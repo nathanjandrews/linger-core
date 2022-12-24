@@ -1,0 +1,4 @@
+proc main() {
+  let age = 11;
+  println(age);
+}
