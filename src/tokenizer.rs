@@ -2,8 +2,8 @@ use regex::{Match, Regex};
 use std::fmt;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Token {
-    ID { value: String },
+pub enum Token<'a> {
+    ID { value: &'a str },
     NUM { n: i64 },
     LPAREN,
     RPAREN,
@@ -62,7 +62,7 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((
             Some(Token::ID {
-                value: mat.as_str().to_string(),
+                value: mat.as_str(),
             }),
             mat.end(),
         ))
