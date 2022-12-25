@@ -5,6 +5,11 @@ use std::fmt;
 pub enum Token<'a> {
     ID { value: &'a str },
     NUM { n: i64 },
+    PROC,
+    LET,
+    EQ,
+    PLUS,
+    MINUS,
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -13,8 +18,13 @@ pub enum Token<'a> {
 }
 
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
+pub const PROC_REGEX: &str = r"proc\b";
+pub const LET_REGEX: &str = "=";
+pub const EQ_REGEX: &str = r"let\b";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
 pub const NUM_REGEX: &str = r"(-?\d+)\b";
+pub const PLUS_REGEX: &str = r"\+";
+pub const MINUS_REGEX: &str = r"\-";
 pub const LPAREN_REGEX: &str = r"\(";
 pub const RPAREN_REGEX: &str = r"\)";
 pub const LBRACKET_REGEX: &str = r"\{";
@@ -34,7 +44,7 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, TokenizerError> {
     tokenize_helper(s)
 }
 
-pub fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
+fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
     if s.len() <= 0 {
         Ok(vec![])
     } else {
@@ -57,8 +67,14 @@ pub fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
 
 fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
-        println!("{}, {}", mat.start(), mat.end());
+        // log_syntax!()
         Ok((None, mat.end()))
+    } else if let Some(mat) = find(PROC_REGEX, s) {
+        Ok((Some(Token::PROC), mat.end()))
+    } else if let Some(mat) = find(LET_REGEX, s) {
+        Ok((Some(Token::LET), mat.end()))
+    } else if let Some(mat) = find(EQ_REGEX, s) {
+        Ok((Some(Token::EQ), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((
             Some(Token::ID {
@@ -73,6 +89,10 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
             }),
             mat.end(),
         ))
+    } else if let Some(mat) = find(PLUS_REGEX, s) {
+        Ok((Some(Token::PLUS), mat.end()))
+    } else if let Some(mat) = find(MINUS_REGEX, s) {
+        Ok((Some(Token::MINUS), mat.end()))
     } else if let Some(mat) = find(LPAREN_REGEX, s) {
         Ok((Some(Token::LPAREN), mat.end()))
     } else if let Some(mat) = find(RPAREN_REGEX, s) {
