@@ -3,8 +3,8 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Token<'a> {
-    ID { value: &'a str },
-    NUM { n: i64 },
+    ID(&'a str),
+    NUM(i64),
     PROC,
     LET,
     EQ,
@@ -76,17 +76,10 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token::EQ), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
-        Ok((
-            Some(Token::ID {
-                value: mat.as_str(),
-            }),
-            mat.end(),
-        ))
+        Ok((Some(Token::ID(mat.as_str())), mat.end()))
     } else if let Some(mat) = find(NUM_REGEX, s) {
         Ok((
-            Some(Token::NUM {
-                n: mat.as_str().parse::<i64>().unwrap(),
-            }),
+            Some(Token::NUM(mat.as_str().parse::<i64>().unwrap())),
             mat.end(),
         ))
     } else if let Some(mat) = find(PLUS_REGEX, s) {
