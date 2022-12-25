@@ -5,8 +5,6 @@ use std::fmt;
 pub enum Token<'a> {
     ID(&'a str),
     NUM(i64),
-    PROC,
-    LET,
     EQ,
     PLUS,
     MINUS,
@@ -18,8 +16,6 @@ pub enum Token<'a> {
 }
 
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
-pub const PROC_REGEX: &str = r"proc\b";
-pub const LET_REGEX: &str = "=";
 pub const EQ_REGEX: &str = r"let\b";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
 pub const NUM_REGEX: &str = r"(-?\d+)\b";
@@ -69,10 +65,6 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         // log_syntax!()
         Ok((None, mat.end()))
-    } else if let Some(mat) = find(PROC_REGEX, s) {
-        Ok((Some(Token::PROC), mat.end()))
-    } else if let Some(mat) = find(LET_REGEX, s) {
-        Ok((Some(Token::LET), mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token::EQ), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
