@@ -1,7 +1,7 @@
 use regex::{Match, Regex};
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Token {
     ID { value: String },
     NUM { n: i64 },
@@ -30,8 +30,8 @@ impl fmt::Display for TokenizerError {
     }
 }
 
-pub fn tokenize(s: String) -> Result<Vec<Token>, TokenizerError> {
-    tokenize_helper(s.as_str())
+pub fn tokenize(s: &str) -> Result<Vec<Token>, TokenizerError> {
+    tokenize_helper(s)
 }
 
 pub fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {

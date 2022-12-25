@@ -19,7 +19,7 @@ fn main() {
         }
     };
 
-    let tokens = match tokenize(linger_file_content) {
+    let tokens = match tokenize(linger_file_content.as_str()) {
         Ok(tokens) => tokens,
         Err(_) => {
             println!("tokenizer error");
