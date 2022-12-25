@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Match, Regex};
 
 use super::{
     error::TokenizerError,
@@ -9,16 +9,16 @@ use super::{
 };
 
 pub fn tokenize(s: String) -> Result<Vec<Token>, TokenizerError> {
-    tokenize_helper(s, 0)
+    tokenize_helper(s.as_str())
 }
 
-pub fn tokenize_helper(s: String, index: usize) -> Result<Vec<Token>, TokenizerError> {
-    if index >= s.len() {
+pub fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
+    if s.len() <= 0 {
         Ok(vec![])
     } else {
-        match get_token(s.as_str(), index) {
+        match get_token(s) {
             Ok((token_option, new_index)) => match token_option {
-                Some(token) => match tokenize_helper(s, new_index) {
+                Some(token) => match tokenize_helper(&s[new_index..]) {
                     Ok(mut vec) => {
                         let mut v = vec![token];
                         v.append(&mut vec);
@@ -26,45 +26,46 @@ pub fn tokenize_helper(s: String, index: usize) -> Result<Vec<Token>, TokenizerE
                     }
                     Err(e) => Err(e),
                 },
-                None => tokenize_helper(s, new_index),
+                None => tokenize_helper(&s[new_index..]),
             },
             Err(e) => Err(e),
         }
     }
 }
 
-fn get_token(s: &str, index: usize) -> Result<(Option<Token>, usize), TokenizerError> {
-    if let Some(mat) = regex(WHITESPACE_REGEX).find_at(s, index) {
+fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
+    if let Some(mat) = find(WHITESPACE_REGEX, s) {
+        println!("{}, {}", mat.start(), mat.end());
         Ok((None, mat.end()))
-    } else if let Some(mat) = regex(ID_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((
             Some(Token::ID {
                 value: mat.as_str().to_string(),
             }),
             mat.end(),
         ))
-    } else if let Some(mat) = regex(NUM_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(NUM_REGEX, s) {
         Ok((
             Some(Token::NUM {
                 n: mat.as_str().parse::<i64>().unwrap(),
             }),
             mat.end(),
         ))
-    } else if let Some(mat) = regex(LPAREN_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(LPAREN_REGEX, s) {
         Ok((Some(Token::LPAREN), mat.end()))
-    } else if let Some(mat) = regex(RPAREN_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(RPAREN_REGEX, s) {
         Ok((Some(Token::RPAREN), mat.end()))
-    } else if let Some(mat) = regex(LBRACKET_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(LBRACKET_REGEX, s) {
         Ok((Some(Token::LBRACKET), mat.end()))
-    } else if let Some(mat) = regex(RBRACKET_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(RBRACKET_REGEX, s) {
         Ok((Some(Token::RBRACKET), mat.end()))
-    } else if let Some(mat) = regex(SEMICOLON_REGEX).find_at(s, index) {
+    } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
         Ok((Some(Token::SEMICOLON), mat.end()))
     } else {
         Err(TokenizerError {})
     }
 }
 
-fn regex(re: &str) -> Regex {
-    return Regex::new(re).unwrap();
+fn find<'a>(re: &'a str, s: &'a str) -> Option<Match<'a>> {
+    return Regex::new(format!("^({re})").as_str()).unwrap().find(s);
 }
