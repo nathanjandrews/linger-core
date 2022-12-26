@@ -5,6 +5,7 @@ use std::fmt;
 pub enum Token<'a> {
     ID(&'a str),
     NUM(i64),
+    ASSIGN,
     EQ,
     PLUS,
     MINUS,
@@ -13,10 +14,12 @@ pub enum Token<'a> {
     LBRACKET,
     RBRACKET,
     SEMICOLON,
+    COMMA,
 }
 
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
-pub const EQ_REGEX: &str = r"let\b";
+pub const ASSIGN_REGEX: &str = r"=";
+pub const EQ_REGEX: &str = r"==";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
 pub const NUM_REGEX: &str = r"(-?\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
@@ -26,6 +29,7 @@ pub const RPAREN_REGEX: &str = r"\)";
 pub const LBRACKET_REGEX: &str = r"\{";
 pub const RBRACKET_REGEX: &str = r"\}";
 pub const SEMICOLON_REGEX: &str = ";";
+pub const COMMA_REGEX: &str = ",";
 
 #[derive(Debug, Clone)]
 pub struct TokenizerError;
@@ -63,10 +67,11 @@ fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
 
 fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
-        // log_syntax!()
         Ok((None, mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token::EQ), mat.end()))
+    } else if let Some(mat) = find(ASSIGN_REGEX, s) {
+        Ok((Some(Token::ASSIGN), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((Some(Token::ID(mat.as_str())), mat.end()))
     } else if let Some(mat) = find(NUM_REGEX, s) {
@@ -88,6 +93,8 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
         Ok((Some(Token::RBRACKET), mat.end()))
     } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
         Ok((Some(Token::SEMICOLON), mat.end()))
+    } else if let Some(mat) = find(COMMA_REGEX, s) {
+        Ok((Some(Token::COMMA), mat.end()))
     } else {
         Err(TokenizerError {})
     }
