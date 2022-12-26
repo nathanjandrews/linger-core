@@ -1,7 +1,7 @@
 use regex::{Match, Regex};
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Token<'a> {
     ID(&'a str),
     NUM(i64),

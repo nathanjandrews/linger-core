@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use linger::tokenizer::tokenize;
+use linger::{parser::parse_program, tokenizer::tokenize};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -21,11 +21,20 @@ fn main() {
 
     let tokens = match tokenize(linger_file_content.as_str()) {
         Ok(tokens) => tokens,
-        Err(_) => {
-            println!("tokenizer error");
+        Err(e) => {
+            println!("tokenizer error: {}", e);
+            return;
+        }
+    };
+    dbg!(&tokens);
+
+    let program = match parse_program(tokens) {
+        Ok(program) => program,
+        Err(e) => {
+            println!("parse error: {}", e);
             return;
         }
     };
 
-    dbg!(tokens);
+    dbg!(program);
 }
