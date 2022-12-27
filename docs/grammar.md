@@ -16,15 +16,14 @@ statements :=
   | statement <rest-statements>
 
 rest-statements :=
-  | SEMICOLON
-  | SEMICOLON <statement> <rest-statements>
+  | <statement> <rest-statements>
 
 statement :=
-  | LET ID ASSIGN <expr>
-  | RETURN <expr>
+  | LET ID ASSIGN <expr> SEMICOLON
+  | RETURN <expr> SEMICOLON
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET ELSE LBRACKET <statements> RBRACKET
-  | <expr>
+  | <expr> SEMICOLON
 
 expr :=
   | <logical_or_expr> <logical_or_expr'>
