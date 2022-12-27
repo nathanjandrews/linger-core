@@ -19,8 +19,9 @@ type Statements<'a> = Vec<Statement<'a>>;
 
 #[derive(Clone, Debug)]
 pub enum Statement<'a> {
-    EXPR(Expr<'a>),
-    LET(&'a str, Expr<'a>),
+    Expr(Expr<'a>),
+    Let(&'a str, Expr<'a>),
+    Return(Expr<'a>)
 }
 
 #[derive(Clone, Debug)]
@@ -171,15 +172,22 @@ fn parse_statements<'a>(tokens: &'a [T<'a>]) -> (Statements, &[T<'a>]) {
 
 fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Statement, &[T<'a>]), ParseError> {
     let (statement, tokens) = match tokens {
-        [T::ID("let"), T::ID(var_name), T::ASSIGN, rest @ ..] => {
-            let (var_expr, tokens) = match parse_expr(rest) {
+        [T::ID("let"), T::ID(var_name), T::ASSIGN, tokens @ ..] => {
+            let (var_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            (Statement::LET(&var_name, var_expr), tokens)
+            (Statement::Let(&var_name, var_expr), tokens)
+        }
+        [T::ID("return"), tokens @ ..] => {
+            let (return_expr, tokens) = match parse_expr(tokens) {
+                Ok(pair) => pair,
+                Err(e) => return Err(e),
+            };
+            (Statement::Return(return_expr), tokens)
         }
         tokens => match parse_expr(tokens) {
-            Ok((expr, tokens)) => (Statement::EXPR(expr), tokens),
+            Ok((expr, tokens)) => (Statement::Expr(expr), tokens),
             Err(e) => return Err(e),
         },
     };

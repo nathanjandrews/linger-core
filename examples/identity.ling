@@ -1,6 +1,6 @@
 proc main() {
   print(identity(5));
-  print(identity("hello there"));
+  print(identity(true));
 }
 
 proc identity(arg) {
