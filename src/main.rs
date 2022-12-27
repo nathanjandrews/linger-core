@@ -28,7 +28,7 @@ fn main() {
     };
     dbg!(&tokens);
 
-    let program = match parse_program(tokens) {
+    let program = match parse_program(tokens.as_slice()) {
         Ok(program) => program,
         Err(e) => {
             println!("parse error: {}", e);
