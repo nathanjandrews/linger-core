@@ -6,13 +6,13 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Program<'a> {
     pub procedures: Vec<Procedure<'a>>,
     pub main: Statements<'a>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Procedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
@@ -21,7 +21,7 @@ pub struct Procedure<'a> {
 
 type Statements<'a> = Vec<Statement<'a>>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
     Expr(Expr<'a>),
     Let(&'a str, Expr<'a>),
@@ -29,7 +29,7 @@ pub enum Statement<'a> {
     Return(Expr<'a>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Expr<'a> {
     Num(i64),
     Bool(bool),
@@ -38,7 +38,7 @@ pub enum Expr<'a> {
     Call(&'a str, Vec<Expr<'a>>),
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum BinaryOperator {
     Plus,
     Minus,
