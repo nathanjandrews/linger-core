@@ -1,6 +1,9 @@
 use std::fmt;
 
-use crate::tokenizer::{Token, TokenValue};
+use crate::{
+    interpreter::Value,
+    tokenizer::{Token, TokenValue},
+};
 
 #[derive(Debug, Clone)]
 pub struct TokenizerError(pub String);
@@ -15,10 +18,20 @@ pub enum ParseError<'a> {
     Custom(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum RuntimeError {
+    UnknownVariable(String),
+    UnknownProc(String),
+    BadArg(Value),
+    ArgMismatch(String, usize, usize),
+    BadCondition(Value),
+}
+
+#[derive(Debug, Clone)]
 pub enum LingerError<'a> {
     ParseError(ParseError<'a>),
     TokenizerError(TokenizerError),
+    RuntimeError(RuntimeError),
 }
 
 impl fmt::Display for LingerError<'_> {
@@ -40,7 +53,22 @@ impl fmt::Display for LingerError<'_> {
                 ),
                 ParseError::Custom(s) => write!(f, "{}", s),
             },
-            LingerError::TokenizerError(err) => write!(f, "unknown token: {}", err.0),
+            LingerError::TokenizerError(err) => write!(f, "unknown token \"{}\"", err.0),
+            LingerError::RuntimeError(err) => match err {
+                RuntimeError::UnknownVariable(id) => write!(f, "unknown variable \"{}\"", id),
+                RuntimeError::BadArg(v) => write!(f, "bad argument \"{}\"", v),
+                RuntimeError::UnknownProc(proc_name) => {
+                    write!(f, "unknown procedure \"{}\"", proc_name)
+                }
+                RuntimeError::ArgMismatch(proc_name, actual, expected) => write!(
+                    f,
+                    "procedure {} expected {} args, instead got {}",
+                    proc_name, expected, actual
+                ),
+                RuntimeError::BadCondition(v) => {
+                    write!(f, "expected boolean value, instead got {}", v)
+                }
+            },
         }
     }
 }

@@ -1,6 +1,10 @@
 use std::{env, fs};
 
-use linger::{parser::parse_program, tokenizer::tokenize};
+use linger::{
+    interpreter::{interp_program},
+    parser::parse_program,
+    tokenizer::tokenize,
+};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,7 +30,6 @@ fn main() {
             return;
         }
     };
-    // dbg!(&tokens);
 
     let program = match parse_program(tokens.as_slice()) {
         Ok(program) => program,
@@ -36,5 +39,13 @@ fn main() {
         }
     };
 
-    dbg!(program);
+    let value = match interp_program(program) {
+        Ok(value) => value,
+        Err(e) => {
+            println!("parse error: {}", e);
+            return;
+        }
+    };
+
+    dbg!(value);
 }

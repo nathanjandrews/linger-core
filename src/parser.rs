@@ -12,7 +12,7 @@ pub struct Program<'a> {
     pub main: Statements<'a>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Procedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
