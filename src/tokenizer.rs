@@ -1,3 +1,5 @@
+use std::fmt;
+
 use regex::{Match, Regex};
 
 use crate::error::{LingerError as LE, TokenizerError};
@@ -16,6 +18,40 @@ pub enum Token<'a> {
     RBRACKET,
     SEMICOLON,
     COMMA,
+}
+
+impl fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut format_msg = |s: &str| write!(f, "\"{s}\"");
+        match self {
+            Token::ID(id) => format_msg(id),
+            Token::NUM(n) => format_msg(n.to_string().as_str()),
+            Token::ASSIGN => format_msg("="),
+            Token::EQ => format_msg("=="),
+            Token::PLUS => format_msg("+"),
+            Token::MINUS => format_msg("-"),
+            Token::LPAREN => format_msg("("),
+            Token::RPAREN => format_msg(")"),
+            Token::LBRACKET => format_msg("{"),
+            Token::RBRACKET => format_msg("}"),
+            Token::SEMICOLON => format_msg(";"),
+            Token::COMMA => format_msg(","),
+        }
+    }
+}
+
+pub struct Tokens<'a>(pub Vec<Token<'a>>);
+
+impl fmt::Display for Tokens<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = self
+            .0
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        write!(f, "[{s}]")
+    }
 }
 
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
