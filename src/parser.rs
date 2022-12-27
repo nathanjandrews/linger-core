@@ -87,22 +87,24 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, ParseError>
 }
 
 fn parse_procs<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Procedure<'a>>, &'a [T<'a>]), ParseError> {
-    match parse_proc(tokens) {
-        Ok((proc, tokens)) => {
+    let (proc_option, tokens) = match parse_proc(tokens) {
+        Ok(pair) => pair,
+        Err(e) => return Err(e),
+    };
+
+    match (proc_option, tokens.len()) {
+        (Some(proc), 0) => Ok((vec![proc], tokens)),
+        (Some(proc), _) => {
             match parse_procs(tokens) {
                 Ok((mut rest_procs, tokens)) => {
-                    let mut vec = if proc.is_some() {
-                        vec![proc.unwrap()]
-                    } else {
-                        vec![]
-                    };
+                    let mut vec = vec![proc];
                     vec.append(&mut rest_procs);
                     return Ok((vec, tokens));
                 }
                 Err(e) => return Err(e),
             };
         }
-        Err(e) => return Err(e),
+        (None, _) => Err(ParseError),
     }
 }
 
@@ -114,7 +116,17 @@ fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>
                 Err(e) => return Err(e),
             };
 
+            let tokens = match consume_token(T::LBRACKET, tokens) {
+                Ok(t) => t,
+                Err(e) => return Err(e),
+            };
+
             let (body_statements, tokens) = parse_statements(tokens);
+
+            let tokens = match consume_token(T::RBRACKET, tokens) {
+                Ok(t) => t,
+                Err(e) => return Err(e),
+            };
 
             Ok((
                 Some(Procedure {
