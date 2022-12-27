@@ -1,4 +1,4 @@
 proc main() {
-  let age = 11;
+  let age = 10;
   print(age);
 }
