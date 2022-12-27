@@ -19,7 +19,7 @@ pub struct Procedure<'a> {
     pub body: Statements<'a>,
 }
 
-type Statements<'a> = Vec<Statement<'a>>;
+pub type Statements<'a> = Vec<Statement<'a>>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
