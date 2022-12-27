@@ -39,13 +39,19 @@ fn interp_statements<'a>(
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
-        // TODO: add immediate termination if the statement is a return statement
+        let is_return_statement = match statement {
+            Statement::Return(_) => true,
+            _ => false,
+        };
         let (new_env, value) = match interp_statement(&procs, env.clone(), statement) {
             Ok(pair) => pair,
             Err(e) => return Err(e),
         };
         env = new_env;
         return_value = value;
+        if is_return_statement {
+            break;
+        }
     }
     return Ok(return_value);
 }

@@ -3,7 +3,7 @@ use crate::{
     tokenizer::{
         Token as T,
         TokenValue::{self, *},
-    },
+    }, KEYWORDS,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -113,6 +113,10 @@ fn parse_procs<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Procedure<'a>>, &'a [T<'a
 fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>]), LingerError> {
     match tokens {
         [T(ID("proc"), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
+            if KEYWORDS.contains(name) {
+                return Err(ParseError(KeywordAsProc(name)));
+            }
+
             let (params, tokens) = match parse_params(rest) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -145,6 +149,10 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
         [T(ID(param_name), ..), rest_toks @ ..] => {
+            if KEYWORDS.contains(param_name) {
+                return Err(ParseError(KeywordAsParam(param_name)));
+            }
+            
             let (mut rest_params, rest_toks) = match parse_params(rest_toks) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -182,6 +190,10 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
         [T(ID("let"), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
+            if KEYWORDS.contains(var_name) {
+                return Err(ParseError(KeywordAsVar(var_name)));
+            }
+
             let (var_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -349,7 +361,13 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
         [T(ID(id), ..), tokens @ ..] => match *id {
             "true" => Ok((Expr::Bool(true), tokens)),
             "false" => Ok((Expr::Bool(false), tokens)),
-            _ => Ok((Expr::Var(id), tokens)),
+            _ => {
+                if KEYWORDS.contains(id) {
+                    Err(LingerError::ParseError(KeywordAsVar(id)))
+                } else {
+                    Ok((Expr::Var(id), tokens))
+                }
+            }
         },
         [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = match parse_logical_or_expr(tokens) {

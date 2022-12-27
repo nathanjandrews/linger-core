@@ -15,6 +15,9 @@ pub enum ParseError<'a> {
     MissingSemicolon,
     UnexpectedToken(Token<'a>),
     Expected(TokenValue<'a>, Token<'a>),
+    KeywordAsVar(&'a str),
+    KeywordAsProc(&'a str),
+    KeywordAsParam(&'a str),
     Custom(String),
 }
 
@@ -52,6 +55,9 @@ impl fmt::Display for LingerError<'_> {
                     target, token.1, token.2, token.0
                 ),
                 ParseError::Custom(s) => write!(f, "{}", s),
+                ParseError::KeywordAsVar(keyword) => write!(f, "keyword \"{}\" used as variable", keyword),
+                ParseError::KeywordAsProc(keyword) => write!(f, "keyword \"{}\" used as procedure name", keyword),
+                ParseError::KeywordAsParam(keyword) =>  write!(f, "keyword \"{}\" used as parameter name", keyword),
             },
             LingerError::TokenizerError(err) => write!(f, "unknown token \"{}\"", err.0),
             LingerError::RuntimeError(err) => match err {
