@@ -3,7 +3,7 @@ use std::fmt;
 use crate::tokenizer::{Token, Tokens};
 
 #[derive(Debug, Clone)]
-pub struct TokenizerError;
+pub struct TokenizerError(pub String);
 
 #[derive(Debug, Clone)]
 pub enum ParseError<'a> {
@@ -29,7 +29,7 @@ impl fmt::Display for LingerError<'_> {
                     ParseError::UnexpectedToken(tokens) => write!(f, "unexpected tokens: {}", Tokens(tokens.to_vec())),
                 }
             }
-            LingerError::TokenizerError(_) => write!(f, "tokenizer error"),
+            LingerError::TokenizerError(err) => write!(f, "unknown token: {}", err.0),
         }
     }
 }

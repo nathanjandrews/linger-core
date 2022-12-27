@@ -124,10 +124,19 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), LE> {
     } else if let Some(mat) = find(COMMA_REGEX, s) {
         Ok((Some(Token::COMMA), mat.end()))
     } else {
-        Err(LE::TokenizerError(TokenizerError))
+        Err(LE::TokenizerError(TokenizerError({
+            let mut split =
+                s.split(|c: char| str_to_regex(WHITESPACE_REGEX).is_match(c.to_string().as_str()));
+            let unknown_token = split.nth(0).unwrap();
+            format!("\"{}\"", unknown_token).to_string()
+        })))
     }
 }
 
+fn str_to_regex(s: &str) -> Regex {
+    return Regex::new(format!("^({s})").as_str()).unwrap();
+}
+
 fn find<'a>(re: &'a str, s: &'a str) -> Option<Match<'a>> {
-    return Regex::new(format!("^({re})").as_str()).unwrap().find(s);
+    return str_to_regex(re).find(s);
 }
