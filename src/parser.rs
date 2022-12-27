@@ -170,19 +170,24 @@ fn parse_statements<'a>(tokens: &'a [T<'a>]) -> (Statements, &[T<'a>]) {
 }
 
 fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Statement, &[T<'a>]), ParseError> {
-    match tokens {
+    let (statement, tokens) = match tokens {
         [T::ID("let"), T::ID(var_name), T::ASSIGN, rest @ ..] => {
             let (var_expr, tokens) = match parse_expr(rest) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            return Ok((Statement::LET(&var_name, var_expr), tokens));
+            (Statement::LET(&var_name, var_expr), tokens)
         }
         tokens => match parse_expr(tokens) {
-            Ok((expr, tokens)) => Ok((Statement::EXPR(expr), tokens)),
-            Err(e) => Err(e),
+            Ok((expr, tokens)) => (Statement::EXPR(expr), tokens),
+            Err(e) => return Err(e),
         },
-    }
+    };
+    let tokens = match consume_token(T::SEMICOLON, tokens) {
+        Ok(t) => t,
+        Err(e) => return Err(e),
+    };
+    Ok((statement, tokens))
 }
 
 fn parse_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), ParseError> {
