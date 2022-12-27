@@ -22,6 +22,7 @@ type Statements<'a> = Vec<Statement<'a>>;
 pub enum Statement<'a> {
     Expr(Expr<'a>),
     Let(&'a str, Expr<'a>),
+    If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
     Return(Expr<'a>),
 }
 
@@ -45,7 +46,7 @@ pub enum BinaryOperator {
 fn consume_token<'a>(target: T<'a>, tokens: &'a [T<'a>]) -> Result<&'a [T<'a>], LingerError<'a>> {
     match tokens {
         [token, rest @ ..] if token.eq(&target) => Ok(rest),
-        tokens => Err(unexpected_token(tokens)),
+        _ => Err(ParseError(Expected(target))),
     }
 }
 
@@ -163,18 +164,13 @@ fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Statements, &[T<'a>]), L
         return Ok((vec![], tokens));
     };
 
-    match tokens {
-        [T::SEMICOLON, tokens @ ..] => {
-            let (mut rest_statements, tokens) = match parse_statements(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
-            let mut vec = vec![statement];
-            vec.append(&mut rest_statements);
-            Ok((vec, tokens))
-        }
-        _ => return Err(ParseError(MissingSemicolon)),
-    }
+    let (mut rest_statements, tokens) = match parse_statements(tokens) {
+        Ok(pair) => pair,
+        Err(e) => return Err(e),
+    };
+    let mut vec = vec![statement];
+    vec.append(&mut rest_statements);
+    Ok((vec, tokens))
 }
 
 fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a>]), LingerError> {
@@ -185,17 +181,68 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
+            let tokens = match consume_token(T::SEMICOLON, tokens) {
+                Ok(t) => t,
+                Err(e) => return Err(e),
+            };
             Ok((Some(Statement::Let(&var_name, var_expr)), tokens))
+        }
+        [T::ID("if"), T::LPAREN, tokens @ ..] => {
+            let (cond_expr, tokens) = match parse_expr(tokens) {
+                Ok(pair) => pair,
+                Err(e) => return Err(e),
+            };
+
+            // TODO: include more granular error handling for each of the RPAREN and LBRACKET tokens
+            let (then_statements, tokens) = match tokens {
+                [T::RPAREN, T::LBRACKET, tokens @ ..] => match parse_statements(tokens) {
+                    Ok(pair) => pair,
+                    Err(e) => return Err(e),
+                },
+                _ => {
+                    return Err(ParseError(Custom(String::from(
+                        "expected \")\", followed by \"{\"",
+                    ))))
+                }
+            };
+
+            // TODO: include more granular error handling for each of the ID("else") and LBRACKET tokens
+            let (else_statements_option, tokens) = match tokens {
+                [T::ID("else"), T::LBRACKET, tokens @ ..] => match parse_statements(tokens) {
+                    Ok((statements, tokens)) => (Some(statements), tokens),
+                    Err(e) => return Err(e),
+                },
+                tokens => (None, tokens),
+            };
+
+            Ok((
+                Some(Statement::If(
+                    cond_expr,
+                    then_statements,
+                    else_statements_option,
+                )),
+                tokens,
+            ))
         }
         [T::ID("return"), tokens @ ..] => {
             let (return_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
+            let tokens = match consume_token(T::SEMICOLON, tokens) {
+                Ok(t) => t,
+                Err(e) => return Err(e),
+            };
             Ok((Some(Statement::Return(return_expr)), tokens))
         }
         tokens => match parse_expr(tokens) {
-            Ok((expr, tokens)) => Ok((Some(Statement::Expr(expr)), tokens)),
+            Ok((expr, tokens)) => {
+                let tokens = match consume_token(T::SEMICOLON, tokens) {
+                    Ok(t) => t,
+                    Err(e) => return Err(e),
+                };
+                Ok((Some(Statement::Expr(expr)), tokens))
+            }
             Err(e) => return Err(e),
         },
     }

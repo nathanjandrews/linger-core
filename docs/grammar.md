@@ -21,6 +21,9 @@ rest-statements :=
 
 statement :=
   | LET ID ASSIGN <expr>
+  | RETURN <expr>
+  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
+  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET ELSE LBRACKET <statements> RBRACKET
   | <expr>
 
 expr :=

@@ -11,6 +11,8 @@ pub enum ParseError<'a> {
     MultipleMain,
     MissingSemicolon,
     UnexpectedToken(Token<'a>),
+    Expected(Token<'a>),
+    Custom(String)
 }
 
 pub enum LingerError<'a> {
@@ -27,6 +29,8 @@ impl fmt::Display for LingerError<'_> {
                     ParseError::MultipleMain => write!(f, "multiple main procedures found"),
                     ParseError::MissingSemicolon => write!(f, "missing semicolon"),
                     ParseError::UnexpectedToken(token) => write!(f, "unexpected token {}", token),
+                    ParseError::Expected(token) => write!(f, "expected token {}", token),
+                    ParseError::Custom(s) =>  write!(f, "{}", s),
                 }
             }
             LingerError::TokenizerError(err) => write!(f, "unknown token: {}", err.0),
