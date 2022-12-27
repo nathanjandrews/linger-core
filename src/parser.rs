@@ -42,6 +42,7 @@ pub enum BinaryOperator {
 }
 
 fn consume_token<'a>(target: T<'a>, tokens: &'a [T<'a>]) -> Result<&'a [T<'a>], LingerError<'a>> {
+    println!("consuming token... {target}");
     match tokens {
         [token, rest @ ..] if token.eq(&target) => Ok(rest),
         tokens => Err(unexpected_token(tokens)),
@@ -116,10 +117,8 @@ fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>
                 Err(e) => return Err(e),
             };
 
-            let (body_statements, tokens) = parse_statements(tokens);
-
-            let tokens = match consume_token(T::RBRACKET, tokens) {
-                Ok(t) => t,
+            let (body_statements, tokens) = match parse_statements(tokens) {
+                Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
 
@@ -152,44 +151,54 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
     }
 }
 
-fn parse_statements<'a>(tokens: &'a [T<'a>]) -> (Statements, &[T<'a>]) {
-    match parse_statement(tokens) {
-        Ok((statement, tokens)) => {
-            let (mut rest_statements, tokens) = parse_statements(tokens);
+fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Statements, &[T<'a>]), LingerError> {
+    let (statement_option, tokens) = match parse_statement(tokens) {
+        Ok(pair) => pair,
+        Err(e) => return Err(e),
+    };
+
+    let statement = if statement_option.is_some() {
+        statement_option.unwrap()
+    } else {
+        return Ok((vec![], tokens));
+    };
+
+    match tokens {
+        [T::SEMICOLON, tokens @ ..] => {
+            let (mut rest_statements, tokens) = match parse_statements(tokens) {
+                Ok(pair) => pair,
+                Err(e) => return Err(e),
+            };
             let mut vec = vec![statement];
             vec.append(&mut rest_statements);
-            (vec, tokens)
+            Ok((vec, tokens))
         }
-        Err(_) => (vec![], tokens),
+        _ => return Err(ParseError(MissingSemicolon)),
     }
 }
 
-fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Statement, &[T<'a>]), LingerError> {
-    let (statement, tokens) = match tokens {
+fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a>]), LingerError> {
+    match tokens {
+        [T::RBRACKET, tokens @ ..] => Ok((None, tokens)),
         [T::ID("let"), T::ID(var_name), T::ASSIGN, tokens @ ..] => {
             let (var_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            (Statement::Let(&var_name, var_expr), tokens)
+            Ok((Some(Statement::Let(&var_name, var_expr)), tokens))
         }
         [T::ID("return"), tokens @ ..] => {
             let (return_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            (Statement::Return(return_expr), tokens)
+            Ok((Some(Statement::Return(return_expr)), tokens))
         }
         tokens => match parse_expr(tokens) {
-            Ok((expr, tokens)) => (Statement::Expr(expr), tokens),
+            Ok((expr, tokens)) => Ok((Some(Statement::Expr(expr)), tokens)),
             Err(e) => return Err(e),
         },
-    };
-    let tokens = match consume_token(T::SEMICOLON, tokens) {
-        Ok(t) => t,
-        Err(e) => return Err(e),
-    };
-    Ok((statement, tokens))
+    }
 }
 
 fn parse_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
