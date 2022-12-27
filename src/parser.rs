@@ -3,7 +3,8 @@ use crate::{
     tokenizer::{
         Token as T,
         TokenValue::{self, *},
-    }, KEYWORDS,
+    },
+    KEYWORDS,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -152,7 +153,7 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
             if KEYWORDS.contains(param_name) {
                 return Err(ParseError(KeywordAsParam(param_name)));
             }
-            
+
             let (mut rest_params, rest_toks) = match parse_params(rest_toks) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
