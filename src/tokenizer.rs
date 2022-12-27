@@ -23,7 +23,6 @@ pub enum TokenValue<'a> {
     RBRACKET,
     SEMICOLON,
     COMMA,
-    EOF,
 }
 
 impl fmt::Display for TokenValue<'_> {
@@ -43,7 +42,6 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::SEMICOLON => format_msg(";"),
             TokenValue::COMMA => format_msg(","),
             TokenValue::LOGIC_OR => format_msg("||"),
-            TokenValue::EOF => format_msg("EOF"), // EOF currently does not have a regex
         }
     }
 }
@@ -80,18 +78,13 @@ pub const LOGIC_OR_REGEX: &str = r"\|\|";
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     let enumerated_lines = s.split("\n").enumerate();
     let mut tokens: Vec<Token> = vec![];
-    let mut last_row: usize = 0;
-    let mut last_col: usize = 0;
     for (line_num, line) in enumerated_lines {
-        last_row += 1;
-        last_col = line.len();
         let mut line_tokens = match tokenize_helper(line, line_num + 1, 1) {
             Ok(tokens) => tokens,
             Err(e) => return Err(e),
         };
         tokens.append(&mut line_tokens)
     }
-    tokens.append(&mut vec![Token(TokenValue::EOF, last_row, last_col + 1)]);
     Ok(tokens)
 }
 

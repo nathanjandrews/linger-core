@@ -71,11 +71,6 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
         Err(e) => return Err(e),
     };
 
-    let rest = match consume_token(EOF, rest) {
-        Ok(rest) => rest,
-        Err(e) => return Err(e),
-    };
-
     if !rest.is_empty() {
         return Err(unexpected_token(rest)); // extra tokens
     }
