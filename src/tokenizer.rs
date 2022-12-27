@@ -1,5 +1,6 @@
 use regex::{Match, Regex};
-use std::fmt;
+
+use crate::error::{LingerError as LE, TokenizerError};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Token<'a> {
@@ -31,20 +32,11 @@ pub const RBRACKET_REGEX: &str = r"\}";
 pub const SEMICOLON_REGEX: &str = ";";
 pub const COMMA_REGEX: &str = ",";
 
-#[derive(Debug, Clone)]
-pub struct TokenizerError;
-
-impl fmt::Display for TokenizerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "token error")
-    }
-}
-
-pub fn tokenize(s: &str) -> Result<Vec<Token>, TokenizerError> {
+pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     tokenize_helper(s)
 }
 
-fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
+fn tokenize_helper(s: &str) -> Result<Vec<Token>, LE> {
     if s.len() <= 0 {
         Ok(vec![])
     } else {
@@ -65,7 +57,7 @@ fn tokenize_helper(s: &str) -> Result<Vec<Token>, TokenizerError> {
     }
 }
 
-fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
+fn get_token(s: &str) -> Result<(Option<Token>, usize), LE> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
@@ -96,7 +88,7 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), TokenizerError> {
     } else if let Some(mat) = find(COMMA_REGEX, s) {
         Ok((Some(Token::COMMA), mat.end()))
     } else {
-        Err(TokenizerError {})
+        Err(LE::TokenizerError(TokenizerError))
     }
 }
 
