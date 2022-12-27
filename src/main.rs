@@ -26,7 +26,7 @@ fn main() {
             return;
         }
     };
-    dbg!(&tokens);
+    // dbg!(&tokens);
 
     let program = match parse_program(tokens.as_slice()) {
         Ok(program) => program,

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::tokenizer::{Token};
+use crate::tokenizer::{Token, TokenValue};
 
 #[derive(Debug, Clone)]
 pub struct TokenizerError(pub String);
@@ -11,10 +11,11 @@ pub enum ParseError<'a> {
     MultipleMain,
     MissingSemicolon,
     UnexpectedToken(Token<'a>),
-    Expected(Token<'a>),
-    Custom(String)
+    Expected(TokenValue<'a>, Token<'a>),
+    Custom(String),
 }
 
+#[derive(Debug)]
 pub enum LingerError<'a> {
     ParseError(ParseError<'a>),
     TokenizerError(TokenizerError),
@@ -23,21 +24,29 @@ pub enum LingerError<'a> {
 impl fmt::Display for LingerError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LingerError::ParseError(err) => {
-                match err {
-                    ParseError::NoMain => write!(f, "main procedure not found"),
-                    ParseError::MultipleMain => write!(f, "multiple main procedures found"),
-                    ParseError::MissingSemicolon => write!(f, "missing semicolon"),
-                    ParseError::UnexpectedToken(token) => write!(f, "unexpected token {}", token),
-                    ParseError::Expected(token) => write!(f, "expected token {}", token),
-                    ParseError::Custom(s) =>  write!(f, "{}", s),
-                }
-            }
+            LingerError::ParseError(err) => match err {
+                ParseError::NoMain => write!(f, "main procedure not found"),
+                ParseError::MultipleMain => write!(f, "multiple main procedures found"),
+                ParseError::MissingSemicolon => write!(f, "missing semicolon"),
+                ParseError::UnexpectedToken(token) => write!(
+                    f,
+                    "unexpected token {} @ ({}, {})",
+                    token.0, token.1, token.2
+                ),
+                ParseError::Expected(target, token) => write!(
+                    f,
+                    "expected token {} @ ({}, {}), instead got {}",
+                    target, token.1, token.2, token.0
+                ),
+                ParseError::Custom(s) => write!(f, "{}", s),
+            },
             LingerError::TokenizerError(err) => write!(f, "unknown token: {}", err.0),
         }
     }
 }
 
 pub fn unexpected_token<'a>(tokens: &'a [Token<'a>]) -> LingerError<'a> {
-    return LingerError::ParseError(ParseError::UnexpectedToken(tokens.first().unwrap().to_owned()));
+    return LingerError::ParseError(ParseError::UnexpectedToken(
+        tokens.first().unwrap().to_owned(),
+    ));
 }

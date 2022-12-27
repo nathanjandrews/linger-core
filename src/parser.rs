@@ -1,6 +1,9 @@
 use crate::{
     error::{unexpected_token, LingerError, LingerError::ParseError, ParseError::*},
-    tokenizer::Token as T,
+    tokenizer::{
+        Token as T,
+        TokenValue::{self, *},
+    },
 };
 
 #[derive(Debug)]
@@ -43,10 +46,14 @@ pub enum BinaryOperator {
     LogicOr,
 }
 
-fn consume_token<'a>(target: T<'a>, tokens: &'a [T<'a>]) -> Result<&'a [T<'a>], LingerError<'a>> {
+fn consume_token<'a>(
+    target: TokenValue<'a>,
+    tokens: &'a [T<'a>],
+) -> Result<&'a [T<'a>], LingerError<'a>> {
     match tokens {
-        [token, rest @ ..] if token.eq(&target) => Ok(rest),
-        _ => Err(ParseError(Expected(target))),
+        [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
+        [token, ..] => Err(ParseError(Expected(target, *token))),
+        _ => unreachable!(),
     }
 }
 
@@ -63,6 +70,12 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
         Ok((procs, tokens)) => (procs, tokens),
         Err(e) => return Err(e),
     };
+
+    let rest = match consume_token(EOF, rest) {
+        Ok(rest) => rest,
+        Err(e) => return Err(e),
+    };
+
     if !rest.is_empty() {
         return Err(unexpected_token(rest)); // extra tokens
     }
@@ -88,32 +101,29 @@ fn parse_procs<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Procedure<'a>>, &'a [T<'a
         Err(e) => return Err(e),
     };
 
-    match (proc_option, tokens.len()) {
-        (Some(proc), 0) => Ok((vec![proc], tokens)),
-        (Some(proc), _) => {
-            match parse_procs(tokens) {
-                Ok((mut rest_procs, tokens)) => {
-                    let mut vec = vec![proc];
-                    vec.append(&mut rest_procs);
-                    return Ok((vec, tokens));
-                }
+    match proc_option {
+        Some(proc) => {
+            let (mut rest_procs, tokens) = match parse_procs(tokens) {
+                Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
+            let mut vec = vec![proc];
+            vec.append(&mut rest_procs);
+            return Ok((vec, tokens));
         }
-        (None, 0) => Err(ParseError(NoMain)),
-        (None, _) => Err(unexpected_token(tokens)),
+        None => Ok((vec![], tokens)),
     }
 }
 
 fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>]), LingerError> {
     match tokens {
-        [T::ID("proc"), T::ID(name), T::LPAREN, rest @ ..] => {
+        [T(ID("proc"), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
             let (params, tokens) = match parse_params(rest) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
 
-            let tokens = match consume_token(T::LBRACKET, tokens) {
+            let tokens = match consume_token(LBRACKET, tokens) {
                 Ok(t) => t,
                 Err(e) => return Err(e),
             };
@@ -138,8 +148,8 @@ fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>
 
 fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), LingerError> {
     match tokens {
-        [T::RPAREN, rest @ ..] => Ok((vec![], rest)),
-        [T::ID(param_name), rest_toks @ ..] => {
+        [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
+        [T(ID(param_name), ..), rest_toks @ ..] => {
             let (mut rest_params, rest_toks) = match parse_params(rest_toks) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -175,19 +185,20 @@ fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Statements, &[T<'a>]), L
 
 fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a>]), LingerError> {
     match tokens {
-        [T::RBRACKET, tokens @ ..] => Ok((None, tokens)),
-        [T::ID("let"), T::ID(var_name), T::ASSIGN, tokens @ ..] => {
+        [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
+        [T(ID("let"), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            let tokens = match consume_token(T::SEMICOLON, tokens) {
+
+            let tokens = match consume_token(SEMICOLON, tokens) {
                 Ok(t) => t,
                 Err(e) => return Err(e),
             };
             Ok((Some(Statement::Let(&var_name, var_expr)), tokens))
         }
-        [T::ID("if"), T::LPAREN, tokens @ ..] => {
+        [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -195,7 +206,7 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
 
             // TODO: include more granular error handling for each of the RPAREN and LBRACKET tokens
             let (then_statements, tokens) = match tokens {
-                [T::RPAREN, T::LBRACKET, tokens @ ..] => match parse_statements(tokens) {
+                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => match parse_statements(tokens) {
                     Ok(pair) => pair,
                     Err(e) => return Err(e),
                 },
@@ -208,7 +219,8 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
 
             // TODO: include more granular error handling for each of the ID("else") and LBRACKET tokens
             let (else_statements_option, tokens) = match tokens {
-                [T::ID("else"), T::LBRACKET, tokens @ ..] => match parse_statements(tokens) {
+                [T(ID("else"), ..), T(LBRACKET, ..), tokens @ ..] => match parse_statements(tokens)
+                {
                     Ok((statements, tokens)) => (Some(statements), tokens),
                     Err(e) => return Err(e),
                 },
@@ -224,12 +236,13 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                 tokens,
             ))
         }
-        [T::ID("return"), tokens @ ..] => {
+        [T(ID("return"), ..), tokens @ ..] => {
             let (return_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            let tokens = match consume_token(T::SEMICOLON, tokens) {
+
+            let tokens = match consume_token(SEMICOLON, tokens) {
                 Ok(t) => t,
                 Err(e) => return Err(e),
             };
@@ -237,7 +250,7 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
         }
         tokens => match parse_expr(tokens) {
             Ok((expr, tokens)) => {
-                let tokens = match consume_token(T::SEMICOLON, tokens) {
+                let tokens = match consume_token(SEMICOLON, tokens) {
                     Ok(t) => t,
                     Err(e) => return Err(e),
                 };
@@ -258,7 +271,7 @@ fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
         Err(e) => return Err(e),
     };
     match tokens {
-        [T::LOGIC_OR, tokens @ ..] => {
+        [T(LOGIC_OR, ..), tokens @ ..] => {
             let (logical_or_expr, tokens) = match parse_logical_or_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -280,7 +293,7 @@ fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
         Err(e) => return Err(e),
     };
     match tokens {
-        [T::EQ, tokens @ ..] => {
+        [T(EQ, ..), tokens @ ..] => {
             let (relational_expr, tokens) = match parse_relational_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -303,7 +316,7 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
     };
 
     match tokens {
-        [T::PLUS, tokens @ ..] => {
+        [T(PLUS, ..), tokens @ ..] => {
             let (additive_expr, tokens) = match parse_additive_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -313,7 +326,7 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
                 tokens,
             ));
         }
-        [T::MINUS, tokens @ ..] => {
+        [T(MINUS, ..), tokens @ ..] => {
             let (additive_expr, tokens) = match parse_additive_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
@@ -331,37 +344,37 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 
 fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     match tokens {
-        [T::ID(function_name), T::LPAREN, tokens @ ..] => {
+        [T(ID(function_name), ..), T(LPAREN, ..), tokens @ ..] => {
             let (args, tokens) = match parse_args(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
             return Ok((Expr::Call(*function_name, args), tokens));
         }
-        [T::ID(id), tokens @ ..] => match *id {
+        [T(ID(id), ..), tokens @ ..] => match *id {
             "true" => Ok((Expr::Bool(true), tokens)),
             "false" => Ok((Expr::Bool(false), tokens)),
             _ => Ok((Expr::Var(id), tokens)),
         },
-        [T::LPAREN, tokens @ ..] => {
+        [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = match parse_logical_or_expr(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            let tokens = match consume_token(T::RPAREN, tokens) {
+            let tokens = match consume_token(RPAREN, tokens) {
                 Ok(tokens) => tokens,
                 Err(e) => return Err(e),
             };
             Ok((expr, tokens))
         }
-        [T::NUM(n), tokens @ ..] => Ok((Expr::Num(*n), tokens)),
+        [T(NUM(n), ..), tokens @ ..] => Ok((Expr::Num(*n), tokens)),
         tokens => Err(unexpected_token(tokens)),
     }
 }
 
 fn parse_args<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Expr>, &'a [T<'a>]), LingerError> {
     match tokens {
-        [T::RPAREN, tokens @ ..] => Ok((vec![], tokens)),
+        [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         tokens => {
             let (expr, tokens) = match parse_logical_or_expr(tokens) {
                 Ok(pair) => pair,
@@ -381,9 +394,9 @@ fn parse_args<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Expr>, &'a [T<'a>]), Linge
 
 fn parse_rest_args<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Expr>, &'a [T<'a>]), LingerError> {
     match tokens {
-        [T::RPAREN, tokens @ ..] => Ok((vec![], tokens)),
-        [T::COMMA, T::RPAREN, ..] => Err(unexpected_token(tokens)),
-        [T::COMMA, tokens @ ..] => parse_args(tokens),
+        [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
+        [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
+        [T(COMMA, ..), tokens @ ..] => parse_args(tokens),
         tokens => Err(unexpected_token(tokens)),
     }
 }
