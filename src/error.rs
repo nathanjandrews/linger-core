@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::tokenizer::{Token, Tokens};
+use crate::tokenizer::{Token};
 
 #[derive(Debug, Clone)]
 pub struct TokenizerError(pub String);
@@ -10,7 +10,7 @@ pub enum ParseError<'a> {
     NoMain,
     MultipleMain,
     MissingSemicolon,
-    UnexpectedToken(Vec<Token<'a>>),
+    UnexpectedToken(Token<'a>),
 }
 
 pub enum LingerError<'a> {
@@ -26,7 +26,7 @@ impl fmt::Display for LingerError<'_> {
                     ParseError::NoMain => write!(f, "main procedure not found"),
                     ParseError::MultipleMain => write!(f, "multiple main procedures found"),
                     ParseError::MissingSemicolon => write!(f, "missing semicolon"),
-                    ParseError::UnexpectedToken(tokens) => write!(f, "unexpected tokens: {}", Tokens(tokens.to_vec())),
+                    ParseError::UnexpectedToken(token) => write!(f, "unexpected token {}", token),
                 }
             }
             LingerError::TokenizerError(err) => write!(f, "unknown token: {}", err.0),
@@ -35,5 +35,5 @@ impl fmt::Display for LingerError<'_> {
 }
 
 pub fn unexpected_token<'a>(tokens: &'a [Token<'a>]) -> LingerError<'a> {
-    return LingerError::ParseError(ParseError::UnexpectedToken(tokens.to_vec()));
+    return LingerError::ParseError(ParseError::UnexpectedToken(tokens.first().unwrap().to_owned()));
 }
