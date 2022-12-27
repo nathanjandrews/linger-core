@@ -97,7 +97,7 @@ pub fn interp_statement<'a>(
         }
         Statement::Return(expr) => match interp_expression(&procs, env.clone(), expr) {
             Ok(value) => Ok((env, value)),
-            Err(_) => todo!(),
+            Err(e) => return Err(e),
         },
     }
 }
@@ -142,7 +142,7 @@ pub fn interp_expression<'a>(
                 },
                 BinaryOperator::Eq => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left + num_right))
+                        Ok(Value::Bool(num_left == num_right))
                     }
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left == bool_right))
