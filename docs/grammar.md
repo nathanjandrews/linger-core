@@ -24,7 +24,10 @@ statement :=
   | <expr>
 
 expr :=
-  | <relational_expr> <relational_expr'>
+  | <logical_or_expr> <logical_or_expr'>
+
+logical_or_expr :=
+  | <relational_expr> <logical_or_expr'>
 
 relational_expr :=
   | <additive_expr> <relational_expr'>
@@ -35,7 +38,7 @@ relational_expr' :=
   | LT <relational_expr> // TODO: add LT and other relational operators
 
 additive_expr :=
-  | <termianl> <additive_expr'>
+  | <terminal> <additive_expr'>
 
 additive_expr' :=
   | epsilon

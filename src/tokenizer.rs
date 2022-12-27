@@ -5,10 +5,12 @@ use regex::{Match, Regex};
 use crate::error::{LingerError as LE, TokenizerError};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[allow(non_camel_case_types)]
 pub enum Token<'a> {
     ID(&'a str),
     NUM(i64),
     ASSIGN,
+    LOGIC_OR,
     EQ,
     PLUS,
     MINUS,
@@ -36,6 +38,7 @@ impl fmt::Display for Token<'_> {
             Token::RBRACKET => format_msg("}"),
             Token::SEMICOLON => format_msg(";"),
             Token::COMMA => format_msg(","),
+            Token::LOGIC_OR => format_msg("||"),
         }
     }
 }
@@ -67,6 +70,7 @@ pub const LBRACKET_REGEX: &str = r"\{";
 pub const RBRACKET_REGEX: &str = r"\}";
 pub const SEMICOLON_REGEX: &str = ";";
 pub const COMMA_REGEX: &str = ",";
+pub const LOGIC_OR_REGEX: &str = r"\|\|";
 
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     tokenize_helper(s)
@@ -98,6 +102,8 @@ fn get_token(s: &str) -> Result<(Option<Token>, usize), LE> {
         Ok((None, mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token::EQ), mat.end()))
+    } else if let Some(mat) = find(LOGIC_OR_REGEX, s) {
+        Ok((Some(Token::LOGIC_OR), mat.end()))
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
         Ok((Some(Token::ASSIGN), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
