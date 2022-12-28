@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use linger::interp;
+use linger::{interp, interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,12 +19,30 @@ fn main() {
         }
     };
 
-    let value = match interp(linger_file_content) {
-        Ok(v) => v,
-        Err(e) => {
-            println!("{e}");
-            return;
-        }
+    let tokens = match tokenize(linger_file_content.as_str()) {
+        Ok(t) => t,
+        Err(e) => return println!("{e}"),
     };
+
+    let program = match parse_program(tokens.as_slice()) {
+        Ok(p) => p,
+        Err(e) => return println!("{e}"),
+    };
+
+    dbg!(&program.main);
+
+    // let value = match interp(linger_file_content) {
+    //     Ok(v) => v,
+    //     Err(e) => {
+    //         println!("{e}");
+    //         return;
+    //     }
+    // };
+
+    let value = match interp_program(program) {
+        Ok(v) => v,
+        Err(e) => return println!("{e}"),
+    };
+
     dbg!(value);
 }
