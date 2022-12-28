@@ -26,7 +26,7 @@ fn relational_operators() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(file_name_to_path("relational_operators"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("true false true true false"));
+        .stdout(predicate::str::contains("true false true true false false"));
 
     Ok(())
 }

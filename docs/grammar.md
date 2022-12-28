@@ -37,19 +37,25 @@ logical_or_expr' :=
   | LOGIC_OR <logical_or_expr>
 
 logical_and_expr :=
-  | <relational_expr> <logical_and_expr'>
+  | <equality_expr> <logical_and_expr'>
 
 logical_and_expr' :=
   | epsilon
   | LOGIC_AND <logical_and_expr>
+
+equality_expr :=
+  | <relational_expr> <equality_expr'>
+
+equality_expr' :=
+  | epsilon
+  | NE <equality_expr>
+  | EQ <equality_expr>
 
 relational_expr :=
   | <additive_expr> <relational_expr'>
 
 relational_expr' :=
   | epsilon
-  | EQ <relational_expr>
-  | NE <relational_expr>
   | LT <relational_expr>
   | GT <relational_expr>
   | LTE <relational_expr>
