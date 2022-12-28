@@ -189,23 +189,22 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
         [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = parse_expr(tokens)?;
 
-            // TODO: include more granular error handling for each of the RPAREN and LBRACKET tokens
             let (then_statements, tokens) = match tokens {
-                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
-                _ => {
-                    return Err(ParseError(Custom(String::from(
-                        "expected \")\", followed by \"{\"",
-                    ))))
-                }
+                [T(RPAREN, ..), T(LBRACKET, ..), ..] => parse_statements(tokens)?,
+                [T(RPAREN, ..), token, ..] => return Err(ParseError(Expected(LBRACKET, *token))),
+                [token, ..] => return Err(ParseError(Expected(RPAREN, *token))),
+                _ => return Err(ParseError(ExpectedSomething)),
             };
 
-            // TODO: include more granular error handling for each of the ID("else") and LBRACKET tokens
             let (else_statements_option, tokens) = match tokens {
                 [T(ID("else"), ..), T(LBRACKET, ..), tokens @ ..] => match parse_statements(tokens)
                 {
                     Ok((statements, tokens)) => (Some(statements), tokens),
                     Err(e) => return Err(e),
                 },
+                [T(ID("else"), ..), token, ..] => {
+                    return Err(ParseError(Expected(LBRACKET, *token)))
+                }
                 tokens => (None, tokens),
             };
 
