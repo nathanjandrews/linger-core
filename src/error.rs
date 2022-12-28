@@ -27,6 +27,7 @@ pub enum RuntimeError {
     UnknownVariable(String),
     UnknownProc(String),
     BadArg(Value),
+    BadArgs(Vec<Value>),
     ArgMismatch(String, usize, usize),
     BadCondition(Value),
 }
@@ -81,6 +82,12 @@ impl fmt::Display for LingerError<'_> {
                 ),
                 RuntimeError::BadCondition(v) => {
                     write!(f, "expected boolean value, instead got {}", v)
+                }
+                RuntimeError::BadArgs(args) => {
+                    let arg_strings_vec: Vec<String> =
+                        args.iter().map(|arg| arg.to_string()).collect();
+                    let arg_string = arg_strings_vec.join(", ");
+                    write!(f, "bad args: [{}]", arg_string)
                 }
             },
         }

@@ -12,6 +12,7 @@ use crate::{
 pub enum Value {
     Num(i64),
     Bool(bool),
+    // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
 
@@ -137,14 +138,13 @@ pub fn interp_expression<'a>(
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
         Expr::Binary(op, left, right) => {
-            let left_value =  interp_expression(procs, env.clone(), *left) ?;
-            let right_value =  interp_expression(procs, env.clone(), *right) ?;
+            let left_value = interp_expression(procs, env.clone(), *left)?;
+            let right_value = interp_expression(procs, env.clone(), *right)?;
             match op {
                 BinaryOperator::Plus => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left + num_right))
                     }
-                    // TODO: look into better methods of returning errors
                     (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
@@ -152,7 +152,6 @@ pub fn interp_expression<'a>(
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left - num_right))
                     }
-                    // TODO: look into better methods of returning errors
                     (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
@@ -163,14 +162,12 @@ pub fn interp_expression<'a>(
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left == bool_right))
                     }
-                    // TODO: determine if the arg types are mismatched, the first argument must be incorrect?
-                    (v, _) => Err(RuntimeError(BadArg(v))),
+                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
                 BinaryOperator::LogicOr => match (left_value, right_value) {
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left || bool_right))
                     }
-                    // TODO: look into better methods of returning errors
                     (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
