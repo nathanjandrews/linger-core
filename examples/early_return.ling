@@ -1,0 +1,9 @@
+proc main() {
+  if (false) {
+    print(5);
+  } else {
+    print(15);
+    return;
+  }
+  print(10);
+}

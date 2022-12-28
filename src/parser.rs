@@ -27,7 +27,7 @@ pub enum Statement<'a> {
     Expr(Expr<'a>),
     Let(&'a str, Expr<'a>),
     If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
-    Return(Expr<'a>),
+    Return(Option<Expr<'a>>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -257,6 +257,9 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                 tokens,
             ))
         }
+        [T(ID("return"), ..), T(SEMICOLON, ..), tokens @ ..] => {
+            Ok((Some(Statement::Return(None)), tokens))
+        }
         [T(ID("return"), ..), tokens @ ..] => {
             let (return_expr, tokens) = match parse_expr(tokens) {
                 Ok(pair) => pair,
@@ -267,7 +270,7 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                 Ok(t) => t,
                 Err(e) => return Err(e),
             };
-            Ok((Some(Statement::Return(return_expr)), tokens))
+            Ok((Some(Statement::Return(Some(return_expr))), tokens))
         }
         tokens => match parse_expr(tokens) {
             Ok((expr, tokens)) => {

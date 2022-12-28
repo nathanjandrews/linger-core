@@ -15,6 +15,11 @@ pub enum Value {
     Void,
 }
 
+enum ReturnFlag {
+    Return,
+    Continue,
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -28,14 +33,17 @@ impl fmt::Display for Value {
 pub type Environment = HashMap<String, Value>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
-    return interp_statements(&p.procedures, Environment::new(), p.main);
+    return match interp_statements(&p.procedures, Environment::new(), p.main) {
+        Ok((value, _)) => Ok(value),
+        Err(e) => Err(e),
+    };
 }
 
 fn interp_statements<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment,
     statements: Statements<'a>,
-) -> Result<Value, LingerError<'a>> {
+) -> Result<(Value, ReturnFlag), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -44,33 +52,37 @@ fn interp_statements<'a>(
             _ => false,
         };
         let (new_env, value) = match interp_statement(&procs, env.clone(), statement) {
-            Ok(pair) => pair,
+            Ok((new_env, value, return_flag)) => match return_flag {
+                ReturnFlag::Return => return Ok((value, return_flag)),
+                ReturnFlag::Continue => (new_env, value),
+            },
             Err(e) => return Err(e),
         };
+
         env = new_env;
         return_value = value;
         if is_return_statement {
-            break;
+            return Ok((return_value, ReturnFlag::Return));
         }
     }
-    return Ok(return_value);
+    return Ok((return_value, ReturnFlag::Continue));
 }
 
-pub fn interp_statement<'a>(
+fn interp_statement<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment,
     statement: Statement<'a>,
-) -> Result<(Environment, Value), LingerError<'a>> {
+) -> Result<(Environment, Value, ReturnFlag), LingerError<'a>> {
     match statement {
         Statement::Expr(expr) => match interp_expression(&procs, env.clone(), expr) {
-            Ok(value) => Ok((env.clone(), value)),
+            Ok(value) => Ok((env.clone(), value, ReturnFlag::Continue)),
             Err(e) => Err(e),
         },
         Statement::Let(id, let_expr) => match interp_expression(&procs, env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
                 env.insert(id.to_string(), value);
-                Ok((env, Value::Void))
+                Ok((env, Value::Void, ReturnFlag::Continue))
             }
             Err(e) => Err(e),
         },
@@ -83,27 +95,34 @@ pub fn interp_statement<'a>(
                 Value::Bool(b) => {
                     if b {
                         match interp_statements(procs, env.clone(), then_statements) {
-                            Ok(value) => return Ok((env.clone(), value)),
+                            Ok((value, return_flag)) => {
+                                return Ok((env.clone(), value, return_flag))
+                            }
                             Err(e) => return Err(e),
                         };
                     } else {
                         match else_statements_option {
                             Some(else_statements) => {
                                 match interp_statements(procs, env.clone(), else_statements) {
-                                    Ok(value) => return Ok((env.clone(), value)),
+                                    Ok((value, return_flag)) => {
+                                        return Ok((env.clone(), value, return_flag))
+                                    }
                                     Err(e) => return Err(e),
                                 };
                             }
-                            None => Ok((env.clone(), Value::Void)),
+                            None => Ok((env.clone(), Value::Void, ReturnFlag::Continue)),
                         }
                     }
                 }
                 v => return Err(RuntimeError(BadCondition(v))),
             }
         }
-        Statement::Return(expr) => match interp_expression(&procs, env.clone(), expr) {
-            Ok(value) => Ok((env, value)),
-            Err(e) => return Err(e),
+        Statement::Return(expr_option) => match expr_option {
+            Some(expr) => match interp_expression(&procs, env.clone(), expr) {
+                Ok(value) => Ok((env, value, ReturnFlag::Return)),
+                Err(e) => return Err(e),
+            },
+            None => Ok((env, Value::Void, ReturnFlag::Return)),
         },
     }
 }
@@ -194,7 +213,10 @@ pub fn interp_expression<'a>(
                 env.insert(param.to_string(), value);
             }
 
-            return interp_statements(procs, env.clone(), proc.body.to_vec());
+            return match interp_statements(procs, env.clone(), proc.body.to_vec()) {
+                Ok((value, _)) => Ok(value),
+                Err(e) => Err(e),
+            };
         }
         Expr::PrimitiveCall(builtin, args) => match builtin {
             crate::parser::Builtin::Print => {

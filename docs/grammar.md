@@ -21,6 +21,7 @@ rest-statements :=
 statement :=
   | LET ID ASSIGN <expr> SEMICOLON
   | RETURN <expr> SEMICOLON
+  | RETURN SEMICOLON
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET ELSE LBRACKET <statements> RBRACKET
   | <expr> SEMICOLON
