@@ -51,6 +51,7 @@ pub enum BinaryOperator {
     GT,
     LTE,
     GTE,
+    Mod,
     LogicOr,
     LogicAnd,
 }
@@ -364,6 +365,13 @@ fn parse_multiplicative_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a
                 tokens,
             ));
         }
+        [T(MOD, ..), tokens @ ..] => {
+            let (multiplicative_expr, tokens) = parse_multiplicative_expr(tokens)?;
+            return Ok((
+                binary_expression(BinaryOperator::Mod, terminal, multiplicative_expr),
+                tokens,
+            ));
+        }
         tokens => {
             return Ok((terminal, tokens));
         }
@@ -394,7 +402,7 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
             }
         },
         [T(LPAREN, ..), tokens @ ..] => {
-            let (expr, tokens) = parse_logical_or_expr(tokens)?;
+            let (expr, tokens) = parse_expr(tokens)?;
             let tokens = consume_token(RPAREN, tokens)?;
             Ok((expr, tokens))
         }
@@ -407,7 +415,7 @@ fn parse_args<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Expr>, &'a [T<'a>]), Linge
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         tokens => {
-            let (expr, tokens) = parse_logical_or_expr(tokens)?;
+            let (expr, tokens) = parse_expr(tokens)?;
             let (mut rest_args, tokens) = parse_rest_args(tokens)?;
 
             let mut vec = vec![expr];

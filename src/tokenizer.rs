@@ -24,6 +24,7 @@ pub enum TokenValue<'a> {
     PLUS,
     MINUS,
     STAR,
+    MOD,
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -56,6 +57,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::GT => format_msg(">"),
             TokenValue::GTE => format_msg(">="),
             TokenValue::STAR => format_msg("*"),
+            TokenValue::MOD => format_msg("%"),
         }
     }
 }
@@ -87,6 +89,7 @@ pub const NUM_REGEX: &str = r"(-?\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
 pub const MINUS_REGEX: &str = r"\-";
 pub const STAR_REGEX: &str = r"\*";
+pub const MOD_REGEX: &str = "%";
 pub const LPAREN_REGEX: &str = r"\(";
 pub const RPAREN_REGEX: &str = r"\)";
 pub const LBRACKET_REGEX: &str = r"\{";
@@ -153,6 +156,8 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((Some(Token(TokenValue::GT, row, col)), mat.end()))
     } else if let Some(mat) = find(STAR_REGEX, s) {
         Ok((Some(Token(TokenValue::STAR, row, col)), mat.end()))
+    } else if let Some(mat) = find(MOD_REGEX, s) {
+        Ok((Some(Token(TokenValue::MOD, row, col)), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((
             Some(Token(TokenValue::ID(mat.as_str()), row, col)),
