@@ -87,10 +87,7 @@ fn interp_statement<'a>(
             Err(e) => Err(e),
         },
         Statement::If(cond_expr, then_statements, else_statements_option) => {
-            let cond_value = match interp_expression(&procs, env.clone(), cond_expr) {
-                Ok(value) => value,
-                Err(e) => return Err(e),
-            };
+            let cond_value = interp_expression(&procs, env.clone(), cond_expr)?;
             match cond_value {
                 Value::Bool(b) => {
                     if b {
@@ -140,14 +137,8 @@ pub fn interp_expression<'a>(
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
         Expr::Binary(op, left, right) => {
-            let left_value = match interp_expression(procs, env.clone(), *left) {
-                Ok(v) => v,
-                Err(e) => return Err(e),
-            };
-            let right_value = match interp_expression(procs, env.clone(), *right) {
-                Ok(v) => v,
-                Err(e) => return Err(e),
-            };
+            let left_value =  interp_expression(procs, env.clone(), *left) ?;
+            let right_value =  interp_expression(procs, env.clone(), *right) ?;
             match op {
                 BinaryOperator::Plus => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {

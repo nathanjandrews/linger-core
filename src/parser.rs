@@ -80,10 +80,7 @@ fn binary_expression<'a>(
 }
 
 pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError> {
-    let (procedures, rest) = match parse_procs(tokens) {
-        Ok((procs, tokens)) => (procs, tokens),
-        Err(e) => return Err(e),
-    };
+    let (procedures, rest) = parse_procs(tokens)?;
 
     if !rest.is_empty() {
         return Err(unexpected_token(rest)); // extra tokens
@@ -105,17 +102,11 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
 }
 
 fn parse_procs<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Procedure<'a>>, &'a [T<'a>]), LingerError> {
-    let (proc_option, tokens) = match parse_proc(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (proc_option, tokens) = parse_proc(tokens)?;
 
     match proc_option {
         Some(proc) => {
-            let (mut rest_procs, tokens) = match parse_procs(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (mut rest_procs, tokens) = parse_procs(tokens)?;
             let mut vec = vec![proc];
             vec.append(&mut rest_procs);
             return Ok((vec, tokens));
@@ -131,20 +122,11 @@ fn parse_proc<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Procedure<'a>>, &[T<'a>
                 return Err(ParseError(KeywordAsProc(name)));
             }
 
-            let (params, tokens) = match parse_params(rest) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (params, tokens) = parse_params(rest)?;
 
-            let tokens = match consume_token(LBRACKET, tokens) {
-                Ok(t) => t,
-                Err(e) => return Err(e),
-            };
+            let tokens = consume_token(LBRACKET, tokens)?;
 
-            let (body_statements, tokens) = match parse_statements(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (body_statements, tokens) = parse_statements(tokens)?;
 
             Ok((
                 Some(Procedure {
@@ -167,10 +149,7 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
                 return Err(ParseError(KeywordAsParam(param_name)));
             }
 
-            let (mut rest_params, rest_toks) = match parse_params(rest_toks) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (mut rest_params, rest_toks) = parse_params(rest_toks)?;
             let mut params = vec![*param_name];
             params.append(&mut rest_params);
             Ok((params, rest_toks))
@@ -180,10 +159,7 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
 }
 
 fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Statements, &[T<'a>]), LingerError> {
-    let (statement_option, tokens) = match parse_statement(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (statement_option, tokens) = parse_statement(tokens)?;
 
     let statement = if statement_option.is_some() {
         statement_option.unwrap()
@@ -191,10 +167,7 @@ fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Statements, &[T<'a>]), L
         return Ok((vec![], tokens));
     };
 
-    let (mut rest_statements, tokens) = match parse_statements(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (mut rest_statements, tokens) = parse_statements(tokens)?;
     let mut vec = vec![statement];
     vec.append(&mut rest_statements);
     Ok((vec, tokens))
@@ -208,29 +181,17 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                 return Err(ParseError(KeywordAsVar(var_name)));
             }
 
-            let (var_expr, tokens) = match parse_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (var_expr, tokens) = parse_expr(tokens)?;
 
-            let tokens = match consume_token(SEMICOLON, tokens) {
-                Ok(t) => t,
-                Err(e) => return Err(e),
-            };
+            let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(Statement::Let(&var_name, var_expr)), tokens))
         }
         [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (cond_expr, tokens) = match parse_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (cond_expr, tokens) = parse_expr(tokens)?;
 
             // TODO: include more granular error handling for each of the RPAREN and LBRACKET tokens
             let (then_statements, tokens) = match tokens {
-                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => match parse_statements(tokens) {
-                    Ok(pair) => pair,
-                    Err(e) => return Err(e),
-                },
+                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
                 _ => {
                     return Err(ParseError(Custom(String::from(
                         "expected \")\", followed by \"{\"",
@@ -261,23 +222,14 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
             Ok((Some(Statement::Return(None)), tokens))
         }
         [T(ID("return"), ..), tokens @ ..] => {
-            let (return_expr, tokens) = match parse_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (return_expr, tokens) = parse_expr(tokens)?;
 
-            let tokens = match consume_token(SEMICOLON, tokens) {
-                Ok(t) => t,
-                Err(e) => return Err(e),
-            };
+            let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(Statement::Return(Some(return_expr))), tokens))
         }
         tokens => match parse_expr(tokens) {
             Ok((expr, tokens)) => {
-                let tokens = match consume_token(SEMICOLON, tokens) {
-                    Ok(t) => t,
-                    Err(e) => return Err(e),
-                };
+                let tokens = consume_token(SEMICOLON, tokens)?;
                 Ok((Some(Statement::Expr(expr)), tokens))
             }
             Err(e) => return Err(e),
@@ -290,16 +242,10 @@ fn parse_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerErro
 }
 
 fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (relational_expr, tokens) = match parse_relational_expr(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (relational_expr, tokens) = parse_relational_expr(tokens)?;
     match tokens {
         [T(LOGIC_OR, ..), tokens @ ..] => {
-            let (logical_or_expr, tokens) = match parse_logical_or_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (logical_or_expr, tokens) = parse_logical_or_expr(tokens)?;
             return Ok((
                 binary_expression(BinaryOperator::LogicOr, relational_expr, logical_or_expr),
                 tokens,
@@ -312,16 +258,10 @@ fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
 }
 
 fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (additive_expr, tokens) = match parse_additive_expr(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (additive_expr, tokens) = parse_additive_expr(tokens)?;
     match tokens {
         [T(EQ, ..), tokens @ ..] => {
-            let (relational_expr, tokens) = match parse_relational_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (relational_expr, tokens) = parse_relational_expr(tokens)?;
             return Ok((
                 binary_expression(BinaryOperator::Eq, additive_expr, relational_expr),
                 tokens,
@@ -334,27 +274,18 @@ fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
 }
 
 fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (terminal, tokens) = match parse_terminal_expr(tokens) {
-        Ok(pair) => pair,
-        Err(e) => return Err(e),
-    };
+    let (terminal, tokens) = parse_terminal_expr(tokens)?;
 
     match tokens {
         [T(PLUS, ..), tokens @ ..] => {
-            let (additive_expr, tokens) = match parse_additive_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (additive_expr, tokens) = parse_additive_expr(tokens)?;
             return Ok((
                 binary_expression(BinaryOperator::Plus, terminal, additive_expr),
                 tokens,
             ));
         }
         [T(MINUS, ..), tokens @ ..] => {
-            let (additive_expr, tokens) = match parse_additive_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (additive_expr, tokens) = parse_additive_expr(tokens)?;
             return Ok((
                 binary_expression(BinaryOperator::Minus, terminal, additive_expr),
                 tokens,
@@ -369,10 +300,7 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     match tokens {
         [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (args, tokens) = match parse_args(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (args, tokens) = parse_args(tokens)?;
 
             let expr = match check_builtin(proc_name) {
                 Some(builtin) => Expr::PrimitiveCall(builtin, args),
@@ -393,14 +321,8 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
             }
         },
         [T(LPAREN, ..), tokens @ ..] => {
-            let (expr, tokens) = match parse_logical_or_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
-            let tokens = match consume_token(RPAREN, tokens) {
-                Ok(tokens) => tokens,
-                Err(e) => return Err(e),
-            };
+            let (expr, tokens) = parse_logical_or_expr(tokens)?;
+            let tokens = consume_token(RPAREN, tokens)?;
             Ok((expr, tokens))
         }
         [T(NUM(n), ..), tokens @ ..] => Ok((Expr::Num(*n), tokens)),
@@ -412,14 +334,8 @@ fn parse_args<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<Expr>, &'a [T<'a>]), Linge
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         tokens => {
-            let (expr, tokens) = match parse_logical_or_expr(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
-            let (mut rest_args, tokens) = match parse_rest_args(tokens) {
-                Ok(pair) => pair,
-                Err(e) => return Err(e),
-            };
+            let (expr, tokens) = parse_logical_or_expr(tokens)?;
+            let (mut rest_args, tokens) = parse_rest_args(tokens)?;
 
             let mut vec = vec![expr];
             vec.append(&mut rest_args);
