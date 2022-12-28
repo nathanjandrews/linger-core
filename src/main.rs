@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use linger::interp_to_string;
+use linger::interp;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,13 +19,12 @@ fn main() {
         }
     };
 
-    let (value, output) = match interp_to_string(linger_file_content) {
+    let value = match interp(linger_file_content) {
         Ok(v) => v,
         Err(e) => {
             println!("{e}");
             return;
         }
     };
-    println!("program output: {}", output);
     dbg!(value);
 }
