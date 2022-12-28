@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use crate::{
-    parser::{parse_program, Expr::*, Program, Statement},
+    parser::{parse_program, Expr::*, Program, Statement, Builtin::*},
     tokenizer::{
         Token,
         TokenValue::{self, *},
@@ -10,9 +10,9 @@ use crate::{
 #[allow(dead_code)]
 fn tokens_from_values(values: Vec<TokenValue>) -> Vec<Token> {
     values
-    .into_iter()
-    .map(|value| Token(value, 0, 0))
-    .collect::<Vec<Token>>()
+        .into_iter()
+        .map(|value| Token(value, 0, 0))
+        .collect::<Vec<Token>>()
 }
 
 #[allow(dead_code)]
@@ -32,7 +32,6 @@ fn parse_mismatch(values: Vec<TokenValue>, expected: Program) -> bool {
         Err(_) => false,
     }
 }
-
 
 #[allow(dead_code)]
 fn parse_error(values: Vec<TokenValue>) -> bool {
@@ -61,7 +60,7 @@ fn print_ten() {
         ],
         Program {
             procedures: vec![],
-            main: vec![Statement::Expr(Call("print", vec![Num(10)]))]
+            main: vec![Statement::Expr(PrimitiveCall(Print, vec![Num(10)]))]
         }
     ))
 }
