@@ -13,7 +13,7 @@ pub enum TokenValue<'a> {
     ID(&'a str),
     NUM(i64),
     ASSIGN,
-    BIN_OP(BinaryOperator),
+    OP(Operator),
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -23,7 +23,7 @@ pub enum TokenValue<'a> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-pub enum BinaryOperator {
+pub enum Operator {
     Plus,
     Minus,
     Times,
@@ -52,20 +52,20 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::RBRACKET => format_msg("}"),
             TokenValue::SEMICOLON => format_msg(";"),
             TokenValue::COMMA => format_msg(","),
-            TokenValue::BIN_OP(op) => match op {
-                BinaryOperator::Plus => format_msg("+"),
-                BinaryOperator::Minus => format_msg("-"),
-                BinaryOperator::Times => format_msg("*"),
-                BinaryOperator::Eq => format_msg("=="),
-                BinaryOperator::Ne => format_msg("!="),
-                BinaryOperator::LT => format_msg("<"),
-                BinaryOperator::GT => format_msg(">"),
-                BinaryOperator::LTE => format_msg("<="),
-                BinaryOperator::GTE => format_msg(">="),
-                BinaryOperator::Mod => format_msg("%"),
-                BinaryOperator::LogicOr => format_msg("||"),
-                BinaryOperator::LogicAnd => format_msg("&&"),
-                BinaryOperator::Div => format_msg("/"),
+            TokenValue::OP(op) => match op {
+                Operator::Plus => format_msg("+"),
+                Operator::Minus => format_msg("-"),
+                Operator::Times => format_msg("*"),
+                Operator::Eq => format_msg("=="),
+                Operator::Ne => format_msg("!="),
+                Operator::LT => format_msg("<"),
+                Operator::GT => format_msg(">"),
+                Operator::LTE => format_msg("<="),
+                Operator::GTE => format_msg(">="),
+                Operator::Mod => format_msg("%"),
+                Operator::LogicOr => format_msg("||"),
+                Operator::LogicAnd => format_msg("&&"),
+                Operator::Div => format_msg("/"),
             },
         }
     }
@@ -148,63 +148,59 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((None, mat.end()))
     } else if let Some(mat) = find(NE_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Ne), row, col)),
+            Some(Token(TokenValue::OP(Operator::Ne), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Eq), row, col)),
+            Some(Token(TokenValue::OP(Operator::Eq), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(LTE_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::LTE), row, col)),
+            Some(Token(TokenValue::OP(Operator::LTE), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(GTE_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::GTE), row, col)),
+            Some(Token(TokenValue::OP(Operator::GTE), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(LOGIC_AND_REGEX, s) {
         Ok((
-            Some(Token(
-                TokenValue::BIN_OP(BinaryOperator::LogicAnd),
-                row,
-                col,
-            )),
+            Some(Token(TokenValue::OP(Operator::LogicAnd), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(LOGIC_OR_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::LogicOr), row, col)),
+            Some(Token(TokenValue::OP(Operator::LogicOr), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
         Ok((Some(Token(TokenValue::ASSIGN, row, col)), mat.end()))
     } else if let Some(mat) = find(LT_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::LT), row, col)),
+            Some(Token(TokenValue::OP(Operator::LT), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(GT_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::GT), row, col)),
+            Some(Token(TokenValue::OP(Operator::GT), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(STAR_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Times), row, col)),
+            Some(Token(TokenValue::OP(Operator::Times), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(MOD_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Mod), row, col)),
+            Some(Token(TokenValue::OP(Operator::Mod), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(SLASH_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Div), row, col)),
+            Some(Token(TokenValue::OP(Operator::Div), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(ID_REGEX, s) {
@@ -223,12 +219,12 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         ))
     } else if let Some(mat) = find(PLUS_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Plus), row, col)),
+            Some(Token(TokenValue::OP(Operator::Plus), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(MINUS_REGEX, s) {
         Ok((
-            Some(Token(TokenValue::BIN_OP(BinaryOperator::Minus), row, col)),
+            Some(Token(TokenValue::OP(Operator::Minus), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(LPAREN_REGEX, s) {
