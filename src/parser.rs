@@ -70,7 +70,7 @@ fn match_binary_operator<'a>(
 ) -> Option<(BinaryOperator, &'a [T<'a>])> {
     match tokens {
         [T(value, ..), rest @ ..] => match value {
-            BinOp(b) => {
+            BIN_OP(b) => {
                 if operators.contains(b) {
                     return Some((*b, rest));
                 } else {

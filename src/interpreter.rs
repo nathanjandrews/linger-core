@@ -5,7 +5,8 @@ use crate::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
     },
-    parser::{ Expr, Procedure, Program, Statement, Statements}, tokenizer::BinaryOperator,
+    parser::{Expr, Procedure, Program, Statement, Statements},
+    tokenizer::BinaryOperator,
 };
 
 #[derive(Copy, Clone, Debug)]
