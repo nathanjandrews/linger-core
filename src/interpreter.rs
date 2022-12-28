@@ -224,6 +224,12 @@ pub fn interp_expression<'a>(
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
+                BinaryOperator::Div => match (left_value, right_value) {
+                    (Value::Num(num_left), Value::Num(num_right)) => {
+                        Ok(Value::Num(num_left / num_right))
+                    }
+                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                },
             }
         }
         Expr::Call(proc_name, args) => {

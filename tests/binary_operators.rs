@@ -38,7 +38,8 @@ fn numerical_operators() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(file_name_to_path("numerical_operators"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("2 -5 12 17 7"));
+        // numbers are currently only integers so division is actual integer division
+        .stdout(predicate::str::contains("2 -5 12 17 7 4 1"));
 
     Ok(())
 }

@@ -68,6 +68,7 @@ additive_expr' :=
   | epsilon
   | PLUS <additive_expr>
   | MINUS <additive_expr>
+  | DIV <additive_expr>
 
 multiplicative_expr :=
   | <terminal> <multiplicative_expr'>

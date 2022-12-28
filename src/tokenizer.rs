@@ -34,6 +34,7 @@ pub enum BinaryOperator {
     LTE,
     GTE,
     Mod,
+    Div,
     LogicOr,
     LogicAnd,
 }
@@ -64,6 +65,7 @@ impl fmt::Display for TokenValue<'_> {
                 BinaryOperator::Mod => format_msg("%"),
                 BinaryOperator::LogicOr => format_msg("||"),
                 BinaryOperator::LogicAnd => format_msg("&&"),
+                BinaryOperator::Div => format_msg("/"),
             },
         }
     }
@@ -96,6 +98,7 @@ pub const NUM_REGEX: &str = r"(-?\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
 pub const MINUS_REGEX: &str = r"\-";
 pub const STAR_REGEX: &str = r"\*";
+pub const SLASH_REGEX: &str = r"/";
 pub const MOD_REGEX: &str = "%";
 pub const LPAREN_REGEX: &str = r"\(";
 pub const RPAREN_REGEX: &str = r"\)";
@@ -197,6 +200,11 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
     } else if let Some(mat) = find(MOD_REGEX, s) {
         Ok((
             Some(Token(TokenValue::BIN_OP(BinaryOperator::Mod), row, col)),
+            mat.end(),
+        ))
+    } else if let Some(mat) = find(SLASH_REGEX, s) {
+        Ok((
+            Some(Token(TokenValue::BIN_OP(BinaryOperator::Div), row, col)),
             mat.end(),
         ))
     } else if let Some(mat) = find(ID_REGEX, s) {

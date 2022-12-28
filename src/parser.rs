@@ -324,7 +324,7 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 fn parse_multiplicative_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_terminal_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![Times, Mod], tokens) {
+        match match_binary_operator(vec![Times, Mod, Div], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_terminal_expr(rest)?;
                 expr = binary_expression(op, expr, right);
