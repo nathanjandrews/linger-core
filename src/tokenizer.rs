@@ -17,6 +17,7 @@ pub enum TokenValue<'a> {
     LOGIC_AND,
     EQ,
     NE,
+    LT,
     PLUS,
     MINUS,
     LPAREN,
@@ -46,6 +47,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::LOGIC_OR => format_msg("||"),
             TokenValue::LOGIC_AND => format_msg("&&"),
             TokenValue::NE => format_msg("!="),
+            TokenValue::LT => format_msg("<"),
         }
     }
 }
@@ -68,6 +70,7 @@ pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
 pub const ASSIGN_REGEX: &str = r"=";
 pub const EQ_REGEX: &str = r"==";
 pub const NE_REGEX: &str = r"!=";
+pub const LT_REGEX: &str = r"<";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
 pub const NUM_REGEX: &str = r"(-?\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
@@ -128,6 +131,8 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((Some(Token(TokenValue::LOGIC_OR, row, col)), mat.end()))
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
         Ok((Some(Token(TokenValue::ASSIGN, row, col)), mat.end()))
+    } else if let Some(mat) = find(LT_REGEX, s) {
+        Ok((Some(Token(TokenValue::LT, row, col)), mat.end()))
     } else if let Some(mat) = find(ID_REGEX, s) {
         Ok((
             Some(Token(TokenValue::ID(mat.as_str()), row, col)),
