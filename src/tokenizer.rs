@@ -30,7 +30,7 @@ pub enum TokenValue<'a> {
 
 impl fmt::Display for TokenValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut format_msg = |s: &str| write!(f, "\"{s}\"");
+        let mut format_msg = |s: &str| write!(f, "{s}");
         match self {
             TokenValue::ID(id) => format_msg(id),
             TokenValue::NUM(n) => format_msg(n.to_string().as_str()),
