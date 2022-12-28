@@ -18,3 +18,15 @@ fn logical_operators() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn relational_operators() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("relational_operators"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("truefalse"));
+
+    Ok(())
+}

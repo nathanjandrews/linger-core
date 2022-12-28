@@ -45,6 +45,7 @@ pub enum BinaryOperator {
     Plus,
     Minus,
     Eq,
+    Ne,
     LogicOr,
     LogicAnd,
 }
@@ -280,6 +281,13 @@ fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
             let (relational_expr, tokens) = parse_relational_expr(tokens)?;
             return Ok((
                 binary_expression(BinaryOperator::Eq, additive_expr, relational_expr),
+                tokens,
+            ));
+        }
+        [T(NE, ..), tokens @ ..] => {
+            let (relational_expr, tokens) = parse_relational_expr(tokens)?;
+            return Ok((
+                binary_expression(BinaryOperator::Ne, additive_expr, relational_expr),
                 tokens,
             ));
         }

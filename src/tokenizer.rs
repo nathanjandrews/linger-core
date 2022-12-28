@@ -16,6 +16,7 @@ pub enum TokenValue<'a> {
     LOGIC_OR,
     LOGIC_AND,
     EQ,
+    NE,
     PLUS,
     MINUS,
     LPAREN,
@@ -44,6 +45,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::COMMA => format_msg(","),
             TokenValue::LOGIC_OR => format_msg("||"),
             TokenValue::LOGIC_AND => format_msg("&&"),
+            TokenValue::NE => format_msg("!="),
         }
     }
 }
@@ -65,6 +67,7 @@ impl fmt::Display for Tokens<'_> {
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
 pub const ASSIGN_REGEX: &str = r"=";
 pub const EQ_REGEX: &str = r"==";
+pub const NE_REGEX: &str = r"!=";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
 pub const NUM_REGEX: &str = r"(-?\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
@@ -115,6 +118,8 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
 fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), LE> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
+    } else if let Some(mat) = find(NE_REGEX, s) {
+        Ok((Some(Token(TokenValue::NE, row, col)), mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token(TokenValue::EQ, row, col)), mat.end()))
     } else if let Some(mat) = find(LOGIC_AND_REGEX, s) {

@@ -49,6 +49,7 @@ relational_expr :=
 relational_expr' :=
   | epsilon
   | EQ <relational_expr>
+  | NE <relational_expr>
   | LT <relational_expr> // TODO: add LT and other relational operators
 
 additive_expr :=

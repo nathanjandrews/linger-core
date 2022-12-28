@@ -164,6 +164,15 @@ pub fn interp_expression<'a>(
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
+                BinaryOperator::Ne => match (left_value, right_value) {
+                    (Value::Num(num_left), Value::Num(num_right)) => {
+                        Ok(Value::Bool(num_left != num_right))
+                    }
+                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                        Ok(Value::Bool(bool_left != bool_right))
+                    }
+                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                },
                 BinaryOperator::LogicOr => match (left_value, right_value) {
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left || bool_right))
