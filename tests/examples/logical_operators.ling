@@ -1,4 +1,6 @@
 proc main() {
-  print(true && false || false && true);
-  print(true || false && false || true);
+  print(
+    true && false || false && true,
+    true || false && false || true
+  );
 }
