@@ -36,6 +36,7 @@ pub enum Expr<'a> {
     Bool(bool),
     Var(&'a str),
     Binary(BinaryOperator, Box<Expr<'a>>, Box<Expr<'a>>),
+    PrimitiveCall(Builtin, Vec<Expr<'a>>),
     Call(&'a str, Vec<Expr<'a>>),
 }
 
@@ -45,6 +46,18 @@ pub enum BinaryOperator {
     Minus,
     Eq,
     LogicOr,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Builtin {
+    Print,
+}
+
+pub fn check_builtin(s: &str) -> Option<Builtin> {
+    match s {
+        "print" => Some(Builtin::Print),
+        _ => None,
+    }
 }
 
 fn consume_token<'a>(
@@ -80,7 +93,7 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
         procedures.into_iter().partition(|proc| proc.name == "main");
 
     if main_procs.len() == 0 {
-        return Err(ParseError(NoMain)); // more than one main function
+        return Err(ParseError(NoMain)); // more than one main procedure
     }
 
     let main_proc = main_procs.first().unwrap();
@@ -352,12 +365,18 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 
 fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     match tokens {
-        [T(ID(function_name), ..), T(LPAREN, ..), tokens @ ..] => {
+        [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
             let (args, tokens) = match parse_args(tokens) {
                 Ok(pair) => pair,
                 Err(e) => return Err(e),
             };
-            return Ok((Expr::Call(*function_name, args), tokens));
+
+            let expr = match check_builtin(proc_name) {
+                Some(builtin) => Expr::PrimitiveCall(builtin, args),
+                None => Expr::Call(proc_name, args),
+            };
+
+            return Ok((expr, tokens));
         }
         [T(ID(id), ..), tokens @ ..] => match *id {
             "true" => Ok((Expr::Bool(true), tokens)),

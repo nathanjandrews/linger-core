@@ -196,5 +196,20 @@ pub fn interp_expression<'a>(
 
             return interp_statements(procs, env.clone(), proc.body.to_vec());
         }
+        Expr::PrimitiveCall(builtin, args) => match builtin {
+            crate::parser::Builtin::Print => {
+                let mut values: Vec<Value> = vec![];
+                for expr in args {
+                    match interp_expression(procs, env.clone(), expr) {
+                        Ok(v) => values.push(v),
+                        Err(e) => return Err(e),
+                    }
+                }
+                let values: Vec<String> = values.iter().map(|v| v.to_string()).collect();
+                let values = values.join(" ");
+                print!("{}", values);
+                Ok(Value::Void)
+            }
+        },
     }
 }
