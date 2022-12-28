@@ -211,6 +211,12 @@ pub fn interp_expression<'a>(
                     (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
+                BinaryOperator::Times => match (left_value, right_value) {
+                    (Value::Num(num_left), Value::Num(num_right)) => {
+                        Ok(Value::Num(num_left * num_right))
+                    }
+                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                },
             }
         }
         Expr::Call(proc_name, args) => {

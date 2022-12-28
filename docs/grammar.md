@@ -52,17 +52,25 @@ relational_expr' :=
   | NE <relational_expr>
   | LT <relational_expr>
   | GT <relational_expr>
-  // TODO: add other relational operators
   | LTE <relational_expr>
   | GTE <relational_expr>
 
 additive_expr :=
-  | <terminal> <additive_expr'>
+  | <multiplicative_expr> <additive_expr'>
 
 additive_expr' :=
   | epsilon
   | PLUS <additive_expr>
   | MINUS <additive_expr>
+
+multiplicative_expr :=
+  | <terminal> <multiplicative_expr'>
+
+multiplicative_expr' :=
+  | epsilon
+  | TIMES <multiplicative_expr>
+  | MOD <multiplicative_expr>
+  | DIV <multiplicative_expr>
 
 terminal :=
   | ID

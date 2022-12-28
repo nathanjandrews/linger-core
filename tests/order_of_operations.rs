@@ -30,3 +30,15 @@ fn relational_operators() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn numerical_operators() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("numerical_operators"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("2 -5 12 17"));
+
+    Ok(())
+}

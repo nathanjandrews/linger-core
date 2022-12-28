@@ -44,6 +44,7 @@ pub enum Expr<'a> {
 pub enum BinaryOperator {
     Plus,
     Minus,
+    Times,
     Eq,
     Ne,
     LT,
@@ -330,20 +331,37 @@ fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
 }
 
 fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (terminal, tokens) = parse_terminal_expr(tokens)?;
+    let (multiplicative_expr, tokens) = parse_multiplicative_expr(tokens)?;
 
     match tokens {
         [T(PLUS, ..), tokens @ ..] => {
             let (additive_expr, tokens) = parse_additive_expr(tokens)?;
             return Ok((
-                binary_expression(BinaryOperator::Plus, terminal, additive_expr),
+                binary_expression(BinaryOperator::Plus, multiplicative_expr, additive_expr),
                 tokens,
             ));
         }
         [T(MINUS, ..), tokens @ ..] => {
             let (additive_expr, tokens) = parse_additive_expr(tokens)?;
             return Ok((
-                binary_expression(BinaryOperator::Minus, terminal, additive_expr),
+                binary_expression(BinaryOperator::Minus, multiplicative_expr, additive_expr),
+                tokens,
+            ));
+        }
+        tokens => {
+            return Ok((multiplicative_expr, tokens));
+        }
+    }
+}
+
+fn parse_multiplicative_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
+    let (terminal, tokens) = parse_terminal_expr(tokens)?;
+
+    match tokens {
+        [T(STAR, ..), tokens @ ..] => {
+            let (multiplicative_expr, tokens) = parse_multiplicative_expr(tokens)?;
+            return Ok((
+                binary_expression(BinaryOperator::Times, terminal, multiplicative_expr),
                 tokens,
             ));
         }
