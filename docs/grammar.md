@@ -51,8 +51,10 @@ relational_expr' :=
   | EQ <relational_expr>
   | NE <relational_expr>
   | LT <relational_expr>
+  | GT <relational_expr>
   // TODO: add other relational operators
   | LTE <relational_expr>
+  | GTE <relational_expr>
 
 additive_expr :=
   | <terminal> <additive_expr'>
