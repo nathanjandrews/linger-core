@@ -4,7 +4,7 @@ use assert_cmd::prelude::*;
 use predicates::prelude::*;
 
 fn file_name_to_path(s: &str) -> String {
-  return format!("tests/examples/{}.ling", s);
+  return format!("tests/examples/binary_operators/{}.ling", s);
 }
 
 #[test]
