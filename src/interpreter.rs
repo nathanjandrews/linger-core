@@ -171,6 +171,13 @@ pub fn interp_expression<'a>(
                     (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
+                BinaryOperator::LogicAnd => match (left_value, right_value) {
+                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                        Ok(Value::Bool(bool_left && bool_right))
+                    }
+                    (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
+                    (v, _) => Err(RuntimeError(BadArg(v))),
+                },
             }
         }
         Expr::Call(proc_name, args) => {

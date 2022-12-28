@@ -30,7 +30,18 @@ expr :=
   | <logical_or_expr> <logical_or_expr'>
 
 logical_or_expr :=
-  | <relational_expr> <logical_or_expr'>
+  | <logical_and_expr> <logical_or_expr'>
+
+logical_or_expr' :=
+  | epsilon
+  | LOGIC_OR <logical_or_expr>
+
+logical_and_expr :=
+  | <relational_expr> <logical_and_expr'>
+
+logical_and_expr' :=
+  | epsilon
+  | LOGIC_AND <logical_and_expr>
 
 relational_expr :=
   | <additive_expr> <relational_expr'>

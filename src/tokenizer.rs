@@ -14,6 +14,7 @@ pub enum TokenValue<'a> {
     NUM(i64),
     ASSIGN,
     LOGIC_OR,
+    LOGIC_AND,
     EQ,
     PLUS,
     MINUS,
@@ -42,6 +43,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::SEMICOLON => format_msg(";"),
             TokenValue::COMMA => format_msg(","),
             TokenValue::LOGIC_OR => format_msg("||"),
+            TokenValue::LOGIC_AND => format_msg("&&"),
         }
     }
 }
@@ -74,6 +76,7 @@ pub const RBRACKET_REGEX: &str = r"\}";
 pub const SEMICOLON_REGEX: &str = ";";
 pub const COMMA_REGEX: &str = ",";
 pub const LOGIC_OR_REGEX: &str = r"\|\|";
+pub const LOGIC_AND_REGEX: &str = "&&";
 
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     let enumerated_lines = s.split("\n").enumerate();
@@ -114,6 +117,8 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((None, mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
         Ok((Some(Token(TokenValue::EQ, row, col)), mat.end()))
+    } else if let Some(mat) = find(LOGIC_AND_REGEX, s) {
+        Ok((Some(Token(TokenValue::LOGIC_AND, row, col)), mat.end()))
     } else if let Some(mat) = find(LOGIC_OR_REGEX, s) {
         Ok((Some(Token(TokenValue::LOGIC_OR, row, col)), mat.end()))
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {

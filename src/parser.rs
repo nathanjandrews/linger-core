@@ -46,6 +46,7 @@ pub enum BinaryOperator {
     Minus,
     Eq,
     LogicOr,
+    LogicAnd,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -241,12 +242,28 @@ fn parse_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerErro
 }
 
 fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (relational_expr, tokens) = parse_relational_expr(tokens)?;
+    let (logical_and_expr, tokens) = parse_logical_and_expr(tokens)?;
     match tokens {
         [T(LOGIC_OR, ..), tokens @ ..] => {
             let (logical_or_expr, tokens) = parse_logical_or_expr(tokens)?;
             return Ok((
-                binary_expression(BinaryOperator::LogicOr, relational_expr, logical_or_expr),
+                binary_expression(BinaryOperator::LogicOr, logical_and_expr, logical_or_expr),
+                tokens,
+            ));
+        }
+        tokens => {
+            return Ok((logical_and_expr, tokens));
+        }
+    }
+}
+
+fn parse_logical_and_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
+    let (relational_expr, tokens) = parse_relational_expr(tokens)?;
+    match tokens {
+        [T(LOGIC_AND, ..), tokens @ ..] => {
+            let (logical_and_expr, tokens) = parse_logical_and_expr(tokens)?;
+            return Ok((
+                binary_expression(BinaryOperator::LogicAnd, relational_expr, logical_and_expr),
                 tokens,
             ));
         }
