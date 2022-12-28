@@ -195,9 +195,8 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
         }
         [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = parse_expr(tokens)?;
-
             let (then_statements, tokens) = match tokens {
-                [T(RPAREN, ..), T(LBRACKET, ..), ..] => parse_statements(tokens)?,
+                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
                 [T(RPAREN, ..), token, ..] => return Err(ParseError(Expected(LBRACKET, *token))),
                 [token, ..] => return Err(ParseError(Expected(RPAREN, *token))),
                 _ => return Err(ParseError(ExpectedSomething)),
