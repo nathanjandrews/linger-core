@@ -50,7 +50,9 @@ relational_expr' :=
   | epsilon
   | EQ <relational_expr>
   | NE <relational_expr>
-  | LT <relational_expr> // TODO: add LT and other relational operators
+  | LT <relational_expr>
+  // TODO: add other relational operators
+  | LTE <relational_expr>
 
 additive_expr :=
   | <terminal> <additive_expr'>
