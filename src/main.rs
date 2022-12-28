@@ -29,7 +29,7 @@ fn main() {
         Err(e) => return println!("{e}"),
     };
 
-    dbg!(&program.main);
+    // dbg!(&program.main);
 
     // let value = match interp(linger_file_content) {
     //     Ok(v) => v,
