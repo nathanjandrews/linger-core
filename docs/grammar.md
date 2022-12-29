@@ -91,6 +91,7 @@ terminal :=
   | ID
   | ID LPAREN <args>
   | NUM
+  | STRING
   | LPAREN <expr> RPAREN
 
 args :=
