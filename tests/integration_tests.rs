@@ -66,3 +66,15 @@ fn short_circuiting() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn string_concatenation() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("string_concatenation"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("hello world"));
+
+    Ok(())
+}
