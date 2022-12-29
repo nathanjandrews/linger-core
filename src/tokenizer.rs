@@ -79,20 +79,6 @@ impl fmt::Display for TokenValue<'_> {
     }
 }
 
-pub struct Tokens<'a>(pub Vec<Token<'a>>);
-
-impl fmt::Display for Tokens<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = self
-            .0
-            .iter()
-            .map(|t| t.0.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        write!(f, "[{s}]")
-    }
-}
-
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
 pub const ASSIGN_REGEX: &str = r"=";
 pub const EQ_REGEX: &str = r"==";
