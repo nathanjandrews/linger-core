@@ -12,7 +12,6 @@ pub struct TokenizerError(pub String);
 pub enum ParseError<'a> {
     NoMain,
     MultipleMain,
-    MissingSemicolon,
     UnexpectedToken(Token<'a>),
     Expected(TokenValue<'a>, Token<'a>),
     ExpectedSomething,
@@ -47,7 +46,6 @@ impl fmt::Display for LingerError<'_> {
             LingerError::ParseError(err) => match err {
                 ParseError::NoMain => write!(f, "main procedure not found"),
                 ParseError::MultipleMain => write!(f, "multiple main procedures found"),
-                ParseError::MissingSemicolon => write!(f, "missing semicolon"),
                 ParseError::UnexpectedToken(token) => write!(
                     f,
                     "unexpected token {} @ ({}, {})",

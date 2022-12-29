@@ -121,7 +121,9 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
         procedures.into_iter().partition(|proc| proc.name == "main");
 
     if main_procs.len() == 0 {
-        return Err(ParseError(NoMain)); // more than one main procedure
+        return Err(ParseError(NoMain)); // no main procedure
+    } else if main_procs.len() > 1 {
+        return Err(ParseError(MultipleMain)); // more than one main procedure
     }
 
     let main_proc = main_procs.first().unwrap();
