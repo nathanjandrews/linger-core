@@ -10,7 +10,9 @@ Nothing so far, let's keep it that way.
 - [x] check that variables and user-defined procedure names are not keywords
 - [x] empty return statements
 - [x] boolean expression short-circuiting
-- [ ] string literals
+- [x] string literals
+- [x] string concatenation
+- [ ] type cohesion for concatenation of strings and other types
 - [ ] lambda expressions
 - [ ] use statements
 - [ ] while loops
