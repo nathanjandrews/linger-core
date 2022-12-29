@@ -9,11 +9,11 @@ use crate::{
     tokenizer::Operator,
 };
 
-#[derive(Copy, Clone, Debug)]
-pub enum Value<'a> {
+#[derive(Clone, Debug)]
+pub enum Value {
     Num(i64),
     Bool(bool),
-    Str(&'a str),
+    Str(String),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -23,7 +23,7 @@ enum ReturnFlag {
     Continue,
 }
 
-impl fmt::Display for Value<'_> {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Num(n) => write!(f, "{}", n),
@@ -34,7 +34,7 @@ impl fmt::Display for Value<'_> {
     }
 }
 
-pub type Environment<'a> = HashMap<String, Value<'a>>;
+pub type Environment<'a> = HashMap<String, Value>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     return match interp_statements(&p.procedures, Environment::new(), p.main) {
@@ -47,7 +47,7 @@ fn interp_statements<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment<'a>,
     statements: Statements<'a>,
-) -> Result<(Value<'a>, ReturnFlag), LingerError<'a>> {
+) -> Result<(Value, ReturnFlag), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -76,7 +76,7 @@ fn interp_statement<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment<'a>,
     statement: Statement<'a>,
-) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value, ReturnFlag), LingerError<'a>> {
     match statement {
         Statement::Expr(expr) => match interp_expression(&procs, env.clone(), expr) {
             Ok(value) => Ok((env.clone(), value, ReturnFlag::Continue)),
@@ -132,13 +132,13 @@ pub fn interp_expression<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment<'a>,
     expr: Expr<'a>,
-) -> Result<Value<'a>, LingerError<'a>> {
+) -> Result<Value, LingerError<'a>> {
     match expr {
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
         Expr::Var(id) => match env.get(id) {
-            Some(value) => Ok(*value),
+            Some(value) => Ok(value.clone()),
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
         Expr::Binary(op, left, right) => match op {
@@ -148,6 +148,9 @@ pub fn interp_expression<'a>(
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left + num_right))
+                }
+                (Value::Str(num_left), Value::Str(num_right)) => {
+                    Ok(Value::Str(num_left + num_right.as_str()))
                 }
                 (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
                 (v, _) => Err(RuntimeError(BadArg(v))),

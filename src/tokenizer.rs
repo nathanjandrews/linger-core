@@ -7,14 +7,14 @@ use crate::error::{
     TokenizerError::*,
 };
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Token<'a>(pub TokenValue<'a>, pub usize, pub usize);
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[allow(non_camel_case_types)]
 pub enum TokenValue<'a> {
     ID(&'a str),
-    STR(&'a str),
+    STR(String),
     NUM(i64),
     ASSIGN,
     OP(Operator),
@@ -140,7 +140,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                                 // reached the end of the string literal, return it
                                 let string_content = &s[new_index - 1..index];
                                 let str_token =
-                                    Token(TokenValue::STR(string_content), line_num, col_num);
+                                    Token(TokenValue::STR(string_content.to_string()), line_num, col_num);
                                 let mut v = vec![str_token];
                                 return match tokenize_helper(
                                     &s[index + 1..],

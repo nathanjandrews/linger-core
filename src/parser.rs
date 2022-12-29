@@ -37,7 +37,7 @@ pub enum Statement<'a> {
 pub enum Expr<'a> {
     Num(i64),
     Bool(bool),
-    Str(&'a str),
+    Str(String),
     Var(&'a str),
     Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
     Unary(Operator, Box<Expr<'a>>),
@@ -63,7 +63,7 @@ fn consume_token<'a>(
 ) -> Result<&'a [T<'a>], LingerError<'a>> {
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
-        [token, ..] => Err(ParseError(Expected(target, *token))),
+        [token, ..] => Err(ParseError(Expected(target, token.clone()))),
         _ => unreachable!(),
     }
 }
@@ -225,8 +225,8 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
             let (cond_expr, tokens) = parse_expr(tokens)?;
             let (then_statements, tokens) = match tokens {
                 [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
-                [T(RPAREN, ..), token, ..] => return Err(ParseError(Expected(LBRACKET, *token))),
-                [token, ..] => return Err(ParseError(Expected(RPAREN, *token))),
+                [T(RPAREN, ..), token, ..] => return Err(ParseError(Expected(LBRACKET, token.clone()))),
+                [token, ..] => return Err(ParseError(Expected(RPAREN, token.clone()))),
                 _ => return Err(ParseError(ExpectedSomething)),
             };
 
@@ -237,7 +237,7 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
                     Err(e) => return Err(e),
                 },
                 [T(ID("else"), ..), token, ..] => {
-                    return Err(ParseError(Expected(LBRACKET, *token)))
+                    return Err(ParseError(Expected(LBRACKET, token.clone())))
                 }
                 tokens => (None, tokens),
             };
@@ -320,7 +320,7 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 
             return Ok((expr, tokens));
         }
-        [T(STR(s), ..), tokens @ ..] => Ok((Expr::Str(*s), tokens)),
+        [T(STR(s), ..), tokens @ ..] => Ok((Expr::Str(s.to_string()), tokens)),
         [T(ID(id), ..), tokens @ ..] => match *id {
             "true" => Ok((Expr::Bool(true), tokens)),
             "false" => Ok((Expr::Bool(false), tokens)),

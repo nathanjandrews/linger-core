@@ -25,13 +25,13 @@ pub enum ParseError<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub enum RuntimeError<'a> {
+pub enum RuntimeError {
     UnknownVariable(String),
     UnknownProc(String),
-    BadArg(Value<'a>),
-    BadArgs(Vec<Value<'a>>),
+    BadArg(Value),
+    BadArgs(Vec<Value>),
     ArgMismatch(String, usize, usize),
-    BadCondition(Value<'a>),
+    BadCondition(Value),
     BinaryAsUnary(Operator),
     UnaryAsBinary(Operator),
 }
@@ -40,7 +40,7 @@ pub enum RuntimeError<'a> {
 pub enum LingerError<'a> {
     ParseError(ParseError<'a>),
     TokenizerError(TokenizerError),
-    RuntimeError(RuntimeError<'a>),
+    RuntimeError(RuntimeError),
 }
 
 impl fmt::Display for LingerError<'_> {
