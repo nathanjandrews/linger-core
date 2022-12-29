@@ -22,6 +22,7 @@ pub enum TokenValue<'a> {
     LBRACKET,
     RBRACKET,
     SEMICOLON,
+    QUOTE,
     COMMA,
 }
 
@@ -78,6 +79,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::SEMICOLON => format_msg(";"),
             TokenValue::COMMA => format_msg(","),
             TokenValue::OP(op) => format_msg(op.to_string().as_str()),
+            TokenValue::QUOTE => format_msg("\""),
         }
     }
 }
@@ -103,6 +105,7 @@ pub const LBRACKET_REGEX: &str = r"\{";
 pub const RBRACKET_REGEX: &str = r"\}";
 pub const SEMICOLON_REGEX: &str = ";";
 pub const COMMA_REGEX: &str = ",";
+pub const QUOTE_REGEX: &str = "\"";
 pub const LOGIC_OR_REGEX: &str = r"\|\|";
 pub const LOGIC_AND_REGEX: &str = "&&";
 pub const LOGIC_NOT_REGEX: &str = "!";
@@ -237,6 +240,8 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((Some(Token(TokenValue::SEMICOLON, row, col)), mat.end()))
     } else if let Some(mat) = find(COMMA_REGEX, s) {
         Ok((Some(Token(TokenValue::COMMA, row, col)), mat.end()))
+    } else if let Some(mat) = find(QUOTE_REGEX, s) {
+        Ok((Some(Token(TokenValue::QUOTE, row, col)), mat.end()))
     } else if let Some(mat) = find(LOGIC_NOT_REGEX, s) {
         Ok((
             Some(Token(TokenValue::OP(Operator::LogicNot), row, col)),
