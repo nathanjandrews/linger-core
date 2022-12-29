@@ -14,6 +14,7 @@ pub struct Token<'a>(pub TokenValue<'a>, pub usize, pub usize);
 #[allow(non_camel_case_types)]
 pub enum TokenValue<'a> {
     ID(&'a str),
+    STR(&'a str),
     NUM(i64),
     ASSIGN,
     OP(Operator),
@@ -80,6 +81,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::COMMA => format_msg(","),
             TokenValue::OP(op) => format_msg(op.to_string().as_str()),
             TokenValue::QUOTE => format_msg("\""),
+            TokenValue::STR(s) => format_msg(s),
         }
     }
 }
@@ -129,13 +131,42 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
     } else {
         match get_token(s, line_num, col_num) {
             Ok((token_option, new_index)) => match token_option {
-                Some(token) => match tokenize_helper(&s[new_index..], line_num, new_index + 1) {
-                    Ok(mut vec) => {
-                        let mut v = vec![token];
-                        v.append(&mut vec);
-                        Ok(v)
+                Some(token) => match token {
+                    Token(TokenValue::QUOTE, ..) => {
+                        let s = &s[new_index..];
+                        // tokenizing string literal
+                        for (index, char) in s.chars().enumerate() {
+                            if char.eq(&'"') {
+                                // reached the end of the string literal, return it
+                                let string_content = &s[new_index - 1..index];
+                                let str_token =
+                                    Token(TokenValue::STR(string_content), line_num, col_num);
+                                let mut v = vec![str_token];
+                                return match tokenize_helper(
+                                    &s[index + 1..],
+                                    line_num,
+                                    // the plus two is to account for the opening and closing quotes
+                                    col_num + string_content.len() + 2,
+                                ) {
+                                    Ok(mut vec) => {
+                                        v.append(&mut vec);
+                                        Ok(v)
+                                    }
+                                    Err(e) => Err(e),
+                                };
+                            }
+                        }
+
+                        return Err(TokenizerError(UnterminatedStringLiteral));
                     }
-                    Err(e) => Err(e),
+                    _ => match tokenize_helper(&s[new_index..], line_num, new_index + 1) {
+                        Ok(mut vec) => {
+                            let mut v = vec![token];
+                            v.append(&mut vec);
+                            Ok(v)
+                        }
+                        Err(e) => Err(e),
+                    },
                 },
                 None => tokenize_helper(&s[new_index..], line_num, new_index + 1),
             },
