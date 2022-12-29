@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, write};
 
 use crate::{
     interpreter::Value,
@@ -6,7 +6,10 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct TokenizerError(pub String);
+pub enum TokenizerError {
+    UnknownToken(String),
+    UnterminatedStringLiteral,
+}
 
 #[derive(Debug, Clone)]
 pub enum ParseError<'a> {
@@ -68,7 +71,12 @@ impl fmt::Display for LingerError<'_> {
                 }
                 ParseError::ExpectedSomething => write!(f, "expected token"),
             },
-            LingerError::TokenizerError(err) => write!(f, "unknown token \"{}\"", err.0),
+            LingerError::TokenizerError(err) => match err {
+                TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
+                TokenizerError::UnterminatedStringLiteral => {
+                    write!(f, "unterminated string literal")
+                }
+            },
             LingerError::RuntimeError(err) => match err {
                 RuntimeError::UnknownVariable(id) => write!(f, "unknown variable \"{}\"", id),
                 RuntimeError::BadArg(v) => write!(f, "bad argument \"{}\"", v),

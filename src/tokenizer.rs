@@ -2,7 +2,10 @@ use std::fmt;
 
 use regex::{Match, Regex};
 
-use crate::error::{LingerError as LE, TokenizerError};
+use crate::error::{
+    LingerError::{self, *},
+    TokenizerError::*,
+};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Token<'a>(pub TokenValue<'a>, pub usize, pub usize);
@@ -104,7 +107,7 @@ pub const LOGIC_OR_REGEX: &str = r"\|\|";
 pub const LOGIC_AND_REGEX: &str = "&&";
 pub const LOGIC_NOT_REGEX: &str = "!";
 
-pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
+pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
     let enumerated_lines = s.split("\n").enumerate();
     let mut tokens: Vec<Token> = vec![];
     for (line_num, line) in enumerated_lines {
@@ -117,7 +120,7 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     Ok(tokens)
 }
 
-fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, LE> {
+fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, LingerError> {
     if s.len() <= 0 {
         Ok(vec![])
     } else {
@@ -138,7 +141,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
     }
 }
 
-fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), LE> {
+fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), LingerError> {
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
     } else if let Some(mat) = find(NE_REGEX, s) {
@@ -240,7 +243,7 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
             mat.end(),
         ))
     } else {
-        Err(LE::TokenizerError(TokenizerError({
+        Err(TokenizerError(UnknownToken({
             let mut split =
                 s.split(|c: char| str_to_regex(WHITESPACE_REGEX).is_match(c.to_string().as_str()));
             let unknown_token = split.nth(0).unwrap();
