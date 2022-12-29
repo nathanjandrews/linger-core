@@ -78,3 +78,15 @@ fn string_concatenation() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn summing_integers() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("summing_integers"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("recursive sum: 55, algebraic sum: 55"));
+
+    Ok(())
+}
