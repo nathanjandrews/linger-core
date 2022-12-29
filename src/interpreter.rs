@@ -138,101 +138,136 @@ pub fn interp_expression<'a>(
             Some(value) => Ok(*value),
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
-        Expr::Binary(op, left, right) => {
-            let left_value = interp_expression(procs, env.clone(), *left)?;
-            let right_value = interp_expression(procs, env.clone(), *right)?;
-            match op {
-                Operator::Plus => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left + num_right))
-                    }
-                    (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                    (v, _) => Err(RuntimeError(BadArg(v))),
+        Expr::Binary(op, left, right) => match op {
+            Operator::Plus => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left + num_right))
+                }
+                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
+                (v, _) => Err(RuntimeError(BadArg(v))),
+            },
+            Operator::Minus => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left - num_right))
+                }
+                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
+                (v, _) => Err(RuntimeError(BadArg(v))),
+            },
+            Operator::Eq => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left == num_right))
+                }
+                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                    Ok(Value::Bool(bool_left == bool_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Ne => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left != num_right))
+                }
+                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                    Ok(Value::Bool(bool_left != bool_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LT => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left < num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::GT => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left > num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LTE => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left <= num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::GTE => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left >= num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LogicOr => match interp_expression(procs, env.clone(), *left)? {
+                Value::Bool(b) => match b {
+                    true => Ok(Value::Bool(true)),
+                    false => match interp_expression(procs, env.clone(), *right)? {
+                        Value::Bool(b) => Ok(Value::Bool(b)),
+                        right_value => Err(RuntimeError(BadArg(right_value)))
+                    },
                 },
-                Operator::Minus => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left - num_right))
-                    }
-                    (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                    (v, _) => Err(RuntimeError(BadArg(v))),
+                left_value => Err(RuntimeError(BadArg(left_value))),
+            },
+            Operator::LogicAnd => match interp_expression(procs, env.clone(), *left)? {
+                Value::Bool(b) => match b {
+                    false => Ok(Value::Bool(false)),
+                    true => match interp_expression(procs, env.clone(), *right)? {
+                        Value::Bool(b) => Ok(Value::Bool(b)),
+                        right_value => Err(RuntimeError(BadArg(right_value)))
+                    },
                 },
-                Operator::Eq => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left == num_right))
-                    }
-                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                        Ok(Value::Bool(bool_left == bool_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::Ne => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left != num_right))
-                    }
-                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                        Ok(Value::Bool(bool_left != bool_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::LT => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left < num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::GT => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left > num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::LTE => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left <= num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::GTE => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Bool(num_left >= num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::LogicOr => match (left_value, right_value) {
-                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                        Ok(Value::Bool(bool_left || bool_right))
-                    }
-                    (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
-                    (v, _) => Err(RuntimeError(BadArg(v))),
-                },
-                Operator::LogicAnd => match (left_value, right_value) {
-                    (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                        Ok(Value::Bool(bool_left && bool_right))
-                    }
-                    (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
-                    (v, _) => Err(RuntimeError(BadArg(v))),
-                },
-                Operator::Times => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left * num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::Mod => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left % num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                Operator::Div => match (left_value, right_value) {
-                    (Value::Num(num_left), Value::Num(num_right)) => {
-                        Ok(Value::Num(num_left / num_right))
-                    }
-                    (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-                },
-                op => Err(RuntimeError(UnaryAsBinary(op))),
-            }
-        }
+                left_value => Err(RuntimeError(BadArg(left_value))),
+            },
+            Operator::Times => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left * num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Mod => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left % num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Div => match (
+                interp_expression(procs, env.clone(), *left)?,
+                interp_expression(procs, env.clone(), *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left / num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            op => Err(RuntimeError(UnaryAsBinary(op))),
+        },
         Expr::Unary(op, arg) => {
             let arg_value = interp_expression(procs, env, *arg)?;
             match op {

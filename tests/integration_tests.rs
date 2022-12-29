@@ -54,3 +54,15 @@ fn print_ten() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn short_circuiting() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("short_circuiting"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("true false"));
+
+    Ok(())
+}

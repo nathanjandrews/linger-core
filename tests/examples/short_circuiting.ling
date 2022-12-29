@@ -1,0 +1,6 @@
+proc main() {
+  print(
+    true || 10 / 0,
+    false && 10 / 0
+  );
+}
