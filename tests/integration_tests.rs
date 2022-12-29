@@ -4,7 +4,7 @@ use assert_cmd::prelude::*;
 use predicates::prelude::*;
 
 fn file_name_to_path(s: &str) -> String {
-  return format!("tests/examples/{}.ling", s);
+    return format!("tests/examples/{}.ling", s);
 }
 
 #[test]
@@ -63,6 +63,18 @@ fn short_circuiting() -> Result<(), Box<dyn std::error::Error>> {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("true false"));
+
+    Ok(())
+}
+
+#[test]
+fn string_concatenation() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("string_concatenation"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("hello world"));
 
     Ok(())
 }
