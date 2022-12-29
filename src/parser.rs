@@ -1,7 +1,9 @@
+use std::vec;
+
+use crate::tokenizer::Operator::{self, *};
 use crate::{
     error::{unexpected_token, LingerError, LingerError::ParseError, ParseError::*},
     tokenizer::{
-        BinaryOperator::{self, *},
         Token as T,
         TokenValue::{self, *},
     },
@@ -36,7 +38,8 @@ pub enum Expr<'a> {
     Num(i64),
     Bool(bool),
     Var(&'a str),
-    Binary(BinaryOperator, Box<Expr<'a>>, Box<Expr<'a>>),
+    Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
+    Unary(Operator, Box<Expr<'a>>),
     PrimitiveCall(Builtin, Vec<Expr<'a>>),
     Call(&'a str, Vec<Expr<'a>>),
 }
@@ -64,13 +67,13 @@ fn consume_token<'a>(
     }
 }
 
-fn match_binary_operator<'a>(
-    operators: Vec<BinaryOperator>,
+fn match_operator<'a>(
+    operators: Vec<Operator>,
     tokens: &'a [T<'a>],
-) -> Option<(BinaryOperator, &'a [T<'a>])> {
+) -> Option<(Operator, &'a [T<'a>])> {
     match tokens {
         [T(value, ..), rest @ ..] => match value {
-            BIN_OP(b) => {
+            OP(b) => {
                 if operators.contains(b) {
                     return Some((*b, rest));
                 } else {
@@ -83,11 +86,7 @@ fn match_binary_operator<'a>(
     }
 }
 
-fn binary_expression<'a>(
-    op: BinaryOperator,
-    first_arg: Expr<'a>,
-    second_arg: Expr<'a>,
-) -> Expr<'a> {
+fn binary_expression<'a>(op: Operator, first_arg: Expr<'a>, second_arg: Expr<'a>) -> Expr<'a> {
     Expr::Binary(op, Box::new(first_arg), Box::new(second_arg))
 }
 
@@ -254,7 +253,7 @@ fn parse_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerErro
 fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_logical_and_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![LogicOr], tokens) {
+        match match_operator(vec![LogicOr], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_logical_and_expr(rest)?;
                 expr = binary_expression(op, expr, right);
@@ -268,7 +267,7 @@ fn parse_logical_or_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
 fn parse_logical_and_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_equality_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![LogicAnd], tokens) {
+        match match_operator(vec![LogicAnd], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_equality_expr(rest)?;
                 expr = binary_expression(op, expr, right);
@@ -282,7 +281,7 @@ fn parse_logical_and_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>])
 fn parse_equality_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_relational_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![Eq, Ne], tokens) {
+        match match_operator(vec![Eq, Ne], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_relational_expr(rest)?;
                 expr = binary_expression(op, expr, right);
@@ -296,7 +295,7 @@ fn parse_equality_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_additive_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![LT, GT, LTE, GTE], tokens) {
+        match match_operator(vec![LT, GT, LTE, GTE], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_additive_expr(rest)?;
                 expr = binary_expression(op, expr, right);
@@ -310,7 +309,7 @@ fn parse_relational_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]),
 fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     let (mut expr, mut tokens) = parse_multiplicative_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![Plus, Minus], tokens) {
+        match match_operator(vec![Plus, Minus], tokens) {
             Some((op, rest)) => {
                 let (right, rest) = parse_multiplicative_expr(rest)?;
                 expr = binary_expression(op, expr, right);
@@ -322,16 +321,26 @@ fn parse_additive_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 }
 
 fn parse_multiplicative_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
-    let (mut expr, mut tokens) = parse_terminal_expr(tokens)?;
+    let (mut expr, mut tokens) = parse_unary_expr(tokens)?;
     loop {
-        match match_binary_operator(vec![Times, Mod, Div], tokens) {
+        match match_operator(vec![Times, Mod, Div], tokens) {
             Some((op, rest)) => {
-                let (right, rest) = parse_terminal_expr(rest)?;
+                let (right, rest) = parse_unary_expr(rest)?;
                 expr = binary_expression(op, expr, right);
                 tokens = rest;
             }
             None => return Ok((expr, tokens)),
         }
+    }
+}
+
+fn parse_unary_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
+    match match_operator(vec![Minus, LogicNot], tokens) {
+        Some((op, tokens)) => {
+            let (operand, tokens) = parse_terminal_expr(tokens)?;
+            return Ok((Expr::Unary(op, Box::new(operand)), tokens));
+        }
+        None => return parse_terminal_expr(tokens),
     }
 }
 

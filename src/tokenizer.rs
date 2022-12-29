@@ -37,6 +37,28 @@ pub enum Operator {
     Div,
     LogicOr,
     LogicAnd,
+    LogicNot,
+}
+
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Operator::Plus => write!(f, "+"),
+            Operator::Minus => write!(f, "-"),
+            Operator::Times => write!(f, "*"),
+            Operator::Eq => write!(f, "=="),
+            Operator::Ne => write!(f, "!="),
+            Operator::LT => write!(f, "<"),
+            Operator::GT => write!(f, ">"),
+            Operator::LTE => write!(f, "<="),
+            Operator::GTE => write!(f, ">="),
+            Operator::Mod => write!(f, "%"),
+            Operator::LogicOr => write!(f, "||"),
+            Operator::LogicAnd => write!(f, "&&"),
+            Operator::Div => write!(f, "/"),
+            Operator::LogicNot => write!(f, "!"),
+        }
+    }
 }
 
 impl fmt::Display for TokenValue<'_> {
@@ -52,21 +74,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::RBRACKET => format_msg("}"),
             TokenValue::SEMICOLON => format_msg(";"),
             TokenValue::COMMA => format_msg(","),
-            TokenValue::OP(op) => match op {
-                Operator::Plus => format_msg("+"),
-                Operator::Minus => format_msg("-"),
-                Operator::Times => format_msg("*"),
-                Operator::Eq => format_msg("=="),
-                Operator::Ne => format_msg("!="),
-                Operator::LT => format_msg("<"),
-                Operator::GT => format_msg(">"),
-                Operator::LTE => format_msg("<="),
-                Operator::GTE => format_msg(">="),
-                Operator::Mod => format_msg("%"),
-                Operator::LogicOr => format_msg("||"),
-                Operator::LogicAnd => format_msg("&&"),
-                Operator::Div => format_msg("/"),
-            },
+            TokenValue::OP(op) => format_msg(op.to_string().as_str()),
         }
     }
 }
@@ -94,7 +102,7 @@ pub const GT_REGEX: &str = r">";
 pub const LTE_REGEX: &str = r"<=";
 pub const GTE_REGEX: &str = r">=";
 pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
-pub const NUM_REGEX: &str = r"(-?\d+)\b";
+pub const NUM_REGEX: &str = r"(\d+)\b";
 pub const PLUS_REGEX: &str = r"\+";
 pub const MINUS_REGEX: &str = r"\-";
 pub const STAR_REGEX: &str = r"\*";
@@ -108,6 +116,7 @@ pub const SEMICOLON_REGEX: &str = ";";
 pub const COMMA_REGEX: &str = ",";
 pub const LOGIC_OR_REGEX: &str = r"\|\|";
 pub const LOGIC_AND_REGEX: &str = "&&";
+pub const LOGIC_NOT_REGEX: &str = "!";
 
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LE> {
     let enumerated_lines = s.split("\n").enumerate();
@@ -239,6 +248,11 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
         Ok((Some(Token(TokenValue::SEMICOLON, row, col)), mat.end()))
     } else if let Some(mat) = find(COMMA_REGEX, s) {
         Ok((Some(Token(TokenValue::COMMA, row, col)), mat.end()))
+    } else if let Some(mat) = find(LOGIC_NOT_REGEX, s) {
+        Ok((
+            Some(Token(TokenValue::OP(Operator::LogicNot), row, col)),
+            mat.end(),
+        ))
     } else {
         Err(LE::TokenizerError(TokenizerError({
             let mut split =

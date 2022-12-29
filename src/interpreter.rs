@@ -6,7 +6,7 @@ use crate::{
         RuntimeError::*,
     },
     parser::{Expr, Procedure, Program, Statement, Statements},
-    tokenizer::BinaryOperator,
+    tokenizer::Operator,
 };
 
 #[derive(Copy, Clone, Debug)]
@@ -142,21 +142,21 @@ pub fn interp_expression<'a>(
             let left_value = interp_expression(procs, env.clone(), *left)?;
             let right_value = interp_expression(procs, env.clone(), *right)?;
             match op {
-                BinaryOperator::Plus => match (left_value, right_value) {
+                Operator::Plus => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left + num_right))
                     }
                     (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
-                BinaryOperator::Minus => match (left_value, right_value) {
+                Operator::Minus => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left - num_right))
                     }
                     (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
-                BinaryOperator::Eq => match (left_value, right_value) {
+                Operator::Eq => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left == num_right))
                     }
@@ -165,7 +165,7 @@ pub fn interp_expression<'a>(
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::Ne => match (left_value, right_value) {
+                Operator::Ne => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left != num_right))
                     }
@@ -174,62 +174,77 @@ pub fn interp_expression<'a>(
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::LT => match (left_value, right_value) {
+                Operator::LT => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left < num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::GT => match (left_value, right_value) {
+                Operator::GT => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left > num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::LTE => match (left_value, right_value) {
+                Operator::LTE => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left <= num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::GTE => match (left_value, right_value) {
+                Operator::GTE => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Bool(num_left >= num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::LogicOr => match (left_value, right_value) {
+                Operator::LogicOr => match (left_value, right_value) {
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left || bool_right))
                     }
                     (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
-                BinaryOperator::LogicAnd => match (left_value, right_value) {
+                Operator::LogicAnd => match (left_value, right_value) {
                     (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                         Ok(Value::Bool(bool_left && bool_right))
                     }
                     (Value::Bool(_), v) => Err(RuntimeError(BadArg(v))),
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 },
-                BinaryOperator::Times => match (left_value, right_value) {
+                Operator::Times => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left * num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::Mod => match (left_value, right_value) {
+                Operator::Mod => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left % num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
-                BinaryOperator::Div => match (left_value, right_value) {
+                Operator::Div => match (left_value, right_value) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left / num_right))
                     }
                     (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
                 },
+                op => Err(RuntimeError(UnaryAsBinary(op))),
+            }
+        }
+        Expr::Unary(op, arg) => {
+            let arg_value = interp_expression(procs, env, *arg)?;
+            match op {
+                Operator::Minus => match arg_value {
+                    Value::Num(n) => Ok(Value::Num(-n)),
+                    _ => Err(RuntimeError(BadArg(arg_value))),
+                },
+                Operator::LogicNot => match arg_value {
+                    Value::Bool(b) => Ok(Value::Bool(!b)),
+                    _ => Err(RuntimeError(BadArg(arg_value))),
+                },
+                op => Err(RuntimeError(BinaryAsUnary(op))),
             }
         }
         Expr::Call(proc_name, args) => {

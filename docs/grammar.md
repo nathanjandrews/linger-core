@@ -71,13 +71,21 @@ additive_expr' :=
   | DIV <additive_expr>
 
 multiplicative_expr :=
-  | <terminal> <multiplicative_expr'>
+  | <unary_expr> <multiplicative_expr'>
 
 multiplicative_expr' :=
   | epsilon
   | TIMES <multiplicative_expr>
   | MOD <multiplicative_expr>
   | DIV <multiplicative_expr>
+
+unary_expr :=
+  | <unary_expr'> terminal
+
+unary_expr' :=
+  | epsilon
+  | LOGIC_NOT
+  | MINUS
 
 terminal :=
   | ID

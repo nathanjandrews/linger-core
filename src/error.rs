@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{
     interpreter::Value,
-    tokenizer::{Token, TokenValue},
+    tokenizer::{Operator, Token, TokenValue},
 };
 
 #[derive(Debug, Clone)]
@@ -30,6 +30,8 @@ pub enum RuntimeError {
     BadArgs(Vec<Value>),
     ArgMismatch(String, usize, usize),
     BadCondition(Value),
+    BinaryAsUnary(Operator),
+    UnaryAsBinary(Operator),
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +90,12 @@ impl fmt::Display for LingerError<'_> {
                         args.iter().map(|arg| arg.to_string()).collect();
                     let arg_string = arg_strings_vec.join(", ");
                     write!(f, "bad args: [{}]", arg_string)
+                }
+                RuntimeError::BinaryAsUnary(op) => {
+                    write!(f, "binary operator \"{}\" used as unary operator", op)
+                }
+                RuntimeError::UnaryAsBinary(op) => {
+                    write!(f, "unary operator \"{}\" used as binary operator", op)
                 }
             },
         }

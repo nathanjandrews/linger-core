@@ -43,3 +43,16 @@ fn numerical_operators() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn unary_operators() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("unary_operators"));
+    cmd.assert()
+        .success()
+        // numbers are currently only integers so division is actual integer division
+        .stdout(predicate::str::contains("false true -5 -10 15"));
+
+    Ok(())
+}

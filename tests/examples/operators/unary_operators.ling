@@ -1,0 +1,13 @@
+proc main() {
+  print(
+    !true,
+    !false,
+    -five(),
+    -10,
+    -(-15)
+  );
+}
+
+proc five() {
+  return 5;
+}

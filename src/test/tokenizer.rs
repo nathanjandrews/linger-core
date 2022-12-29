@@ -1,6 +1,6 @@
 use crate::tokenizer::{
     tokenize,
-    TokenValue::{self, *},
+    TokenValue::{self, *}, Operator,
 };
 
 fn tokenize_success(s: &str, expected: Vec<TokenValue>) -> bool {
@@ -33,7 +33,7 @@ fn tokenize_error(s: &str) -> bool {
 #[test]
 fn numbers() {
     assert!(tokenize_success("1234", vec![NUM(1234)]));
-    assert!(tokenize_success("-1234", vec![NUM(-1234)]));
+    assert!(tokenize_success("-1234", vec![OP(Operator::Minus), NUM(1234)]));
 }
 
 #[test]
