@@ -10,9 +10,10 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Debug)]
-pub enum Value {
+pub enum Value<'a> {
     Num(i64),
     Bool(bool),
+    Str(&'a str),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -22,17 +23,18 @@ enum ReturnFlag {
     Continue,
 }
 
-impl fmt::Display for Value {
+impl fmt::Display for Value<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Num(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
             Value::Void => write!(f, "<void>"),
+            Value::Str(s) => write!(f, "{}", s),
         }
     }
 }
 
-pub type Environment = HashMap<String, Value>;
+pub type Environment<'a> = HashMap<String, Value<'a>>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     return match interp_statements(&p.procedures, Environment::new(), p.main) {
@@ -43,9 +45,9 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
 
 fn interp_statements<'a>(
     procs: &Vec<Procedure<'a>>,
-    env: Environment,
+    env: Environment<'a>,
     statements: Statements<'a>,
-) -> Result<(Value, ReturnFlag), LingerError<'a>> {
+) -> Result<(Value<'a>, ReturnFlag), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -72,9 +74,9 @@ fn interp_statements<'a>(
 
 fn interp_statement<'a>(
     procs: &Vec<Procedure<'a>>,
-    env: Environment,
+    env: Environment<'a>,
     statement: Statement<'a>,
-) -> Result<(Environment, Value, ReturnFlag), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
     match statement {
         Statement::Expr(expr) => match interp_expression(&procs, env.clone(), expr) {
             Ok(value) => Ok((env.clone(), value, ReturnFlag::Continue)),
@@ -128,12 +130,13 @@ fn interp_statement<'a>(
 
 pub fn interp_expression<'a>(
     procs: &Vec<Procedure<'a>>,
-    env: Environment,
+    env: Environment<'a>,
     expr: Expr<'a>,
-) -> Result<Value, LingerError<'a>> {
+) -> Result<Value<'a>, LingerError<'a>> {
     match expr {
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
+        Expr::Str(s) => Ok(Value::Str(s)),
         Expr::Var(id) => match env.get(id) {
             Some(value) => Ok(*value),
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
@@ -224,7 +227,7 @@ pub fn interp_expression<'a>(
                     true => Ok(Value::Bool(true)),
                     false => match interp_expression(procs, env.clone(), *right)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value)))
+                        right_value => Err(RuntimeError(BadArg(right_value))),
                     },
                 },
                 left_value => Err(RuntimeError(BadArg(left_value))),
@@ -234,7 +237,7 @@ pub fn interp_expression<'a>(
                     false => Ok(Value::Bool(false)),
                     true => match interp_expression(procs, env.clone(), *right)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value)))
+                        right_value => Err(RuntimeError(BadArg(right_value))),
                     },
                 },
                 left_value => Err(RuntimeError(BadArg(left_value))),

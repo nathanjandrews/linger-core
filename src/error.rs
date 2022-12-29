@@ -1,4 +1,4 @@
-use std::fmt::{self, write};
+use std::fmt;
 
 use crate::{
     interpreter::Value,
@@ -25,13 +25,13 @@ pub enum ParseError<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub enum RuntimeError {
+pub enum RuntimeError<'a> {
     UnknownVariable(String),
     UnknownProc(String),
-    BadArg(Value),
-    BadArgs(Vec<Value>),
+    BadArg(Value<'a>),
+    BadArgs(Vec<Value<'a>>),
     ArgMismatch(String, usize, usize),
-    BadCondition(Value),
+    BadCondition(Value<'a>),
     BinaryAsUnary(Operator),
     UnaryAsBinary(Operator),
 }
@@ -40,7 +40,7 @@ pub enum RuntimeError {
 pub enum LingerError<'a> {
     ParseError(ParseError<'a>),
     TokenizerError(TokenizerError),
-    RuntimeError(RuntimeError),
+    RuntimeError(RuntimeError<'a>),
 }
 
 impl fmt::Display for LingerError<'_> {

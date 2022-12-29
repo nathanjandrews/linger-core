@@ -23,27 +23,27 @@ fn main() {
         Ok(t) => t,
         Err(e) => return println!("{e}"),
     };
-    dbg!(&tokens);
+    // dbg!(&tokens);
 
-    // let program = match parse_program(tokens.as_slice()) {
-    //     Ok(p) => p,
-    //     Err(e) => return println!("{e}"),
-    // };
+    let program = match parse_program(tokens.as_slice()) {
+        Ok(p) => p,
+        Err(e) => return println!("{e}"),
+    };
 
-    // // dbg!(&program.main);
+    // dbg!(&program.main);
 
-    // // let value = match interp(linger_file_content) {
-    // //     Ok(v) => v,
-    // //     Err(e) => {
-    // //         println!("{e}");
-    // //         return;
-    // //     }
-    // // };
-
-    // let value = match interp_program(program) {
+    // let value = match interp(linger_file_content) {
     //     Ok(v) => v,
-    //     Err(e) => return println!("{e}"),
+    //     Err(e) => {
+    //         println!("{e}");
+    //         return;
+    //     }
     // };
 
-    // dbg!(value);
+    let value = match interp_program(program) {
+        Ok(v) => v,
+        Err(e) => return println!("{e}"),
+    };
+
+    dbg!(value);
 }

@@ -37,6 +37,7 @@ pub enum Statement<'a> {
 pub enum Expr<'a> {
     Num(i64),
     Bool(bool),
+    Str(&'a str),
     Var(&'a str),
     Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
     Unary(Operator, Box<Expr<'a>>),
@@ -86,7 +87,8 @@ fn match_operator<'a>(
     }
 }
 
-type BinaryExpressionParser<'a> = fn(&'a [T<'a>]) -> Result<(Expr<'a>, &'a [T<'a>]), LingerError<'a>>;
+type BinaryExpressionParser<'a> =
+    fn(&'a [T<'a>]) -> Result<(Expr<'a>, &'a [T<'a>]), LingerError<'a>>;
 
 fn parse_binary_expr<'a>(
     parse_expr: BinaryExpressionParser<'a>,
@@ -318,6 +320,7 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
 
             return Ok((expr, tokens));
         }
+        [T(STR(s), ..), tokens @ ..] => Ok((Expr::Str(*s), tokens)),
         [T(ID(id), ..), tokens @ ..] => match *id {
             "true" => Ok((Expr::Bool(true), tokens)),
             "false" => Ok((Expr::Bool(false), tokens)),
