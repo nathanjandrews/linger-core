@@ -80,7 +80,7 @@ multiplicative_expr' :=
   | DIV <multiplicative_expr>
 
 unary_expr :=
-  | <unary_expr'> terminal
+  | <unary_expr'> <terminal>
 
 unary_expr' :=
   | epsilon
