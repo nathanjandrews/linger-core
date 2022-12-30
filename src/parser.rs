@@ -29,6 +29,7 @@ pub type Statements<'a> = Vec<Statement<'a>>;
 pub enum Statement<'a> {
     Expr(Expr<'a>),
     Let(&'a str, Expr<'a>),
+    Assign(&'a str, Expr<'a>),
     If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
     Return(Option<Expr<'a>>),
 }
@@ -220,6 +221,16 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
 
             let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(Statement::Let(&var_name, var_expr)), tokens))
+        }
+        [T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
+            if KEYWORDS.contains(var_name) {
+                return Err(ParseError(KeywordAsVar(var_name)));
+            }
+
+            let (var_expr, tokens) = parse_expr(tokens)?;
+
+            let tokens = consume_token(SEMICOLON, tokens)?;
+            Ok((Some(Statement::Assign(&var_name, var_expr)), tokens))
         }
         [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = parse_expr(tokens)?;
