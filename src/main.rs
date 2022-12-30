@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use linger::{interp, interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
+use linger::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
