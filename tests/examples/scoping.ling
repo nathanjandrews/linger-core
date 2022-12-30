@@ -1,0 +1,9 @@
+proc main() {
+  let a = 5;
+  print(a);
+  if (true) {
+    a = 6;
+    print(a);
+  }
+  print(a);
+}
