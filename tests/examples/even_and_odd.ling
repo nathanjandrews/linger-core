@@ -1,0 +1,17 @@
+proc main() {
+  print(odd(5));
+}
+
+proc even(n) {
+  if (n == 0) {
+    return true;
+  }
+  return odd(n - 1);
+}
+
+proc odd(n) {
+  if (n == 0) {
+    return false;
+  }
+  return even(n - 1);
+}

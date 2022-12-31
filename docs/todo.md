@@ -27,6 +27,7 @@ Nothing so far, let's keep it that way.
 - [ ] bitwise operations
 - [ ] more robust builtin print function with formatting
 - [x] escape sequences
+- [x] closures (static-scope)
 
 ## Bugs
 

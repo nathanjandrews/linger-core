@@ -80,25 +80,11 @@ fn string_concatenation() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn summing_integers() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
-
-    cmd.arg(file_name_to_path("summing_integers"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("recursive sum: 55, algebraic sum: 55"));
-
-    Ok(())
-}
-
-#[test]
 fn scoping() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("scoping"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("6"));
+    cmd.assert().success().stdout(predicate::str::contains("6"));
 
     Ok(())
 }
@@ -108,9 +94,7 @@ fn reassignment() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("reassignment"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("6"));
+    cmd.assert().success().stdout(predicate::str::contains("6"));
 
     Ok(())
 }
@@ -171,6 +155,30 @@ fn procedure_shadowing() -> Result<(), Box<dyn std::error::Error>> {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("5 6|5 5"));
+
+    Ok(())
+}
+
+#[test]
+fn closures() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("closures"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("10"));
+
+    Ok(())
+}
+
+#[test]
+fn even_and_odd() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("even_and_odd"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("true"));
 
     Ok(())
 }

@@ -5,7 +5,7 @@ use crate::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
     },
-    parser::{Expr, Program, Statement, Statements},
+    parser::{Expr, Procedure, Program, Statement, Statements},
     tokenizer::Operator,
 };
 
@@ -14,7 +14,7 @@ pub enum Value<'a> {
     Num(i64),
     Bool(bool),
     Str(String),
-    Lambda(Vec<&'a str>, Statements<'a>),
+    Lambda(Vec<&'a str>, Statements<'a>, Environment<'a>),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -24,8 +24,8 @@ enum ReturnFlag {
     Continue,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum ValueStory {
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum ValueStory {
     Assignment,
     Initialization,
 }
@@ -46,11 +46,11 @@ type Environment<'a> = HashMap<String, (Value<'a>, ValueStory)>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     let mut initial_env = Environment::new();
-    for proc in p.procedures {
+    for Procedure { name, params, body } in p.procedures {
         initial_env.insert(
-            proc.name.to_string(),
+            name.to_string(),
             (
-                Value::Lambda(proc.params, proc.body),
+                Value::Lambda(params, body, Environment::new()),
                 ValueStory::Initialization,
             ),
         );
@@ -179,7 +179,7 @@ fn interp_expression<'a>(
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
-        Expr::Lambda(params, body) => Ok(Value::Lambda(params, body)),
+        Expr::Lambda(params, body) => Ok(Value::Lambda(params, body, env)),
         Expr::Var(id) => match env.get(id) {
             Some((value, _)) => Ok(value.clone()),
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
@@ -337,8 +337,8 @@ fn interp_expression<'a>(
                 _ => "<lambda>",
             };
             let f_value = interp_expression(env.clone(), *f_expr)?;
-            let (params, body) = match f_value {
-                Value::Lambda(params, body) => (params, body),
+            let (params, body, closure_env) = match f_value {
+                Value::Lambda(params, body, env) => (params, body, env),
                 _ => return Err(RuntimeError(BadArg(f_value))),
             };
 
@@ -358,13 +358,22 @@ fn interp_expression<'a>(
                 }
             }
 
-            let mut env = env.clone();
-            let bindings = params.iter().zip(values);
-            for (param, value) in bindings {
-                env.insert(param.to_string(), (value, ValueStory::Initialization));
+            let mut body_env = env.clone();
+            for (name, value) in closure_env {
+                match body_env.get(&name) {
+                    Some(_) => {
+                        body_env.insert(name, value);
+                    }
+                    None => (),
+                }
             }
 
-            return match interp_statements(env.clone(), body.to_vec()) {
+            let bindings = params.iter().zip(values);
+            for (param, value) in bindings {
+                body_env.insert(param.to_string(), (value, ValueStory::Initialization));
+            }
+
+            return match interp_statements(body_env.clone(), body.to_vec()) {
                 Ok((_, value, _)) => Ok(value),
                 Err(e) => Err(e),
             };
