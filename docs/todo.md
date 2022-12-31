@@ -16,7 +16,8 @@ Nothing so far, let's keep it that way.
   - [x] variable shadowing
   - [x] variable reassignment
 - [ ] type cohesion for concatenation of strings and other types
-- [ ] support for "else if" statements
+- [x] support for "else if" statements
+  - implement as syntactic sugar on top of simpler "if-else" statements
 - [ ] better error message when there are multiple "else" statements after an
       "if" statement (current message is that "else" is a keyword being used as
       a variable)
@@ -42,11 +43,6 @@ Nothing so far, let's keep it that way.
 
 - [ ] make keywords and enum
 - [ ] use Option<Value> in place of an explicit Void type
-- [ ] refactor Token struct to separate TokenValue from its associated data
-  - This would allow for a "mode-based" schema system
-  - This has the drawback of dealing with A Token's value and data separately
-    - could maybe get around this by storing the value and data both as enum
-      variants, but that is super redundant
 
 ## Testing
 
