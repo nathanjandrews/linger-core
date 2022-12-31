@@ -39,6 +39,7 @@ Nothing so far, let's keep it that way.
 
 ## Potential Code Improvements
 
+- [ ] make keywords and enum
 - [ ] use Option<Value> in place of an explicit Void type
 - [ ] refactor Token struct to separate TokenValue from its associated data
   - This would allow for a "mode-based" schema system
