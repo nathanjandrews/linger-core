@@ -16,6 +16,10 @@ Nothing so far, let's keep it that way.
   - [x] variable shadowing
   - [x] variable reassignment
 - [ ] type cohesion for concatenation of strings and other types
+- [ ] support for "else if" statements
+- [ ] better error message when there are multiple "else" statements after an
+      "if" statement (current message is that "else" is a keyword being used as
+      a variable)
 - [ ] lambda expressions
 - [ ] use statements
 - [ ] while loops
