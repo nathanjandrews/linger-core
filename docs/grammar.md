@@ -22,9 +22,17 @@ statement :=
   | LET ID ASSIGN <expr> SEMICOLON
   | RETURN <expr> SEMICOLON
   | RETURN SEMICOLON
-  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
-  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET ELSE LBRACKET <statements> RBRACKET
+  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements>
+  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements> ELSE LBRACKET <statements> RBRACKET
   | <expr> SEMICOLON
+
+else-if-statements :=
+  | epsilon
+  | ELSE IF <expr> RPAREN LBRACKET <statements> RBRACKET <rest-else-if-statements>
+
+rest-else-if-statements :=
+  | epsilon
+  | <else-if-statement> <rest-else-if-statements>
 
 expr :=
   | <logical_or_expr> <logical_or_expr'>
