@@ -194,3 +194,27 @@ fn else_if_with_else() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn else_if_no_else() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("else_if_no_else"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("branch 2"));
+
+    Ok(())
+}
+
+#[test]
+fn else_if_no_else_all_false() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("else_if_no_else_all_false"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("5"));
+
+    Ok(())
+}
