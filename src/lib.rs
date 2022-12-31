@@ -8,7 +8,7 @@ pub mod parser;
 mod test;
 pub mod tokenizer;
 
-pub static KEYWORDS: &'static [&str] = &["if", "else", "proc", "let", "true", "false", "return"];
+pub static KEYWORDS: &'static [&str] = &["if", "else", "proc", "let", "true", "false", "return", "lam"];
 
 pub fn interp<'a>(s: String) -> Result<String, String> {
     let tokens = match tokenize(s.as_str()) {

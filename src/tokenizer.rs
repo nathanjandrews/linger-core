@@ -25,6 +25,7 @@ pub enum TokenValue<'a> {
     SEMICOLON,
     QUOTE,
     COMMA,
+    THIN_ARROW,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -82,12 +83,14 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::OP(op) => format_msg(op.to_string().as_str()),
             TokenValue::QUOTE => format_msg("\""),
             TokenValue::STR(s) => format_msg(s),
+            TokenValue::THIN_ARROW => format_msg("->"),
         }
     }
 }
 
 pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
 pub const ASSIGN_REGEX: &str = r"=";
+pub const THIN_ARROW_REGEX: &str = r"->";
 pub const EQ_REGEX: &str = r"==";
 pub const NE_REGEX: &str = r"!=";
 pub const LT_REGEX: &str = r"<";
@@ -228,6 +231,8 @@ fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), 
             Some(Token(TokenValue::OP(Operator::LogicOr), row, col)),
             mat.end(),
         ))
+    } else if let Some(mat) = find(THIN_ARROW_REGEX, s) {
+        Ok((Some(Token(TokenValue::THIN_ARROW, row, col)), mat.end()))
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
         Ok((Some(Token(TokenValue::ASSIGN, row, col)), mat.end()))
     } else if let Some(mat) = find(LT_REGEX, s) {
