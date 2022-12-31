@@ -1,6 +1,7 @@
+use crate::desugar::{Expr::*, Statement};
 #[allow(unused_imports)]
 use crate::{
-    parser::{parse_program, Expr::*, Program, Statement, Builtin::*},
+    parser::{parse_program, Builtin::*, Program},
     tokenizer::{
         Token,
         TokenValue::{self, *},
