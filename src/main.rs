@@ -23,7 +23,7 @@ fn main() {
         Ok(t) => t,
         Err(e) => return println!("{e}"),
     };
-    // dbg!(&tokens);
+    dbg!(&tokens);
 
     let program = match parse_program(tokens.as_slice()) {
         Ok(p) => p,

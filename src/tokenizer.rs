@@ -133,10 +133,10 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
         Ok(vec![])
     } else {
         match get_token(s, line_num, col_num) {
-            Ok((token_option, new_index)) => match token_option {
+            Ok((token_option, match_len)) => match token_option {
                 Some(token) => match token {
                     Token(TokenValue::QUOTE, ..) => {
-                        let s = &s[new_index..];
+                        let s = &s[match_len..];
                         let mut string_content = String::new();
                         // tokenizing string literal
                         let mut character_iter = s.chars().enumerate();
@@ -182,7 +182,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
 
                         return Err(TokenizerError(UnterminatedStringLiteral));
                     }
-                    _ => match tokenize_helper(&s[new_index..], line_num, new_index + 1) {
+                    _ => match tokenize_helper(&s[match_len..], line_num, col_num + match_len) {
                         Ok(mut vec) => {
                             let mut v = vec![token];
                             v.append(&mut vec);
@@ -191,7 +191,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                         Err(e) => Err(e),
                     },
                 },
-                None => tokenize_helper(&s[new_index..], line_num, new_index + 1),
+                None => tokenize_helper(&s[match_len..], line_num, col_num + match_len),
             },
             Err(e) => Err(e),
         }
