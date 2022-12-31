@@ -26,6 +26,7 @@ Nothing so far, let's keep it that way.
 - [ ] for loops
 - [ ] bitwise operations
 - [ ] more robust builtin print function with formatting
+- [x] escape sequences
 
 ## Bugs
 
