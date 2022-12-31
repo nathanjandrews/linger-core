@@ -184,10 +184,10 @@ fn even_and_odd() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn else_if() -> Result<(), Box<dyn std::error::Error>> {
+fn else_if_with_else() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
-    cmd.arg(file_name_to_path("else_if"));
+    cmd.arg(file_name_to_path("else_if_with_else"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("branch 2"));
