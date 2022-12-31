@@ -1,35 +1,37 @@
 use crate::{
-    parser::{Builtin, Expr, Statement, Statements},
+    parser::{Builtin, SugaredExpr, SugaredStatement, SugaredStatements},
     tokenizer::Operator,
 };
 
-pub type SugaredStatements<'a> = Vec<SugaredStatement<'a>>;
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Procedure<'a> {
+    pub name: &'a str,
+    pub params: Vec<&'a str>,
+    pub body: Statements<'a>,
+}
+
+pub type Statements<'a> = Vec<Statement<'a>>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SugaredStatement<'a> {
-    Expr(SugaredExpr<'a>),
-    Let(&'a str, SugaredExpr<'a>),
-    Assign(&'a str, SugaredExpr<'a>),
-    If(
-        SugaredExpr<'a>,
-        SugaredStatements<'a>,
-        Vec<(SugaredExpr<'a>, SugaredStatements<'a>)>,
-        Option<SugaredStatements<'a>>,
-    ),
-    Return(Option<SugaredExpr<'a>>),
+pub enum Statement<'a> {
+    Expr(Expr<'a>),
+    Let(&'a str, Expr<'a>),
+    Assign(&'a str, Expr<'a>),
+    If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
+    Return(Option<Expr<'a>>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SugaredExpr<'a> {
+pub enum Expr<'a> {
     Num(i64),
     Bool(bool),
     Str(String),
     Var(&'a str),
-    Binary(Operator, Box<SugaredExpr<'a>>, Box<SugaredExpr<'a>>),
-    Unary(Operator, Box<SugaredExpr<'a>>),
-    PrimitiveCall(Builtin, Vec<SugaredExpr<'a>>),
-    Call(Box<SugaredExpr<'a>>, Vec<SugaredExpr<'a>>),
-    Lambda(Vec<&'a str>, SugaredStatements<'a>),
+    Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
+    Unary(Operator, Box<Expr<'a>>),
+    PrimitiveCall(Builtin, Vec<Expr<'a>>),
+    Call(Box<Expr<'a>>, Vec<Expr<'a>>),
+    Lambda(Vec<&'a str>, Statements<'a>),
 }
 
 pub fn desugar_statements(sugared_statements: SugaredStatements) -> Statements {

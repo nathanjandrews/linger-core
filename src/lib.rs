@@ -4,7 +4,7 @@ use tokenizer::tokenize;
 
 pub mod error;
 pub mod interpreter;
-pub mod desugarer;
+pub mod desugar;
 pub mod parser;
 mod test;
 pub mod tokenizer;
