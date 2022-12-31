@@ -150,3 +150,27 @@ fn escape_sequences() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn lambdas() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("lambdas"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("20"));
+
+    Ok(())
+}
+
+#[test]
+fn procedure_shadowing() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("procedure_shadowing"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("5 6|5 5"));
+
+    Ok(())
+}

@@ -43,7 +43,8 @@ pub enum Expr<'a> {
     Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
     Unary(Operator, Box<Expr<'a>>),
     PrimitiveCall(Builtin, Vec<Expr<'a>>),
-    Call(&'a str, Vec<Expr<'a>>),
+    Call(Box<Expr<'a>>, Vec<Expr<'a>>),
+    Lambda(Vec<&'a str>, Statements<'a>),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -236,7 +237,9 @@ fn parse_statement<'a>(tokens: &'a [T<'a>]) -> Result<(Option<Statement>, &[T<'a
             let (cond_expr, tokens) = parse_expr(tokens)?;
             let (then_statements, tokens) = match tokens {
                 [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
-                [T(RPAREN, ..), token, ..] => return Err(ParseError(Expected(LBRACKET, token.clone()))),
+                [T(RPAREN, ..), token, ..] => {
+                    return Err(ParseError(Expected(LBRACKET, token.clone())))
+                }
                 [token, ..] => return Err(ParseError(Expected(RPAREN, token.clone()))),
                 _ => return Err(ParseError(ExpectedSomething)),
             };
@@ -321,12 +324,19 @@ fn parse_unary_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), Ling
 
 fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), LingerError> {
     match tokens {
+        [T(ID("lam"), ..), T(LPAREN, ..), tokens @ ..] => {
+            let (params, tokens) = parse_params(tokens)?;
+            let tokens = consume_token(THIN_ARROW, tokens)?;
+            let tokens = consume_token(LBRACKET, tokens)?;
+            let (lambda_body, tokens) = parse_statements(tokens)?;
+            return Ok((Expr::Lambda(params, lambda_body), tokens));
+        }
         [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
             let (args, tokens) = parse_args(tokens)?;
 
             let expr = match check_builtin(proc_name) {
                 Some(builtin) => Expr::PrimitiveCall(builtin, args),
-                None => Expr::Call(proc_name, args),
+                None => Expr::Call(Box::new(Expr::Var(proc_name)), args),
             };
 
             return Ok((expr, tokens));
@@ -346,7 +356,18 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(Expr, &'a [T<'a>]), L
         [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = parse_expr(tokens)?;
             let tokens = consume_token(RPAREN, tokens)?;
-            Ok((expr, tokens))
+            match expr {
+                Expr::Lambda(params, body) => {
+                    // expect an immediately invoked function, parse the arguments and return the call
+                    let tokens = consume_token(LPAREN, tokens)?;
+                    let (args, tokens) = parse_args(tokens)?;
+                    Ok((
+                        Expr::Call(Box::new(Expr::Lambda(params, body)), args),
+                        tokens,
+                    ))
+                }
+                expr => Ok((expr, tokens)),
+            }
         }
         [T(NUM(n), ..), tokens @ ..] => Ok((Expr::Num(*n), tokens)),
         tokens => Err(unexpected_token(tokens)),

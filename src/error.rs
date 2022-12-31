@@ -26,13 +26,13 @@ pub enum ParseError<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub enum RuntimeError {
+pub enum RuntimeError<'a> {
     UnknownVariable(String),
     UnknownProc(String),
-    BadArg(Value),
-    BadArgs(Vec<Value>),
+    BadArg(Value<'a>),
+    BadArgs(Vec<Value<'a>>),
     ArgMismatch(String, usize, usize),
-    BadCondition(Value),
+    BadCondition(Value<'a>),
     BinaryAsUnary(Operator),
     UnaryAsBinary(Operator),
 }
@@ -41,7 +41,7 @@ pub enum RuntimeError {
 pub enum LingerError<'a> {
     ParseError(ParseError<'a>),
     TokenizerError(TokenizerError),
-    RuntimeError(RuntimeError),
+    RuntimeError(RuntimeError<'a>),
 }
 
 impl fmt::Display for LingerError<'_> {
@@ -89,7 +89,7 @@ impl fmt::Display for LingerError<'_> {
                 }
                 RuntimeError::ArgMismatch(proc_name, actual, expected) => write!(
                     f,
-                    "procedure {} expected {} args, instead got {}",
+                    "procedure \"{}\" expected {} args, instead got {}",
                     proc_name, expected, actual
                 ),
                 RuntimeError::BadCondition(v) => {

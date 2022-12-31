@@ -1,0 +1,15 @@
+proc main() {
+  let x = num();
+  if (true) {
+    let num = lam() -> {
+      return 6;
+    };
+    print(x, num());
+  }
+  print("|");
+  print(x, num());
+}
+
+proc num() {
+  return 5;
+}
