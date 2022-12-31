@@ -1,9 +1,0 @@
-proc main() {
-  let a = 5;
-  print(a);
-  if (true) {
-    let a = 6;
-    print(a);
-  }
-  print(a);
-}

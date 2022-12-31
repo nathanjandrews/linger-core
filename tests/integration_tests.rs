@@ -98,19 +98,19 @@ fn scoping() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(file_name_to_path("scoping"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("566"));
+        .stdout(predicate::str::contains("6"));
 
     Ok(())
 }
 
 #[test]
-fn shadowing() -> Result<(), Box<dyn std::error::Error>> {
+fn reassignment() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
-    cmd.arg(file_name_to_path("shadowing"));
+    cmd.arg(file_name_to_path("reassignment"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("565"));
+        .stdout(predicate::str::contains("6"));
 
     Ok(())
 }

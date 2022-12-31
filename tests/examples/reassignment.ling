@@ -1,7 +1,5 @@
 proc main() {
   let a = 5;
-  if (true) {
-    a = 6;
-  }
+  a = 6;
   print(a);
 }

@@ -38,7 +38,7 @@ pub type Environment<'a> = HashMap<String, Value>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     return match interp_statements(&p.procedures, Environment::new(), p.main) {
-        Ok((value, _)) => Ok(value),
+        Ok((_, value, _)) => Ok(value),
         Err(e) => Err(e),
     };
 }
@@ -47,7 +47,7 @@ fn interp_statements<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment<'a>,
     statements: Statements<'a>,
-) -> Result<(Value, ReturnFlag), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value, ReturnFlag), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -57,7 +57,7 @@ fn interp_statements<'a>(
         };
         let (new_env, value) = match interp_statement(&procs, env.clone(), statement) {
             Ok((new_env, value, return_flag)) => match return_flag {
-                ReturnFlag::Return => return Ok((value, return_flag)),
+                ReturnFlag::Return => return Ok((new_env, value, return_flag)),
                 ReturnFlag::Continue => (new_env, value),
             },
             Err(e) => return Err(e),
@@ -66,10 +66,10 @@ fn interp_statements<'a>(
         env = new_env;
         return_value = value;
         if is_return_statement {
-            return Ok((return_value, ReturnFlag::Return));
+            return Ok((env, return_value, ReturnFlag::Return));
         }
     }
-    return Ok((return_value, ReturnFlag::Continue));
+    return Ok((env, return_value, ReturnFlag::Continue));
 }
 
 fn interp_statement<'a>(
@@ -90,23 +90,29 @@ fn interp_statement<'a>(
             }
             Err(e) => Err(e),
         },
+        Statement::Assign(id, new_expr) => match env.get(id) {
+            Some(_) => {
+                let mut updated_env = env.clone();
+                updated_env.insert(id.to_string(), interp_expression(procs, env, new_expr)?);
+                Ok((updated_env, Value::Void, ReturnFlag::Continue))
+            }
+            None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
+        },
         Statement::If(cond_expr, then_statements, else_statements_option) => {
             let cond_value = interp_expression(&procs, env.clone(), cond_expr)?;
             match cond_value {
                 Value::Bool(b) => {
                     if b {
                         match interp_statements(procs, env.clone(), then_statements) {
-                            Ok((value, return_flag)) => {
-                                return Ok((env.clone(), value, return_flag))
-                            }
+                            Ok((env, value, return_flag)) => return Ok((env, value, return_flag)),
                             Err(e) => return Err(e),
                         };
                     } else {
                         match else_statements_option {
                             Some(else_statements) => {
                                 match interp_statements(procs, env.clone(), else_statements) {
-                                    Ok((value, return_flag)) => {
-                                        return Ok((env.clone(), value, return_flag))
+                                    Ok((env, value, return_flag)) => {
+                                        return Ok((env, value, return_flag))
                                     }
                                     Err(e) => return Err(e),
                                 };
@@ -317,7 +323,7 @@ pub fn interp_expression<'a>(
             }
 
             return match interp_statements(procs, env.clone(), proc.body.to_vec()) {
-                Ok((value, _)) => Ok(value),
+                Ok((_, value, _)) => Ok(value),
                 Err(e) => Err(e),
             };
         }
