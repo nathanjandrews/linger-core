@@ -20,7 +20,7 @@ Nothing so far, let's keep it that way.
 - [ ] better error message when there are multiple "else" statements after an
       "if" statement (current message is that "else" is a keyword being used as
       a variable)
-- [ ] lambda expressions
+- [x] lambda expressions
 - [ ] use statements
 - [ ] while loops
 - [ ] for loops
@@ -31,7 +31,7 @@ Nothing so far, let's keep it that way.
 
 ## Bugs
 
-- [ ] token row and column data breaks when parsing ID tokens
+- [x] token row and column data breaks when parsing ID tokens
 
 ## Language Optimizations
 
