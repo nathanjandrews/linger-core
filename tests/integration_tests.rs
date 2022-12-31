@@ -114,3 +114,15 @@ fn reassignment() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn shadowing() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("shadowing"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("565"));
+
+    Ok(())
+}

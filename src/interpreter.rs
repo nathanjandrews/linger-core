@@ -23,6 +23,12 @@ enum ReturnFlag {
     Continue,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum ValueStory {
+    Assignment,
+    Initialization,
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -34,7 +40,7 @@ impl fmt::Display for Value {
     }
 }
 
-pub type Environment<'a> = HashMap<String, Value>;
+type Environment<'a> = HashMap<String, (Value, ValueStory)>;
 
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     return match interp_statements(&p.procedures, Environment::new(), p.main) {
@@ -74,7 +80,7 @@ fn interp_statements<'a>(
 
 fn interp_statement<'a>(
     procs: &Vec<Procedure<'a>>,
-    env: Environment<'a>,
+    mut env: Environment<'a>,
     statement: Statement<'a>,
 ) -> Result<(Environment<'a>, Value, ReturnFlag), LingerError<'a>> {
     match statement {
@@ -85,7 +91,7 @@ fn interp_statement<'a>(
         Statement::Let(id, let_expr) => match interp_expression(&procs, env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
-                env.insert(id.to_string(), value);
+                env.insert(id.to_string(), (value, ValueStory::Initialization));
                 Ok((env, Value::Void, ReturnFlag::Continue))
             }
             Err(e) => Err(e),
@@ -93,7 +99,13 @@ fn interp_statement<'a>(
         Statement::Assign(id, new_expr) => match env.get(id) {
             Some(_) => {
                 let mut updated_env = env.clone();
-                updated_env.insert(id.to_string(), interp_expression(procs, env, new_expr)?);
+                updated_env.insert(
+                    id.to_string(),
+                    (
+                        interp_expression(procs, env, new_expr)?,
+                        ValueStory::Assignment,
+                    ),
+                );
                 Ok((updated_env, Value::Void, ReturnFlag::Continue))
             }
             None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
@@ -103,19 +115,36 @@ fn interp_statement<'a>(
             match cond_value {
                 Value::Bool(b) => {
                     if b {
-                        match interp_statements(procs, env.clone(), then_statements) {
-                            Ok((env, value, return_flag)) => return Ok((env, value, return_flag)),
-                            Err(e) => return Err(e),
-                        };
+                        let (then_env, then_value, return_flag) =
+                            interp_statements(procs, env.clone(), then_statements)?;
+
+                        for (var_name, (_, value_story)) in env.clone() {
+                            match then_env.get(&var_name) {
+                                Some((reassigned_value, ValueStory::Assignment)) => {
+                                    env.insert(var_name, (reassigned_value.clone(), value_story));
+                                }
+                                _ => (),
+                            };
+                        }
+                        Ok((env, then_value, return_flag))
                     } else {
                         match else_statements_option {
                             Some(else_statements) => {
-                                match interp_statements(procs, env.clone(), else_statements) {
-                                    Ok((env, value, return_flag)) => {
-                                        return Ok((env, value, return_flag))
-                                    }
-                                    Err(e) => return Err(e),
-                                };
+                                let (else_env, else_value, return_flag) =
+                                    interp_statements(procs, env.clone(), else_statements)?;
+
+                                for (var_name, (_, value_story)) in env.clone() {
+                                    match else_env.get(&var_name) {
+                                        Some((reassigned_value, ValueStory::Assignment)) => {
+                                            env.insert(
+                                                var_name,
+                                                (reassigned_value.clone(), value_story),
+                                            );
+                                        }
+                                        _ => (),
+                                    };
+                                }
+                                Ok((env, else_value, return_flag))
                             }
                             None => Ok((env.clone(), Value::Void, ReturnFlag::Continue)),
                         }
@@ -134,7 +163,7 @@ fn interp_statement<'a>(
     }
 }
 
-pub fn interp_expression<'a>(
+fn interp_expression<'a>(
     procs: &Vec<Procedure<'a>>,
     env: Environment<'a>,
     expr: Expr<'a>,
@@ -144,7 +173,7 @@ pub fn interp_expression<'a>(
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
         Expr::Var(id) => match env.get(id) {
-            Some(value) => Ok(value.clone()),
+            Some((value, _)) => Ok(value.clone()),
             None => Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
         Expr::Binary(op, left, right) => match op {
@@ -319,7 +348,7 @@ pub fn interp_expression<'a>(
             let mut env = env.clone();
             let bindings = proc.params.iter().zip(values);
             for (param, value) in bindings {
-                env.insert(param.to_string(), value);
+                env.insert(param.to_string(), (value, ValueStory::Initialization));
             }
 
             return match interp_statements(procs, env.clone(), proc.body.to_vec()) {

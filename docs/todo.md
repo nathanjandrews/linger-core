@@ -12,7 +12,9 @@ Nothing so far, let's keep it that way.
 - [x] boolean expression short-circuiting
 - [x] string literals
 - [x] string concatenation
-- [x] variable_reassignment
+- [x] distinction between assignment and initialization
+  - [x] variable shadowing
+  - [x] variable reassignment
 - [ ] type cohesion for concatenation of strings and other types
 - [ ] lambda expressions
 - [ ] use statements
