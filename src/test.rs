@@ -1,3 +1,3 @@
+mod parser;
 #[cfg(test)]
 mod tokenizer;
-mod parser;

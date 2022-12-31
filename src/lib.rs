@@ -2,14 +2,16 @@ use interpreter::interp_program;
 use parser::parse_program;
 use tokenizer::tokenize;
 
+pub mod desugar;
 pub mod error;
 pub mod interpreter;
-pub mod desugar;
 pub mod parser;
 mod test;
 pub mod tokenizer;
 
-pub static KEYWORDS: &'static [&str] = &["if", "else", "proc", "let", "true", "false", "return", "lam"];
+pub static KEYWORDS: &'static [&str] = &[
+    "if", "else", "proc", "let", "true", "false", "return", "lam",
+];
 
 pub fn interp<'a>(s: String) -> Result<String, String> {
     let tokens = match tokenize(s.as_str()) {

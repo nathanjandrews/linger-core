@@ -1,11 +1,13 @@
 use std::{collections::HashMap, fmt};
 
 use crate::{
+    desugar::{Expr, Procedure, Statement, Statements},
     error::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
     },
-    tokenizer::Operator, parser::Program, desugar::{Procedure, Statements, Statement, Expr},
+    parser::Program,
+    tokenizer::Operator,
 };
 
 #[derive(Clone, Debug)]
