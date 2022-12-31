@@ -182,3 +182,15 @@ fn even_and_odd() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn else_if() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("else_if"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("branch 2"));
+
+    Ok(())
+}
