@@ -9,6 +9,7 @@ use crate::{
 pub enum TokenizerError {
     UnknownToken(String),
     UnterminatedStringLiteral,
+    InvalidEscapeSequence(char),
 }
 
 #[derive(Debug, Clone)]
@@ -75,6 +76,9 @@ impl fmt::Display for LingerError<'_> {
                 TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
                 TokenizerError::UnterminatedStringLiteral => {
                     write!(f, "unterminated string literal")
+                }
+                TokenizerError::InvalidEscapeSequence(char) => {
+                    write!(f, "invalid escape sequence \"\\{char}\"")
                 }
             },
             LingerError::RuntimeError(err) => match err {

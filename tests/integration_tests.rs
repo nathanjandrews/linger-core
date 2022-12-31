@@ -138,3 +138,15 @@ fn reassignment_and_shadowing() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn escape_sequences() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("escape_sequences"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("first line\nsecond line"));
+
+    Ok(())
+}

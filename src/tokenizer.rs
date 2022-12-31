@@ -134,13 +134,17 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                 Some(token) => match token {
                     Token(TokenValue::QUOTE, ..) => {
                         let s = &s[new_index..];
+                        let mut string_content = String::new();
                         // tokenizing string literal
-                        for (index, char) in s.chars().enumerate() {
+                        let mut character_iter = s.chars().enumerate();
+                        while let Some((index, char)) = character_iter.next() {
                             if char.eq(&'"') {
                                 // reached the end of the string literal, return it
-                                let string_content = &s[new_index - 1..index];
-                                let str_token =
-                                    Token(TokenValue::STR(string_content.to_string()), line_num, col_num);
+                                let str_token = Token(
+                                    TokenValue::STR(string_content.to_string()),
+                                    line_num,
+                                    col_num,
+                                );
                                 let mut v = vec![str_token];
                                 return match tokenize_helper(
                                     &s[index + 1..],
@@ -154,6 +158,22 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                                     }
                                     Err(e) => Err(e),
                                 };
+                            } else if char.eq(&'\\') {
+                                match character_iter.nth(0) {
+                                    Some((_, escaped_char)) => match escaped_char {
+                                        'n' => string_content.push('\n'),
+                                        'r' => string_content.push('\r'),
+                                        't' => string_content.push('\t'),
+                                        '\\' => string_content.push('\\'),
+                                        '0' => string_content.push('0'),
+                                        '"' => string_content.push('"'),
+                                        '\'' => string_content.push('\''),
+                                        c => return Err(TokenizerError(InvalidEscapeSequence(c))),
+                                    },
+                                    None => return Err(TokenizerError(UnterminatedStringLiteral)),
+                                }
+                            } else {
+                                string_content.push(char);
                             }
                         }
 

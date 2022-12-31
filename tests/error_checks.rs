@@ -54,3 +54,15 @@ fn missing_semicolon() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("invalid_escape_sequence"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("invalid escape sequence").and(predicate::str::contains("\\f")));
+
+    Ok(())
+}
