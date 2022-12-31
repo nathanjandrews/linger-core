@@ -93,6 +93,7 @@ terminal :=
   | NUM
   | STRING
   | LPAREN <expr> RPAREN
+  | LAM LPAREN <args> THIN_ARROW LBRACKET <statements> RBRACKET
 
 args :=
   | RPAREN
