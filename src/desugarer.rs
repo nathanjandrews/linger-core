@@ -82,5 +82,33 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
 }
 
 pub fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
-    todo!()
+    match sugared_expr {
+        SugaredExpr::Num(n) => Expr::Num(n),
+        SugaredExpr::Bool(b) => Expr::Bool(b),
+        SugaredExpr::Str(s) => Expr::Str(s),
+        SugaredExpr::Var(id) => Expr::Var(id),
+        SugaredExpr::Binary(op, left_sugared_expr, right_sugared_expr) => Expr::Binary(
+            op,
+            Box::new(desugar_expression(*left_sugared_expr)),
+            Box::new(desugar_expression(*right_sugared_expr)),
+        ),
+        SugaredExpr::Unary(op, expr) => Expr::Unary(op, Box::new(desugar_expression(*expr))),
+        SugaredExpr::PrimitiveCall(name, sugared_args) => Expr::PrimitiveCall(
+            name,
+            sugared_args
+                .iter()
+                .map(|sugared_arg_expr| desugar_expression(sugared_arg_expr.clone()))
+                .collect(),
+        ),
+        SugaredExpr::Call(sugared_proc_expr, sugared_args) => Expr::Call(
+            Box::new(desugar_expression(*sugared_proc_expr)),
+            sugared_args
+                .iter()
+                .map(|sugared_arg_expr| desugar_expression(sugared_arg_expr.clone()))
+                .collect(),
+        ),
+        SugaredExpr::Lambda(params, sugared_body) => {
+            Expr::Lambda(params, desugar_statements(sugared_body))
+        }
+    }
 }
