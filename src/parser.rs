@@ -10,7 +10,7 @@ use crate::{
     KEYWORDS,
 };
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Program<'a> {
     pub procedures: Vec<Procedure<'a>>,
     pub main: Statements<'a>,

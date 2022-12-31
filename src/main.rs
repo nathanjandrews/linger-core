@@ -19,31 +19,31 @@ fn main() {
         }
     };
 
+    let debug_tokens = false;
+    let debug_program = false;
+    let debug_value = false;
+
     let tokens = match tokenize(linger_file_content.as_str()) {
         Ok(t) => t,
         Err(e) => return println!("{e}"),
     };
-    dbg!(&tokens);
+    if debug_tokens {
+        dbg!(&tokens);
+    }
 
     let program = match parse_program(tokens.as_slice()) {
         Ok(p) => p,
         Err(e) => return println!("{e}"),
     };
-
-    // dbg!(&program.main);
-
-    // let value = match interp(linger_file_content) {
-    //     Ok(v) => v,
-    //     Err(e) => {
-    //         println!("{e}");
-    //         return;
-    //     }
-    // };
+    if debug_program {
+        dbg!(&program);
+    }
 
     let value = match interp_program(program) {
         Ok(v) => v,
         Err(e) => return println!("{e}"),
     };
-
-    // dbg!(value);
+    if debug_value {
+        dbg!(value);
+    }
 }
