@@ -1,5 +1,4 @@
 use crate::desugar::{Expr::*, Statement};
-#[allow(unused_imports)]
 use crate::{
     parser::{parse_program, Builtin::*, Program},
     tokenizer::{
@@ -8,7 +7,6 @@ use crate::{
     },
 };
 
-#[allow(dead_code)]
 fn tokens_from_values(values: Vec<TokenValue>) -> Vec<Token> {
     values
         .into_iter()
@@ -16,7 +14,6 @@ fn tokens_from_values(values: Vec<TokenValue>) -> Vec<Token> {
         .collect::<Vec<Token>>()
 }
 
-#[allow(dead_code)]
 fn parse_success(values: Vec<TokenValue>, expected: Program) -> bool {
     let tokens = tokens_from_values(values);
     match parse_program(tokens.as_slice()) {
@@ -25,8 +22,7 @@ fn parse_success(values: Vec<TokenValue>, expected: Program) -> bool {
     }
 }
 
-#[allow(dead_code)]
-fn parse_mismatch(values: Vec<TokenValue>, expected: Program) -> bool {
+fn _parse_mismatch(values: Vec<TokenValue>, expected: Program) -> bool {
     let tokens = tokens_from_values(values);
     match parse_program(tokens.as_slice()) {
         Ok(program) => program.ne(&expected),
@@ -34,7 +30,6 @@ fn parse_mismatch(values: Vec<TokenValue>, expected: Program) -> bool {
     }
 }
 
-#[allow(dead_code)]
 fn parse_error(values: Vec<TokenValue>) -> bool {
     let tokens = tokens_from_values(values);
     match parse_program(tokens.as_slice()) {
