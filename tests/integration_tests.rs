@@ -254,3 +254,27 @@ fn nested_while_with_break() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn continue_statement() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("continue"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("9 7 5 3 1"));
+
+    Ok(())
+}
+
+#[test]
+fn while_with_continue_and_break() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("while_with_continue_and_break"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("9 7 5"));
+
+    Ok(())
+}

@@ -24,6 +24,7 @@ enum FlowControl {
     Return,
     Normal,
     Break,
+    Continue,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -85,6 +86,13 @@ fn interp_statements<'a>(
                 FlowControl::Break => {
                     if is_loop {
                         return Ok((new_env, Value::Void, FlowControl::Break));
+                    } else {
+                        return Err(RuntimeError(BreakNotInLoop));
+                    }
+                }
+                FlowControl::Continue => {
+                    if is_loop {
+                        return Ok((new_env, Value::Void, FlowControl::Continue));
                     } else {
                         return Err(RuntimeError(BreakNotInLoop));
                     }
@@ -193,8 +201,9 @@ fn interp_statement<'a>(
                             FlowControl::Return => {
                                 break (env.clone(), body_value, body_return_flag)
                             }
-                            FlowControl::Normal => (),
                             FlowControl::Break => break (env, Value::Void, FlowControl::Normal),
+                            FlowControl::Normal => (),
+                            FlowControl::Continue => (),
                         };
                         env = updated_env;
                     }
@@ -204,6 +213,7 @@ fn interp_statement<'a>(
             });
         }
         Statement::Break => Ok((env, Value::Void, FlowControl::Break)),
+        Statement::Continue => Ok((env, Value::Void, FlowControl::Continue)),
     }
 }
 
