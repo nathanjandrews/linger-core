@@ -20,6 +20,7 @@ pub enum Statement<'a> {
     If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
     While(Expr<'a>, Statements<'a>),
     Return(Option<Expr<'a>>),
+    Break,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -85,6 +86,7 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
             desugar_expression(sugared_while_cond),
             desugar_statements(sugared_while_body),
         ),
+        SugaredStatement::Break => Statement::Break,
     }
 }
 

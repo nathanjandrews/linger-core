@@ -24,7 +24,7 @@ Nothing so far, let's keep it that way.
 - [x] lambda expressions
 - [ ] use statements
 - [ ] while loops
-  - [ ] break keyword
+  - [x] break keyword
   - [ ] continue keyword
 - [ ] for loops
 - [ ] bitwise operations

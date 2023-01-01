@@ -38,6 +38,7 @@ pub enum SugaredStatement<'a> {
         Option<SugaredStatements<'a>>,
     ),
     While(SugaredExpr<'a>, SugaredStatements<'a>),
+    Break,
     Return(Option<SugaredExpr<'a>>),
 }
 
@@ -335,6 +336,10 @@ fn parse_statement<'a>(
 
             let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(SugaredStatement::Return(Some(return_expr))), tokens))
+        }
+        [T(ID("break"), ..), tokens @ ..] => {
+            let tokens = consume_token(SEMICOLON, tokens)?;
+            Ok((Some(SugaredStatement::Break), tokens))
         }
         tokens => match parse_expr(tokens) {
             Ok((expr, tokens)) => {

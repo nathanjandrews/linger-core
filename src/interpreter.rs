@@ -23,6 +23,7 @@ pub enum Value<'a> {
 enum FlowControl {
     Return,
     Normal,
+    Break,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -57,7 +58,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
         );
     }
 
-    return match interp_statements(initial_env, p.main) {
+    return match interp_statements(initial_env, p.main, false) {
         Ok((_, value, _)) => Ok(value),
         Err(e) => Err(e),
     };
@@ -66,6 +67,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
 fn interp_statements<'a>(
     env: Environment<'a>,
     statements: Statements<'a>,
+    is_loop: bool,
 ) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
@@ -74,10 +76,19 @@ fn interp_statements<'a>(
             Statement::Return(_) => true,
             _ => false,
         };
-        let (new_env, value) = match interp_statement(env.clone(), statement) {
+        let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
             Ok((new_env, value, return_flag)) => match return_flag {
                 FlowControl::Return => return Ok((new_env, value, return_flag)),
                 FlowControl::Normal => (new_env, value),
+
+                // if the statements are part of a loop, then break out of the nearest loop
+                FlowControl::Break => {
+                    if is_loop {
+                        return Ok((new_env, Value::Void, FlowControl::Break));
+                    } else {
+                        return Err(RuntimeError(BreakNotInLoop));
+                    }
+                }
             },
             Err(e) => return Err(e),
         };
@@ -94,6 +105,7 @@ fn interp_statements<'a>(
 fn interp_statement<'a>(
     mut env: Environment<'a>,
     statement: Statement<'a>,
+    inside_loop: bool,
 ) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     match statement {
         Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
@@ -125,7 +137,7 @@ fn interp_statement<'a>(
                 Value::Bool(b) => {
                     if b {
                         let (then_env, then_value, return_flag) =
-                            interp_statements(env.clone(), then_statements)?;
+                            interp_statements(env.clone(), then_statements, inside_loop)?;
 
                         for (var_name, (_, value_story)) in env.clone() {
                             match then_env.get(&var_name) {
@@ -140,7 +152,7 @@ fn interp_statement<'a>(
                         match else_statements_option {
                             Some(else_statements) => {
                                 let (else_env, else_value, return_flag) =
-                                    interp_statements(env.clone(), else_statements)?;
+                                    interp_statements(env.clone(), else_statements, inside_loop)?;
 
                                 for (var_name, (_, value_story)) in env.clone() {
                                     match else_env.get(&var_name) {
@@ -176,12 +188,13 @@ fn interp_statement<'a>(
                 match condition_value {
                     Value::Bool(true) => {
                         let (updated_env, body_value, body_return_flag) =
-                            interp_statements(env.clone(), body.clone())?;
+                            interp_statements(env.clone(), body.clone(), true)?;
                         match body_return_flag {
                             FlowControl::Return => {
                                 break (env.clone(), body_value, body_return_flag)
                             }
                             FlowControl::Normal => (),
+                            FlowControl::Break => break (env, Value::Void, FlowControl::Normal),
                         };
                         env = updated_env;
                     }
@@ -190,6 +203,7 @@ fn interp_statement<'a>(
                 }
             });
         }
+        Statement::Break => Ok((env, Value::Void, FlowControl::Break)),
     }
 }
 
@@ -395,7 +409,7 @@ fn interp_expression<'a>(
                 body_env.insert(param.to_string(), (value, ValueStory::Initialization));
             }
 
-            return match interp_statements(body_env.clone(), body.to_vec()) {
+            return match interp_statements(body_env.clone(), body.to_vec(), false) {
                 Ok((_, value, _)) => Ok(value),
                 Err(e) => Err(e),
             };

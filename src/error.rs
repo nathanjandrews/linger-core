@@ -35,6 +35,7 @@ pub enum RuntimeError<'a> {
     BadCondition(Value<'a>),
     BinaryAsUnary(Operator),
     UnaryAsBinary(Operator),
+    BreakNotInLoop,
 }
 
 #[derive(Debug, Clone)]
@@ -107,6 +108,7 @@ impl fmt::Display for LingerError<'_> {
                 RuntimeError::UnaryAsBinary(op) => {
                     write!(f, "unary operator \"{}\" used as binary operator", op)
                 }
+                RuntimeError::BreakNotInLoop => write!(f, "tried to break while not within a loop"),
             },
         }
     }
