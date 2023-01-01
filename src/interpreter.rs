@@ -20,9 +20,9 @@ pub enum Value<'a> {
     Void,
 }
 
-enum ReturnFlag {
+enum FlowControl {
     Return,
-    Continue,
+    Normal,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -66,7 +66,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
 fn interp_statements<'a>(
     env: Environment<'a>,
     statements: Statements<'a>,
-) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -76,8 +76,8 @@ fn interp_statements<'a>(
         };
         let (new_env, value) = match interp_statement(env.clone(), statement) {
             Ok((new_env, value, return_flag)) => match return_flag {
-                ReturnFlag::Return => return Ok((new_env, value, return_flag)),
-                ReturnFlag::Continue => (new_env, value),
+                FlowControl::Return => return Ok((new_env, value, return_flag)),
+                FlowControl::Normal => (new_env, value),
             },
             Err(e) => return Err(e),
         };
@@ -85,26 +85,26 @@ fn interp_statements<'a>(
         env = new_env;
         return_value = value;
         if is_return_statement {
-            return Ok((env, return_value, ReturnFlag::Return));
+            return Ok((env, return_value, FlowControl::Return));
         }
     }
-    return Ok((env, return_value, ReturnFlag::Continue));
+    return Ok((env, return_value, FlowControl::Normal));
 }
 
 fn interp_statement<'a>(
     mut env: Environment<'a>,
     statement: Statement<'a>,
-) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     match statement {
         Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
-            Ok(value) => Ok((env.clone(), value, ReturnFlag::Continue)),
+            Ok(value) => Ok((env.clone(), value, FlowControl::Normal)),
             Err(e) => Err(e),
         },
         Statement::Let(id, let_expr) => match interp_expression(env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
                 env.insert(id.to_string(), (value, ValueStory::Initialization));
-                Ok((env, Value::Void, ReturnFlag::Continue))
+                Ok((env, Value::Void, FlowControl::Normal))
             }
             Err(e) => Err(e),
         },
@@ -115,7 +115,7 @@ fn interp_statement<'a>(
                     id.to_string(),
                     (interp_expression(env, new_expr)?, ValueStory::Assignment),
                 );
-                Ok((updated_env, Value::Void, ReturnFlag::Continue))
+                Ok((updated_env, Value::Void, FlowControl::Normal))
             }
             None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
@@ -155,7 +155,7 @@ fn interp_statement<'a>(
                                 }
                                 Ok((env, else_value, return_flag))
                             }
-                            None => Ok((env.clone(), Value::Void, ReturnFlag::Continue)),
+                            None => Ok((env.clone(), Value::Void, FlowControl::Normal)),
                         }
                     }
                 }
@@ -164,10 +164,10 @@ fn interp_statement<'a>(
         }
         Statement::Return(expr_option) => match expr_option {
             Some(expr) => match interp_expression(env.clone(), expr) {
-                Ok(value) => Ok((env, value, ReturnFlag::Return)),
+                Ok(value) => Ok((env, value, FlowControl::Return)),
                 Err(e) => return Err(e),
             },
-            None => Ok((env, Value::Void, ReturnFlag::Return)),
+            None => Ok((env, Value::Void, FlowControl::Return)),
         },
         Statement::While(condition, body) => {
             let mut env = env.clone();
@@ -178,14 +178,14 @@ fn interp_statement<'a>(
                         let (updated_env, body_value, body_return_flag) =
                             interp_statements(env.clone(), body.clone())?;
                         match body_return_flag {
-                            ReturnFlag::Return => {
+                            FlowControl::Return => {
                                 break (env.clone(), body_value, body_return_flag)
                             }
-                            ReturnFlag::Continue => (),
+                            FlowControl::Normal => (),
                         };
                         env = updated_env;
                     }
-                    Value::Bool(false) => break (env, Value::Void, ReturnFlag::Continue),
+                    Value::Bool(false) => break (env, Value::Void, FlowControl::Normal),
                     _ => return Err(RuntimeError(BadArg(condition_value))),
                 }
             });
