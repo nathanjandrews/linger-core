@@ -169,6 +169,27 @@ fn interp_statement<'a>(
             },
             None => Ok((env, Value::Void, ReturnFlag::Return)),
         },
+        Statement::While(condition, body) => {
+            let mut env = env.clone();
+            return Ok(loop {
+                let condition_value = interp_expression(env.clone(), condition.clone())?;
+                match condition_value {
+                    Value::Bool(true) => {
+                        let (updated_env, body_value, body_return_flag) =
+                            interp_statements(env.clone(), body.clone())?;
+                        match body_return_flag {
+                            ReturnFlag::Return => {
+                                break (env.clone(), body_value, body_return_flag)
+                            }
+                            ReturnFlag::Continue => (),
+                        };
+                        env = updated_env;
+                    }
+                    Value::Bool(false) => break (env, Value::Void, ReturnFlag::Continue),
+                    _ => return Err(RuntimeError(BadArg(condition_value))),
+                }
+            });
+        }
     }
 }
 

@@ -18,6 +18,7 @@ pub enum Statement<'a> {
     Let(&'a str, Expr<'a>),
     Assign(&'a str, Expr<'a>),
     If(Expr<'a>, Statements<'a>, Option<Statements<'a>>),
+    While(Expr<'a>, Statements<'a>),
     Return(Option<Expr<'a>>),
 }
 
@@ -80,6 +81,10 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
                 None => None,
             })
         }
+        SugaredStatement::While(sugared_while_cond, sugared_while_body) => Statement::While(
+            desugar_expression(sugared_while_cond),
+            desugar_statements(sugared_while_body),
+        ),
     }
 }
 

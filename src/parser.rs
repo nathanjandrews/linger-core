@@ -37,6 +37,7 @@ pub enum SugaredStatement<'a> {
         Vec<(SugaredExpr<'a>, SugaredStatements<'a>)>,
         Option<SugaredStatements<'a>>,
     ),
+    While(SugaredExpr<'a>, SugaredStatements<'a>),
     Return(Option<SugaredExpr<'a>>),
 }
 
@@ -307,6 +308,22 @@ fn parse_statement<'a>(
                     else_ifs,
                     else_statements_option,
                 )),
+                tokens,
+            ))
+        }
+        [T(ID("while"), ..), T(LPAREN, ..), tokens @ ..] => {
+            let (while_cond_expr, tokens) = parse_expr(tokens)?;
+            let (while_body, tokens) = match tokens {
+                [T(RPAREN, ..), T(LBRACKET, ..), tokens @ ..] => parse_statements(tokens)?,
+                [T(RPAREN, ..), token, ..] => {
+                    return Err(ParseError(Expected(LBRACKET, token.clone())))
+                }
+                [token, ..] => return Err(ParseError(Expected(RPAREN, token.clone()))),
+                _ => return Err(ParseError(ExpectedSomething)),
+            };
+
+            Ok((
+                Some(SugaredStatement::While(while_cond_expr, while_body)),
                 tokens,
             ))
         }

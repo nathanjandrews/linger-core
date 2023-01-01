@@ -24,6 +24,7 @@ statement :=
   | RETURN SEMICOLON
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements>
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements> ELSE LBRACKET <statements> RBRACKET
+  | WHILE LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
   | <expr> SEMICOLON
 
 else-if-statements :=

@@ -218,3 +218,15 @@ fn else_if_no_else_all_false() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn while_statement() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("while"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("5 4 3 2 1"));
+
+    Ok(())
+}
