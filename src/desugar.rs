@@ -41,17 +41,23 @@ pub fn desugar_statements(sugared_statements: SugaredStatements) -> Statements {
     sugared_statements
         .iter()
         .map(|s| desugar_statement(s.clone()))
-        .collect()
+        .fold(vec![], |mut acc, mut cur_desugared_statements| {
+            acc.append(&mut cur_desugared_statements);
+            acc
+        })
 }
 
-pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
+// this function now needs to return a vector of statements
+pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statements {
     match sugared_statement {
-        SugaredStatement::Expr(sugared_expr) => Statement::Expr(desugar_expression(sugared_expr)),
+        SugaredStatement::Expr(sugared_expr) => {
+            vec![Statement::Expr(desugar_expression(sugared_expr))]
+        }
         SugaredStatement::Let(name, sugared_expr) => {
-            Statement::Let(name, desugar_expression(sugared_expr))
+            vec![Statement::Let(name, desugar_expression(sugared_expr))]
         }
         SugaredStatement::Assign(name, sugared_expr) => {
-            Statement::Assign(name, desugar_expression(sugared_expr))
+            vec![Statement::Assign(name, desugar_expression(sugared_expr))]
         }
         SugaredStatement::If(if_cond, then_statements, else_ifs, else_option) => {
             let desugared_else_option = match else_option {
@@ -70,25 +76,43 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
                 },
             );
 
-            return Statement::If(
+            return vec![Statement::If(
                 desugar_expression(if_cond),
                 desugar_statements(then_statements),
                 nested_if_statement,
-            );
+            )];
         }
 
         SugaredStatement::Return(sugared_expr_option) => {
-            Statement::Return(match sugared_expr_option {
+            vec![Statement::Return(match sugared_expr_option {
                 Some(sugared_expr) => Some(desugar_expression(sugared_expr)),
                 None => None,
-            })
+            })]
         }
-        SugaredStatement::While(sugared_while_cond, sugared_while_body) => Statement::While(
+        SugaredStatement::While(sugared_while_cond, sugared_while_body) => vec![Statement::While(
             desugar_expression(sugared_while_cond),
             desugar_statements(sugared_while_body),
-        ),
-        SugaredStatement::Break => Statement::Break,
-        SugaredStatement::Continue => Statement::Continue,
+        )],
+        SugaredStatement::For(
+            sugared_var_statement,
+            sugared_stop_cond,
+            sugared_reassign_statement,
+            sugared_body,
+        ) => {
+            let mut desugared_var_statement = desugar_statement(*sugared_var_statement);
+            let desugared_stop_cond = desugar_expression(sugared_stop_cond);
+            let mut desugared_reassign_statement = desugar_statement(*sugared_reassign_statement);
+            let mut desugared_body = desugar_statements(sugared_body);
+
+            desugared_body.append(&mut desugared_reassign_statement);
+
+            let desugared_while: Statement = Statement::While(desugared_stop_cond, desugared_body);
+
+            desugared_var_statement.append(&mut vec![desugared_while]);
+            return desugared_var_statement;
+        }
+        SugaredStatement::Break => vec![Statement::Break],
+        SugaredStatement::Continue => vec![Statement::Continue],
     }
 }
 

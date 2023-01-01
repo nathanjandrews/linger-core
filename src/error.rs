@@ -22,6 +22,7 @@ pub enum ParseError<'a> {
     KeywordAsVar(&'a str),
     KeywordAsProc(&'a str),
     KeywordAsParam(&'a str),
+    ExpectedStatement,
     Custom(String),
 }
 
@@ -73,6 +74,7 @@ impl fmt::Display for LingerError<'_> {
                     write!(f, "keyword \"{}\" used as parameter name", keyword)
                 }
                 ParseError::ExpectedSomething => write!(f, "expected token"),
+                ParseError::ExpectedStatement => write!(f, "expected statement"),
             },
             LingerError::TokenizerError(err) => match err {
                 TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),

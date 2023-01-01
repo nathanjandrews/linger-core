@@ -38,6 +38,12 @@ pub enum SugaredStatement<'a> {
         Option<SugaredStatements<'a>>,
     ),
     While(SugaredExpr<'a>, SugaredStatements<'a>),
+    For(
+        Box<SugaredStatement<'a>>,
+        SugaredExpr<'a>,
+        Box<SugaredStatement<'a>>,
+        SugaredStatements<'a>,
+    ),
     Break,
     Continue,
     Return(Option<SugaredExpr<'a>>),
@@ -328,6 +334,48 @@ fn parse_statement<'a>(
                 Some(SugaredStatement::While(while_cond_expr, while_body)),
                 tokens,
             ))
+        }
+        [T(ID("for"), ..), T(LPAREN, ..), tokens @ ..] => {
+            let (var_statement_option, tokens) = parse_statement(tokens)?;
+            let var_statement = match var_statement_option {
+                Some(statement) => match statement {
+                    s @ (SugaredStatement::Let(_, _) | SugaredStatement::Assign(_, _)) => s,
+                    _ => {
+                        return Err(ParseError(Custom(
+                            "expected variable assignment or initialization".to_string(),
+                        )))
+                    }
+                },
+                None => return Err(ParseError(ExpectedStatement)),
+            };
+            let (stop_cond_expr, tokens) = parse_expr(tokens)?;
+            let tokens = consume_token(SEMICOLON, tokens)?;
+
+            let (reassign_statement_option, tokens) = parse_statement(tokens)?;
+            let reassign_statement = match reassign_statement_option {
+                Some(statement) => match statement {
+                    s @ SugaredStatement::Assign(_, _) => s,
+                    _ => {
+                        return Err(ParseError(Custom(
+                            "expected variable assignment".to_string(),
+                        )))
+                    }
+                },
+                None => return Err(ParseError(ExpectedStatement)),
+            };
+            let tokens = consume_token(RPAREN, tokens)?;
+            let tokens = consume_token(LBRACKET, tokens)?;
+            let (for_statements, tokens) = parse_statements(tokens)?;
+
+            return Ok((
+                Some(SugaredStatement::For(
+                    Box::new(var_statement),
+                    stop_cond_expr,
+                    Box::new(reassign_statement),
+                    for_statements,
+                )),
+                tokens,
+            ));
         }
         [T(ID("return"), ..), T(SEMICOLON, ..), tokens @ ..] => {
             Ok((Some(SugaredStatement::Return(None)), tokens))

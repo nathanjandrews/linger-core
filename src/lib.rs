@@ -10,7 +10,8 @@ mod test;
 pub mod tokenizer;
 
 pub static KEYWORDS: &'static [&str] = &[
-    "if", "else", "proc", "let", "true", "false", "return", "lam", "while", "break", "continue"
+    "if", "else", "proc", "let", "true", "false", "return", "lam", "while", "break", "continue",
+    "for",
 ];
 
 pub fn interp<'a>(s: String) -> Result<String, String> {
