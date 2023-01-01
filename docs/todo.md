@@ -23,10 +23,10 @@ Nothing so far, let's keep it that way.
       a variable)
 - [x] lambda expressions
 - [ ] use statements
-- [ ] while loops
+- [x] while loops
   - [x] break keyword
-  - [ ] continue keyword
-- [ ] for loops
+  - [x] continue keyword
+- [ ] for-loops
 - [ ] bitwise operations
 - [ ] more robust builtin print function with formatting
 - [x] escape sequences
@@ -38,7 +38,7 @@ Nothing so far, let's keep it that way.
 
 ## Language Optimizations
 
-- [ ] implement for loops as syntactic sugar on top of while loops
+- [ ] implement for-loops as syntactic sugar on top of while loops
 - [ ] immediately return error the moment we parse two main procedures
 
 ## Potential Code Improvements
