@@ -164,6 +164,8 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
     if main_procs.len() == 0 {
         return Err(ParseError(NoMain)); // no main procedure
     } else if main_procs.len() > 1 {
+        // this case should no longer be necessary since the parser checks that there is only one main function
+        // maybe turn main into option
         return Err(ParseError(MultipleMain)); // more than one main procedure
     }
 
@@ -183,6 +185,16 @@ fn parse_procs<'a>(
     match proc_option {
         Some(proc) => {
             let (mut rest_procs, tokens) = parse_procs(tokens)?;
+
+            if rest_procs
+                .clone()
+                .iter()
+                .find(|p| p.name == proc.name)
+                .is_some()
+            {
+                return Err(ParseError(MultipleSameNamedProcs(proc.name.to_string())));
+            }
+
             let mut vec = vec![proc];
             vec.append(&mut rest_procs);
             return Ok((vec, tokens));
@@ -236,7 +248,9 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
     }
 }
 
-fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<SugaredStatement<'a>>, &[T<'a>]), LingerError> {
+fn parse_statements<'a>(
+    tokens: &'a [T<'a>],
+) -> Result<(Vec<SugaredStatement<'a>>, &[T<'a>]), LingerError> {
     let (statement_option, tokens) = parse_statement(tokens)?;
 
     let statement = if statement_option.is_some() {

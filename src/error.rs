@@ -16,6 +16,7 @@ pub enum TokenizerError {
 pub enum ParseError<'a> {
     NoMain,
     MultipleMain,
+    MultipleSameNamedProcs(String),
     UnexpectedToken(Token<'a>),
     Expected(TokenValue<'a>, Token<'a>),
     ExpectedSomething,
@@ -77,6 +78,9 @@ impl fmt::Display for LingerError<'_> {
                 ParseError::ExpectedSomething => write!(f, "expected token"),
                 ParseError::ExpectedStatement => write!(f, "expected statement"),
                 ParseError::ExpectedBlock => write!(f, "expected block"),
+                ParseError::MultipleSameNamedProcs(proc_name) => {
+                    write!(f, "multiple procedures with name \"{proc_name}\"")
+                }
             },
             LingerError::TokenizerError(err) => match err {
                 TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),

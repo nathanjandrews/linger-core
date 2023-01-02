@@ -36,9 +36,9 @@ fn multiple_mains() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("multiple_mains"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("multiple main procedures found"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "multiple procedures with name \"main\"",
+    ));
 
     Ok(())
 }
@@ -63,6 +63,18 @@ fn invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
     cmd.assert().success().stdout(
         predicate::str::contains("invalid escape sequence").and(predicate::str::contains("\\f")),
     );
+
+    Ok(())
+}
+
+#[test]
+fn multiple_same_name_procs() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("multiple_same_name_procs"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "multiple procedures with name \"foo\"",
+    ));
 
     Ok(())
 }
