@@ -25,6 +25,7 @@ statement :=
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements>
   | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements> ELSE LBRACKET <statements> RBRACKET
   | WHILE LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
+  | FOR LPAREN <statement> <expr> SEMICOLON <statement> RPAREN LBRACKET <statements> RBRACKET
   | <expr> SEMICOLON
   | BREAK
   | CONTINUE
