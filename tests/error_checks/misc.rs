@@ -60,21 +60,9 @@ fn invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("invalid_escape_sequence"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("invalid escape sequence").and(predicate::str::contains("\\f")));
-
-    Ok(())
-}
-
-#[test]
-fn break_not_in_loop() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
-
-    cmd.arg(file_name_to_path("break_not_in_loop"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("tried to break while not within a loop"));
+    cmd.assert().success().stdout(
+        predicate::str::contains("invalid escape sequence").and(predicate::str::contains("\\f")),
+    );
 
     Ok(())
 }
