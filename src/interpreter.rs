@@ -20,8 +20,10 @@ pub enum Value<'a> {
     Void,
 }
 
-enum ReturnFlag {
+enum FlowControl {
     Return,
+    Normal,
+    Break,
     Continue,
 }
 
@@ -57,7 +59,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
         );
     }
 
-    return match interp_statements(initial_env, p.main) {
+    return match interp_statements(initial_env, p.main, false) {
         Ok((_, value, _)) => Ok(value),
         Err(e) => Err(e),
     };
@@ -66,7 +68,8 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
 fn interp_statements<'a>(
     env: Environment<'a>,
     statements: Statements<'a>,
-) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
+    is_loop: bool,
+) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -74,10 +77,26 @@ fn interp_statements<'a>(
             Statement::Return(_) => true,
             _ => false,
         };
-        let (new_env, value) = match interp_statement(env.clone(), statement) {
+        let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
             Ok((new_env, value, return_flag)) => match return_flag {
-                ReturnFlag::Return => return Ok((new_env, value, return_flag)),
-                ReturnFlag::Continue => (new_env, value),
+                FlowControl::Return => return Ok((new_env, value, return_flag)),
+                FlowControl::Normal => (new_env, value),
+
+                // if the statements are part of a loop, then break out of the nearest loop
+                FlowControl::Break => {
+                    if is_loop {
+                        return Ok((new_env, Value::Void, FlowControl::Break));
+                    } else {
+                        return Err(RuntimeError(BreakNotInLoop));
+                    }
+                }
+                FlowControl::Continue => {
+                    if is_loop {
+                        return Ok((new_env, Value::Void, FlowControl::Continue));
+                    } else {
+                        return Err(RuntimeError(BreakNotInLoop));
+                    }
+                }
             },
             Err(e) => return Err(e),
         };
@@ -85,26 +104,40 @@ fn interp_statements<'a>(
         env = new_env;
         return_value = value;
         if is_return_statement {
-            return Ok((env, return_value, ReturnFlag::Return));
+            return Ok((env, return_value, FlowControl::Return));
         }
     }
-    return Ok((env, return_value, ReturnFlag::Continue));
+    return Ok((env, return_value, FlowControl::Normal));
 }
 
 fn interp_statement<'a>(
     mut env: Environment<'a>,
     statement: Statement<'a>,
-) -> Result<(Environment<'a>, Value<'a>, ReturnFlag), LingerError<'a>> {
+    inside_loop: bool,
+) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     match statement {
+        Statement::Block(statements) => {
+            let (updated_env, value, control_flow) =
+                interp_statements(env.clone(), statements, inside_loop)?;
+            for (var_name, (_, value_story)) in env.clone() {
+                match updated_env.get(&var_name) {
+                    Some((reassigned_value, ValueStory::Assignment)) => {
+                        env.insert(var_name, (reassigned_value.clone(), value_story));
+                    }
+                    _ => (),
+                };
+            }
+            Ok((env, value, control_flow))
+        }
         Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
-            Ok(value) => Ok((env.clone(), value, ReturnFlag::Continue)),
+            Ok(value) => Ok((env.clone(), value, FlowControl::Normal)),
             Err(e) => Err(e),
         },
         Statement::Let(id, let_expr) => match interp_expression(env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
                 env.insert(id.to_string(), (value, ValueStory::Initialization));
-                Ok((env, Value::Void, ReturnFlag::Continue))
+                Ok((env, Value::Void, FlowControl::Normal))
             }
             Err(e) => Err(e),
         },
@@ -115,47 +148,22 @@ fn interp_statement<'a>(
                     id.to_string(),
                     (interp_expression(env, new_expr)?, ValueStory::Assignment),
                 );
-                Ok((updated_env, Value::Void, ReturnFlag::Continue))
+                Ok((updated_env, Value::Void, FlowControl::Normal))
             }
             None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
-        Statement::If(cond_expr, then_statements, else_statements_option) => {
+        Statement::If(cond_expr, then_block, else_statements_option) => {
             let cond_value = interp_expression(env.clone(), cond_expr)?;
             match cond_value {
                 Value::Bool(b) => {
                     if b {
-                        let (then_env, then_value, return_flag) =
-                            interp_statements(env.clone(), then_statements)?;
-
-                        for (var_name, (_, value_story)) in env.clone() {
-                            match then_env.get(&var_name) {
-                                Some((reassigned_value, ValueStory::Assignment)) => {
-                                    env.insert(var_name, (reassigned_value.clone(), value_story));
-                                }
-                                _ => (),
-                            };
-                        }
-                        Ok((env, then_value, return_flag))
+                        interp_statement(env.clone(), *then_block, inside_loop)
                     } else {
                         match else_statements_option {
-                            Some(else_statements) => {
-                                let (else_env, else_value, return_flag) =
-                                    interp_statements(env.clone(), else_statements)?;
-
-                                for (var_name, (_, value_story)) in env.clone() {
-                                    match else_env.get(&var_name) {
-                                        Some((reassigned_value, ValueStory::Assignment)) => {
-                                            env.insert(
-                                                var_name,
-                                                (reassigned_value.clone(), value_story),
-                                            );
-                                        }
-                                        _ => (),
-                                    };
-                                }
-                                Ok((env, else_value, return_flag))
+                            Some(else_block) => {
+                                interp_statement(env.clone(), *else_block, inside_loop)
                             }
-                            None => Ok((env.clone(), Value::Void, ReturnFlag::Continue)),
+                            None => Ok((env.clone(), Value::Void, FlowControl::Normal)),
                         }
                     }
                 }
@@ -164,11 +172,36 @@ fn interp_statement<'a>(
         }
         Statement::Return(expr_option) => match expr_option {
             Some(expr) => match interp_expression(env.clone(), expr) {
-                Ok(value) => Ok((env, value, ReturnFlag::Return)),
+                Ok(value) => Ok((env, value, FlowControl::Return)),
                 Err(e) => return Err(e),
             },
-            None => Ok((env, Value::Void, ReturnFlag::Return)),
+            None => Ok((env, Value::Void, FlowControl::Return)),
         },
+        Statement::While(condition, while_block) => {
+            let mut env = env.clone();
+            return Ok(loop {
+                let condition_value = interp_expression(env.clone(), condition.clone())?;
+                match condition_value {
+                    Value::Bool(true) => {
+                        let (updated_env, body_value, body_return_flag) =
+                            interp_statement(env.clone(), *while_block.clone(), true)?;
+                        match body_return_flag {
+                            FlowControl::Return => {
+                                break (env.clone(), body_value, body_return_flag)
+                            }
+                            FlowControl::Break => break (env, Value::Void, FlowControl::Normal),
+                            FlowControl::Normal => (),
+                            FlowControl::Continue => (),
+                        };
+                        env = updated_env;
+                    }
+                    Value::Bool(false) => break (env, Value::Void, FlowControl::Normal),
+                    _ => return Err(RuntimeError(BadArg(condition_value))),
+                }
+            });
+        }
+        Statement::Break => Ok((env, Value::Void, FlowControl::Break)),
+        Statement::Continue => Ok((env, Value::Void, FlowControl::Continue)),
     }
 }
 
@@ -374,7 +407,7 @@ fn interp_expression<'a>(
                 body_env.insert(param.to_string(), (value, ValueStory::Initialization));
             }
 
-            return match interp_statements(body_env.clone(), body.to_vec()) {
+            return match interp_statements(body_env.clone(), body.to_vec(), false) {
                 Ok((_, value, _)) => Ok(value),
                 Err(e) => Err(e),
             };

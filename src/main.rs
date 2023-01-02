@@ -29,6 +29,7 @@ fn main() {
     };
     if debug_tokens {
         dbg!(&tokens);
+        return
     }
 
     let program = match parse_program(tokens.as_slice()) {
@@ -37,6 +38,7 @@ fn main() {
     };
     if debug_program {
         dbg!(&program);
+        return
     }
 
     let value = match interp_program(program) {
@@ -45,5 +47,6 @@ fn main() {
     };
     if debug_value {
         dbg!(value);
+        return
     }
 }

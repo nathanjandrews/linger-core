@@ -1,0 +1,12 @@
+proc main() {
+  let num = 5;
+  while (num > 0) {
+    print(num);
+    print(" ");
+    if (num == 3) {
+      break;
+    }
+    num = num - 1;
+  }
+  print(num);
+}
