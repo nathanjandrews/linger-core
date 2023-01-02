@@ -84,6 +84,17 @@ fn consume_token<'a>(
     }
 }
 
+fn conditionally_consume_semicolon<'a>(
+    tokens: &'a [T<'a>],
+    should_consume: bool,
+) -> Result<&'a [T<'a>], LingerError<'a>> {
+    if should_consume {
+        return consume_token(SEMICOLON, tokens);
+    } else {
+        return Ok(tokens);
+    }
+}
+
 fn match_operator<'a>(
     operators: &[Operator],
     tokens: &'a [T<'a>],
@@ -251,7 +262,7 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
 fn parse_statements<'a>(
     tokens: &'a [T<'a>],
 ) -> Result<(Vec<SugaredStatement<'a>>, &[T<'a>]), LingerError> {
-    let (statement_option, tokens) = parse_statement(tokens)?;
+    let (statement_option, tokens) = parse_statement(tokens, true)?;
 
     let statement = if statement_option.is_some() {
         statement_option.unwrap()
@@ -267,6 +278,7 @@ fn parse_statements<'a>(
 
 fn parse_statement<'a>(
     tokens: &'a [T<'a>],
+    parse_semicolon: bool,
 ) -> Result<(Option<SugaredStatement>, &[T<'a>]), LingerError> {
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
@@ -277,7 +289,8 @@ fn parse_statement<'a>(
 
             let (var_expr, tokens) = parse_expr(tokens)?;
 
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
+
             Ok((Some(SugaredStatement::Let(&var_name, var_expr)), tokens))
         }
         [T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
@@ -287,13 +300,14 @@ fn parse_statement<'a>(
 
             let (var_expr, tokens) = parse_expr(tokens)?;
 
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
+
             Ok((Some(SugaredStatement::Assign(&var_name, var_expr)), tokens))
         }
         [T(ID("if"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = consume_token(RPAREN, tokens)?;
-            let (then_block_option, mut tokens) = parse_statement(tokens)?;
+            let (then_block_option, mut tokens) = parse_statement(tokens, true)?;
             let then_block = ensure_block(then_block_option)?;
 
             let mut else_ifs = vec![];
@@ -302,7 +316,7 @@ fn parse_statement<'a>(
                     [T(ID("else"), ..), T(ID("if"), ..), T(LPAREN, ..), rest @ ..] => {
                         let (else_if_cond, rest) = parse_expr(rest)?;
                         let rest = consume_token(RPAREN, rest)?;
-                        let (else_if_block_option, rest) = parse_statement(rest)?;
+                        let (else_if_block_option, rest) = parse_statement(rest, true)?;
                         let else_if_block = ensure_block(else_if_block_option)?;
                         else_ifs.push((else_if_cond, else_if_block));
                         tokens = rest;
@@ -313,7 +327,7 @@ fn parse_statement<'a>(
 
             let (else_block_option, tokens) = match tokens {
                 [T(ID("else"), ..), tokens @ ..] => {
-                    let (else_block, tokens) = parse_statement(tokens)?;
+                    let (else_block, tokens) = parse_statement(tokens, true)?;
                     let else_block = ensure_block(else_block)?;
                     (Some(Box::new(else_block)), tokens)
                 }
@@ -333,7 +347,7 @@ fn parse_statement<'a>(
         [T(ID("while"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (while_cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = consume_token(RPAREN, tokens)?;
-            let (while_block_option, tokens) = parse_statement(tokens)?;
+            let (while_block_option, tokens) = parse_statement(tokens, true)?;
             let while_block = ensure_block(while_block_option)?;
 
             Ok((
@@ -345,7 +359,7 @@ fn parse_statement<'a>(
             ))
         }
         [T(ID("for"), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (var_statement_option, tokens) = parse_statement(tokens)?;
+            let (var_statement_option, tokens) = parse_statement(tokens, true)?;
             let var_statement = match var_statement_option {
                 Some(statement) => match statement {
                     s @ (SugaredStatement::Let(_, _) | SugaredStatement::Assign(_, _)) => s,
@@ -358,9 +372,9 @@ fn parse_statement<'a>(
                 None => return Err(ParseError(ExpectedStatement)),
             };
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
 
-            let (reassign_statement_option, tokens) = parse_statement(tokens)?;
+            let (reassign_statement_option, tokens) = parse_statement(tokens, false)?;
             let reassign_statement = match reassign_statement_option {
                 Some(statement) => match statement {
                     s @ SugaredStatement::Assign(_, _) => s,
@@ -374,7 +388,7 @@ fn parse_statement<'a>(
             };
             let tokens = consume_token(RPAREN, tokens)?;
 
-            let (for_block_option, tokens) = parse_statement(tokens)?;
+            let (for_block_option, tokens) = parse_statement(tokens, true)?;
             let for_block_statements = match for_block_option {
                 Some(statement) => match statement {
                     SugaredStatement::Block(statements) => statements,
@@ -398,16 +412,15 @@ fn parse_statement<'a>(
         }
         [T(ID("return"), ..), tokens @ ..] => {
             let (return_expr, tokens) = parse_expr(tokens)?;
-
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Return(Some(return_expr))), tokens))
         }
         [T(ID("break"), ..), tokens @ ..] => {
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Break), tokens))
         }
         [T(ID("continue"), ..), tokens @ ..] => {
-            let tokens = consume_token(SEMICOLON, tokens)?;
+            let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Continue), tokens))
         }
         [T(LBRACKET, ..), tokens @ ..] => {
@@ -416,7 +429,7 @@ fn parse_statement<'a>(
         }
         tokens => match parse_expr(tokens) {
             Ok((expr, tokens)) => {
-                let tokens = consume_token(SEMICOLON, tokens)?;
+                let tokens = conditionally_consume_semicolon(tokens, true)?;
                 Ok((Some(SugaredStatement::Expr(expr)), tokens))
             }
             Err(e) => return Err(e),
