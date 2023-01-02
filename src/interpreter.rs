@@ -78,8 +78,8 @@ fn interp_statements<'a>(
             _ => false,
         };
         let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
-            Ok((new_env, value, return_flag)) => match return_flag {
-                ControlFlow::Return => return Ok((new_env, value, return_flag)),
+            Ok((new_env, value, control_flow)) => match control_flow {
+                ControlFlow::Return => return Ok((new_env, value, control_flow)),
                 ControlFlow::Normal => (new_env, value),
 
                 // if the statements are part of a loop, then break out of the nearest loop
@@ -183,11 +183,11 @@ fn interp_statement<'a>(
                 let condition_value = interp_expression(env.clone(), condition.clone())?;
                 match condition_value {
                     Value::Bool(true) => {
-                        let (updated_env, body_value, body_return_flag) =
+                        let (updated_env, body_value, body_control_flow) =
                             interp_statement(env.clone(), *while_block.clone(), true)?;
-                        match body_return_flag {
+                        match body_control_flow {
                             ControlFlow::Return => {
-                                break (env.clone(), body_value, body_return_flag)
+                                break (env.clone(), body_value, body_control_flow)
                             }
                             ControlFlow::Break => break (env, Value::Void, ControlFlow::Normal),
                             ControlFlow::Normal => (),
