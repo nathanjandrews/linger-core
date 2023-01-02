@@ -31,6 +31,7 @@ Nothing so far, let's keep it that way.
 - [ ] more robust builtin print function with formatting
 - [x] escape sequences
 - [ ] decimal numbers
+- [ ] string interpolation
 - [x] closures (static-scope)
 
 ## Bugs
