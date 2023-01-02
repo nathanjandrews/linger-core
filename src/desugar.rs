@@ -113,19 +113,19 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
             sugared_var_statement,
             sugared_stop_cond,
             sugared_reassign_statement,
-            sugared_for_block,
+            sugared_for_block_statements,
         ) => {
             let desugared_var_statement = desugar_statement(*sugared_var_statement);
             let desugared_stop_cond = desugar_expression(sugared_stop_cond);
             let desugared_reassign_statement = desugar_statement(*sugared_reassign_statement);
-            let mut while_block_statements = match desugar_statement(*sugared_for_block) {
-                Statement::Block(statements) => statements,
-                _ => unreachable!(), // the parser ensures that the sugared_for_block is a Block statement
-            };
+            let mut while_block_statements = desugar_statements(sugared_for_block_statements);
 
             while_block_statements.append(&mut vec![desugared_reassign_statement]);
 
-            let while_statement = Statement::While(desugared_stop_cond, Box::new(Statement::Block(while_block_statements)));
+            let while_statement = Statement::While(
+                desugared_stop_cond,
+                Box::new(Statement::Block(while_block_statements)),
+            );
 
             // desugared_body.append(&mut desugared_reassign_statement);
 
@@ -140,7 +140,7 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
             // while_block.append(&mut vec![desugared_reassign_statement]);
 
             // return Statement::While(desugared_stop_cond, Box::new(Statement::Block(while_block)));
-            return Statement::Block(vec![desugared_var_statement, while_statement])
+            return Statement::Block(vec![desugared_var_statement, while_statement]);
         }
         SugaredStatement::Break => Statement::Break,
         SugaredStatement::Continue => Statement::Continue,

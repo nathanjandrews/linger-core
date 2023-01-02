@@ -43,7 +43,7 @@ pub enum SugaredStatement<'a> {
         Box<SugaredStatement<'a>>,
         SugaredExpr<'a>,
         Box<SugaredStatement<'a>>,
-        Box<SugaredStatement<'a>>,
+        SugaredStatements<'a>,
     ),
     Break,
     Continue,
@@ -283,7 +283,7 @@ fn parse_statement<'a>(
             let tokens = consume_token(RPAREN, tokens)?;
             let (then_block_option, mut tokens) = parse_statement(tokens)?;
             let then_block = ensure_block(then_block_option)?;
-            
+
             let mut else_ifs = vec![];
             loop {
                 match tokens {
@@ -363,14 +363,20 @@ fn parse_statement<'a>(
             let tokens = consume_token(RPAREN, tokens)?;
 
             let (for_block_option, tokens) = parse_statement(tokens)?;
-            let for_block = ensure_block(for_block_option)?;
+            let for_block_statements = match for_block_option {
+                Some(statement) => match statement {
+                    SugaredStatement::Block(statements) => statements,
+                    _ => return Err(ParseError(ExpectedStatement)),
+                },
+                None => return Err(ParseError(ExpectedStatement)),
+            };
 
             return Ok((
                 Some(SugaredStatement::For(
                     Box::new(var_statement),
                     stop_cond_expr,
                     Box::new(reassign_statement),
-                    Box::new(for_block),
+                    for_block_statements,
                 )),
                 tokens,
             ));
