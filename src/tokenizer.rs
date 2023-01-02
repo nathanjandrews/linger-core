@@ -118,81 +118,69 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
     let enumerated_lines = s.split("\n").enumerate();
     let mut tokens: Vec<Token> = vec![];
     for (line_num, line) in enumerated_lines {
-        let mut line_tokens = match tokenize_helper(line, line_num + 1, 1) {
-            Ok(tokens) => tokens,
-            Err(e) => return Err(e),
-        };
-        tokens.append(&mut line_tokens)
+        let mut tokenized_line = tokenize_helper(line, line_num + 1, 1)?;
+        tokens.append(&mut tokenized_line)
     }
     Ok(tokens)
 }
 
 fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, LingerError> {
-    if s.len() <= 0 {
-        Ok(vec![])
-    } else {
-        match get_token(s, line_num, col_num) {
-            Ok((token_option, match_len)) => match token_option {
-                Some(token) => match token {
-                    Token(TokenValue::QUOTE, ..) => {
-                        let s = &s[match_len..];
-                        let mut string_content = String::new();
-                        // tokenizing string literal
-                        let mut character_iter = s.chars().enumerate();
-                        while let Some((index, char)) = character_iter.next() {
-                            if char.eq(&'"') {
-                                // reached the end of the string literal, return it
-                                let str_token = Token(
-                                    TokenValue::STR(string_content.to_string()),
-                                    line_num,
-                                    col_num,
-                                );
-                                let mut v = vec![str_token];
-                                return match tokenize_helper(
-                                    &s[index + 1..],
-                                    line_num,
-                                    // the plus two is to account for the opening and closing quotes
-                                    col_num + string_content.len() + 2,
-                                ) {
-                                    Ok(mut vec) => {
-                                        v.append(&mut vec);
-                                        Ok(v)
-                                    }
-                                    Err(e) => Err(e),
-                                };
-                            } else if char.eq(&'\\') {
-                                match character_iter.nth(0) {
-                                    Some((_, escaped_char)) => match escaped_char {
-                                        'n' => string_content.push('\n'),
-                                        'r' => string_content.push('\r'),
-                                        't' => string_content.push('\t'),
-                                        '\\' => string_content.push('\\'),
-                                        '0' => string_content.push('0'),
-                                        '"' => string_content.push('"'),
-                                        '\'' => string_content.push('\''),
-                                        c => return Err(TokenizerError(InvalidEscapeSequence(c))),
-                                    },
-                                    None => return Err(TokenizerError(UnterminatedStringLiteral)),
-                                }
-                            } else {
-                                string_content.push(char);
-                            }
-                        }
+    if s.len() == 0 {
+        return Ok(vec![]);
+    }
 
-                        return Err(TokenizerError(UnterminatedStringLiteral));
+    let (token_option, token_length) = get_token(s, line_num, col_num)?;
+    let token = match token_option {
+        Some(token) => token,
+        None => return tokenize_helper(&s[token_length..], line_num, col_num + token_length),
+    };
+
+    match token {
+        Token(TokenValue::QUOTE, ..) => {
+            let s = &s[token_length..];
+            let mut string_token_content = String::new();
+            let mut enumerated_character_iter = s.chars().enumerate();
+            while let Some((index, char)) = enumerated_character_iter.next() {
+                match char {
+                    '"' => {
+                        let string_token = Token(
+                            TokenValue::STR(string_token_content.to_string()),
+                            line_num,
+                            col_num,
+                        );
+                        let mut tokens = vec![string_token];
+                        let mut rest_tokens = tokenize_helper(
+                            &s[index + 1..],
+                            line_num,
+                            // the "plus 2" if to account for the opening and closing quotes for the string literal
+                            col_num + string_token_content.len() + 2,
+                        )?;
+                        tokens.append(&mut rest_tokens);
+                        return Ok(tokens);
                     }
-                    _ => match tokenize_helper(&s[match_len..], line_num, col_num + match_len) {
-                        Ok(mut vec) => {
-                            let mut v = vec![token];
-                            v.append(&mut vec);
-                            Ok(v)
-                        }
-                        Err(e) => Err(e),
+                    '\\' => match enumerated_character_iter.nth(0) {
+                        Some((_, escaped_char)) => match escaped_char {
+                            'n' => string_token_content.push('\n'),
+                            'r' => string_token_content.push('\r'),
+                            't' => string_token_content.push('\t'),
+                            '\\' => string_token_content.push('\\'),
+                            '0' => string_token_content.push('0'),
+                            '"' => string_token_content.push('"'),
+                            '\'' => string_token_content.push('\''),
+                            c => return Err(TokenizerError(InvalidEscapeSequence(c))),
+                        },
+                        None => return Err(TokenizerError(UnterminatedStringLiteral)),
                     },
-                },
-                None => tokenize_helper(&s[match_len..], line_num, col_num + match_len),
-            },
-            Err(e) => Err(e),
+                    _ => string_token_content.push(char),
+                }
+            }
+            return Err(TokenizerError(UnterminatedStringLiteral));
+        }
+        token => {
+            let mut tokens = vec![token];
+            let mut rest_tokens = tokenize_helper(&s[token_length..], line_num, col_num + token_length)?;
+            tokens.append(&mut rest_tokens);
+            return Ok(tokens);
         }
     }
 }
