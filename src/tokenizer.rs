@@ -26,7 +26,6 @@ pub enum TokenValue<'a> {
     QUOTE,
     COMMA,
     THIN_ARROW,
-    WHITESPACE,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -84,7 +83,6 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::QUOTE => write!(f, "\""),
             TokenValue::STR(s) => write!(f, "\"{s}\""),
             TokenValue::THIN_ARROW => write!(f, "->"),
-            TokenValue::WHITESPACE => write!(f, "<whitespace>"),
         }
     }
 }
