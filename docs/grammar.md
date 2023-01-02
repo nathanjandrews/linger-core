@@ -1,98 +1,98 @@
 # Linger Grammar
 
 procedure :=
-  | PROC ID LPAREN <params> LBRACKET <statements> RBRACKET
+  | PROC ID LPAREN `<params>` LBRACKET `<statements>` RBRACKET
 
 params :=
   | RPAREN
-  | ID <rest-params>
+  | ID `<rest-params>`
 
 rest-params :=
   | RPAREN
-  | COMMA ID <rest-params>
+  | COMMA ID `<rest-params>`
 
 statements :=
   | epsilon
-  | statement <rest-statements>
+  | statement `<rest-statements>`
 
 rest-statements :=
-  | <statement> <rest-statements>
+  | `<statement>` `<rest-statements>`
 
 statement :=
-  | LET ID ASSIGN <expr> SEMICOLON
-  | RETURN <expr> SEMICOLON
+  | LET ID ASSIGN `<expr>` SEMICOLON
+  | RETURN `<expr>` SEMICOLON
   | RETURN SEMICOLON
-  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements>
-  | IF LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET <else-if-statements> ELSE LBRACKET <statements> RBRACKET
-  | WHILE LPAREN <expr> RPAREN LBRACKET <statements> RBRACKET
-  | FOR LPAREN <statement> <expr> SEMICOLON <statement> RPAREN LBRACKET <statements> RBRACKET
-  | <expr> SEMICOLON
+  | IF LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET `<else-if-statements>`
+  | IF LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET `<else-if-statements>` ELSE LBRACKET `<statements>` RBRACKET
+  | WHILE LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET
+  | FOR LPAREN `<statement>` `<expr>` SEMICOLON `<statement>` RPAREN LBRACKET `<statements>` RBRACKET
+  | `<expr>` SEMICOLON
   | BREAK
   | CONTINUE
 
 else-if-statements :=
   | epsilon
-  | ELSE IF <expr> RPAREN LBRACKET <statements> RBRACKET <rest-else-if-statements>
+  | ELSE IF `<expr>` RPAREN LBRACKET `<statements>` RBRACKET `<rest-else-if-statements>`
 
 rest-else-if-statements :=
   | epsilon
-  | <else-if-statement> <rest-else-if-statements>
+  | `<else-if-statement>` `<rest-else-if-statements>`
 
 expr :=
-  | <logical_or_expr> <logical_or_expr'>
+  | `<logical_or_expr>` `<logical_or_expr'>`
 
 logical_or_expr :=
-  | <logical_and_expr> <logical_or_expr'>
+  | `<logical_and_expr>` `<logical_or_expr'>`
 
 logical_or_expr' :=
   | epsilon
-  | LOGIC_OR <logical_or_expr>
+  | LOGIC_OR `<logical_or_expr>`
 
 logical_and_expr :=
-  | <equality_expr> <logical_and_expr'>
+  | `<equality_expr>` `<logical_and_expr'>`
 
 logical_and_expr' :=
   | epsilon
-  | LOGIC_AND <logical_and_expr>
+  | LOGIC_AND `<logical_and_expr>`
 
 equality_expr :=
-  | <relational_expr> <equality_expr'>
+  | `<relational_expr>` `<equality_expr'>`
 
 equality_expr' :=
   | epsilon
-  | NE <equality_expr>
-  | EQ <equality_expr>
+  | NE `<equality_expr>`
+  | EQ `<equality_expr>`
 
 relational_expr :=
-  | <additive_expr> <relational_expr'>
+  | `<additive_expr>` `<relational_expr'>`
 
 relational_expr' :=
   | epsilon
-  | LT <relational_expr>
-  | GT <relational_expr>
-  | LTE <relational_expr>
-  | GTE <relational_expr>
+  | LT `<relational_expr>`
+  | GT `<relational_expr>`
+  | LTE `<relational_expr>`
+  | GTE `<relational_expr>`
 
 additive_expr :=
-  | <multiplicative_expr> <additive_expr'>
+  | `<multiplicative_expr>` `<additive_expr'>`
 
 additive_expr' :=
   | epsilon
-  | PLUS <additive_expr>
-  | MINUS <additive_expr>
-  | DIV <additive_expr>
+  | PLUS `<additive_expr>`
+  | MINUS `<additive_expr>`
+  | DIV `<additive_expr>`
 
 multiplicative_expr :=
-  | <unary_expr> <multiplicative_expr'>
+  | `<unary_expr>` `<multiplicative_expr'>`
 
 multiplicative_expr' :=
   | epsilon
-  | TIMES <multiplicative_expr>
-  | MOD <multiplicative_expr>
-  | DIV <multiplicative_expr>
+  | TIMES `<multiplicative_expr>`
+  | MOD `<multiplicative_expr>`
+  | DIV `<multiplicative_expr>`
 
 unary_expr :=
-  | <unary_expr'> <terminal>
+  | `<unary_expr'>` `<terminal>`
 
 unary_expr' :=
   | epsilon
@@ -101,16 +101,16 @@ unary_expr' :=
 
 terminal :=
   | ID
-  | ID LPAREN <args>
+  | ID LPAREN `<args>`
   | NUM
   | STRING
-  | LPAREN <expr> RPAREN
-  | LAM LPAREN <args> THIN_ARROW LBRACKET <statements> RBRACKET
+  | LPAREN `<expr>` RPAREN
+  | LAM LPAREN `<args>` THIN_ARROW LBRACKET `<statements>` RBRACKET
 
 args :=
   | RPAREN
-  | <expr> <rest-args>
+  | `<expr>` `<rest-args>`
 
 rest-args :=
   | RPAREN
-  | COMMA <expr> <rest-args>
+  | COMMA `<expr>` `<rest-args>`
