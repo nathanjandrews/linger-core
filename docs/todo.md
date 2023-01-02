@@ -48,6 +48,10 @@ Nothing so far, let's keep it that way.
 - [ ] make keywords and enum
 - [ ] use Option<Value> in place of an explicit Void type
 
+## Repository Hygiene
+
+- [ ] add function documentation
+
 ## Testing
 
 ## Miscellaneous
