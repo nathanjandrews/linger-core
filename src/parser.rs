@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::desugar::{desugar_statements, Procedure, Statements};
+use crate::desugar::{desugar_statements, Procedure, Statement};
 use crate::tokenizer::Operator::{self, *};
 use crate::{
     error::{unexpected_token, LingerError, LingerError::ParseError, ParseError::*},
@@ -14,24 +14,22 @@ use crate::{
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Program<'a> {
     pub procedures: Vec<Procedure<'a>>,
-    pub main: Statements<'a>,
+    pub main: Vec<Statement<'a>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SugaredProcedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
-    pub body: SugaredStatements<'a>,
+    pub body: Vec<SugaredStatement<'a>>,
 }
-
-pub type SugaredStatements<'a> = Vec<SugaredStatement<'a>>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SugaredStatement<'a> {
     Expr(SugaredExpr<'a>),
     Let(&'a str, SugaredExpr<'a>),
     Assign(&'a str, SugaredExpr<'a>),
-    Block(SugaredStatements<'a>),
+    Block(Vec<SugaredStatement<'a>>),
     If(
         SugaredExpr<'a>,
         Box<SugaredStatement<'a>>,
@@ -43,7 +41,7 @@ pub enum SugaredStatement<'a> {
         Box<SugaredStatement<'a>>,
         SugaredExpr<'a>,
         Box<SugaredStatement<'a>>,
-        SugaredStatements<'a>,
+        Vec<SugaredStatement<'a>>,
     ),
     Break,
     Continue,
@@ -60,7 +58,7 @@ pub enum SugaredExpr<'a> {
     Unary(Operator, Box<SugaredExpr<'a>>),
     PrimitiveCall(Builtin, Vec<SugaredExpr<'a>>),
     Call(Box<SugaredExpr<'a>>, Vec<SugaredExpr<'a>>),
-    Lambda(Vec<&'a str>, SugaredStatements<'a>),
+    Lambda(Vec<&'a str>, Vec<SugaredStatement<'a>>),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -238,7 +236,7 @@ fn parse_params<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<&'a str>, &[T<'a>]), Lin
     }
 }
 
-fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(SugaredStatements, &[T<'a>]), LingerError> {
+fn parse_statements<'a>(tokens: &'a [T<'a>]) -> Result<(Vec<SugaredStatement<'a>>, &[T<'a>]), LingerError> {
     let (statement_option, tokens) = parse_statement(tokens)?;
 
     let statement = if statement_option.is_some() {

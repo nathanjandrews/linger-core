@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 use crate::{
-    desugar::{Expr, Procedure, Statement, Statements},
+    desugar::{Expr, Procedure, Statement},
     error::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
@@ -15,7 +15,7 @@ pub enum Value<'a> {
     Num(i64),
     Bool(bool),
     Str(String),
-    Lambda(Vec<&'a str>, Statements<'a>, Environment<'a>),
+    Lambda(Vec<&'a str>, Vec<Statement<'a>>, Environment<'a>),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -67,7 +67,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
 
 fn interp_statements<'a>(
     env: Environment<'a>,
-    statements: Statements<'a>,
+    statements: Vec<Statement<'a>>,
     is_loop: bool,
 ) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
     let mut env = env;

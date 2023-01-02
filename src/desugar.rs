@@ -1,5 +1,5 @@
 use crate::{
-    parser::{Builtin, SugaredExpr, SugaredStatement, SugaredStatements},
+    parser::{Builtin, SugaredExpr, SugaredStatement},
     tokenizer::Operator,
 };
 
@@ -7,10 +7,8 @@ use crate::{
 pub struct Procedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
-    pub body: Statements<'a>,
+    pub body: Vec<Statement<'a>>,
 }
-
-pub type Statements<'a> = Vec<Statement<'a>>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
@@ -19,7 +17,7 @@ pub enum Statement<'a> {
     Assign(&'a str, Expr<'a>),
     If(Expr<'a>, Box<Statement<'a>>, Option<Box<Statement<'a>>>),
     While(Expr<'a>, Box<Statement<'a>>),
-    Block(Statements<'a>),
+    Block(Vec<Statement<'a>>),
     Return(Option<Expr<'a>>),
     Break,
     Continue,
@@ -35,10 +33,10 @@ pub enum Expr<'a> {
     Unary(Operator, Box<Expr<'a>>),
     PrimitiveCall(Builtin, Vec<Expr<'a>>),
     Call(Box<Expr<'a>>, Vec<Expr<'a>>),
-    Lambda(Vec<&'a str>, Statements<'a>),
+    Lambda(Vec<&'a str>, Vec<Statement<'a>>),
 }
 
-pub fn desugar_statements(sugared_statements: SugaredStatements) -> Statements {
+pub fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
     sugared_statements
         .iter()
         .map(|s| desugar_statement(s.clone()))
