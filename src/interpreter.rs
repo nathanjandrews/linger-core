@@ -20,7 +20,7 @@ pub enum Value<'a> {
     Void,
 }
 
-enum FlowControl {
+enum ControlFlow {
     Return,
     Normal,
     Break,
@@ -69,7 +69,7 @@ fn interp_statements<'a>(
     env: Environment<'a>,
     statements: Statements<'a>,
     is_loop: bool,
-) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
     let mut env = env;
     let mut return_value = Value::Void;
     for statement in statements {
@@ -79,20 +79,20 @@ fn interp_statements<'a>(
         };
         let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
             Ok((new_env, value, return_flag)) => match return_flag {
-                FlowControl::Return => return Ok((new_env, value, return_flag)),
-                FlowControl::Normal => (new_env, value),
+                ControlFlow::Return => return Ok((new_env, value, return_flag)),
+                ControlFlow::Normal => (new_env, value),
 
                 // if the statements are part of a loop, then break out of the nearest loop
-                FlowControl::Break => {
+                ControlFlow::Break => {
                     if is_loop {
-                        return Ok((new_env, Value::Void, FlowControl::Break));
+                        return Ok((new_env, Value::Void, ControlFlow::Break));
                     } else {
                         return Err(RuntimeError(BreakNotInLoop));
                     }
                 }
-                FlowControl::Continue => {
+                ControlFlow::Continue => {
                     if is_loop {
-                        return Ok((new_env, Value::Void, FlowControl::Continue));
+                        return Ok((new_env, Value::Void, ControlFlow::Continue));
                     } else {
                         return Err(RuntimeError(BreakNotInLoop));
                     }
@@ -104,17 +104,17 @@ fn interp_statements<'a>(
         env = new_env;
         return_value = value;
         if is_return_statement {
-            return Ok((env, return_value, FlowControl::Return));
+            return Ok((env, return_value, ControlFlow::Return));
         }
     }
-    return Ok((env, return_value, FlowControl::Normal));
+    return Ok((env, return_value, ControlFlow::Normal));
 }
 
 fn interp_statement<'a>(
     mut env: Environment<'a>,
     statement: Statement<'a>,
     inside_loop: bool,
-) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
+) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
     match statement {
         Statement::Block(statements) => {
             let (updated_env, value, control_flow) =
@@ -130,14 +130,14 @@ fn interp_statement<'a>(
             Ok((env, value, control_flow))
         }
         Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
-            Ok(value) => Ok((env.clone(), value, FlowControl::Normal)),
+            Ok(value) => Ok((env.clone(), value, ControlFlow::Normal)),
             Err(e) => Err(e),
         },
         Statement::Let(id, let_expr) => match interp_expression(env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
                 env.insert(id.to_string(), (value, ValueStory::Initialization));
-                Ok((env, Value::Void, FlowControl::Normal))
+                Ok((env, Value::Void, ControlFlow::Normal))
             }
             Err(e) => Err(e),
         },
@@ -148,7 +148,7 @@ fn interp_statement<'a>(
                     id.to_string(),
                     (interp_expression(env, new_expr)?, ValueStory::Assignment),
                 );
-                Ok((updated_env, Value::Void, FlowControl::Normal))
+                Ok((updated_env, Value::Void, ControlFlow::Normal))
             }
             None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
@@ -163,7 +163,7 @@ fn interp_statement<'a>(
                             Some(else_block) => {
                                 interp_statement(env.clone(), *else_block, inside_loop)
                             }
-                            None => Ok((env.clone(), Value::Void, FlowControl::Normal)),
+                            None => Ok((env.clone(), Value::Void, ControlFlow::Normal)),
                         }
                     }
                 }
@@ -172,10 +172,10 @@ fn interp_statement<'a>(
         }
         Statement::Return(expr_option) => match expr_option {
             Some(expr) => match interp_expression(env.clone(), expr) {
-                Ok(value) => Ok((env, value, FlowControl::Return)),
+                Ok(value) => Ok((env, value, ControlFlow::Return)),
                 Err(e) => return Err(e),
             },
-            None => Ok((env, Value::Void, FlowControl::Return)),
+            None => Ok((env, Value::Void, ControlFlow::Return)),
         },
         Statement::While(condition, while_block) => {
             let mut env = env.clone();
@@ -186,22 +186,22 @@ fn interp_statement<'a>(
                         let (updated_env, body_value, body_return_flag) =
                             interp_statement(env.clone(), *while_block.clone(), true)?;
                         match body_return_flag {
-                            FlowControl::Return => {
+                            ControlFlow::Return => {
                                 break (env.clone(), body_value, body_return_flag)
                             }
-                            FlowControl::Break => break (env, Value::Void, FlowControl::Normal),
-                            FlowControl::Normal => (),
-                            FlowControl::Continue => (),
+                            ControlFlow::Break => break (env, Value::Void, ControlFlow::Normal),
+                            ControlFlow::Normal => (),
+                            ControlFlow::Continue => (),
                         };
                         env = updated_env;
                     }
-                    Value::Bool(false) => break (env, Value::Void, FlowControl::Normal),
+                    Value::Bool(false) => break (env, Value::Void, ControlFlow::Normal),
                     _ => return Err(RuntimeError(BadArg(condition_value))),
                 }
             });
         }
-        Statement::Break => Ok((env, Value::Void, FlowControl::Break)),
-        Statement::Continue => Ok((env, Value::Void, FlowControl::Continue)),
+        Statement::Break => Ok((env, Value::Void, ControlFlow::Break)),
+        Statement::Continue => Ok((env, Value::Void, ControlFlow::Continue)),
     }
 }
 
