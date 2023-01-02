@@ -2,7 +2,11 @@
 
 ## URGENT PROBLEMS THAT NEED FIXING
 
-Nothing so far, let's keep it that way.
+<!-- Nothing so far, let's keep it that way. -->
+
+- [ ] "new scope" statement
+  - will allow for proper scoping behavior in for-loop
+  - updated test .rs files with new test programs for loops
 
 ## Language Features
 

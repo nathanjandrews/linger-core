@@ -116,6 +116,19 @@ fn interp_statement<'a>(
     inside_loop: bool,
 ) -> Result<(Environment<'a>, Value<'a>, FlowControl), LingerError<'a>> {
     match statement {
+        Statement::Block(statements) => {
+            let (updated_env, value, control_flow) =
+                interp_statements(env.clone(), statements, inside_loop)?;
+            for (var_name, (_, value_story)) in env.clone() {
+                match updated_env.get(&var_name) {
+                    Some((reassigned_value, ValueStory::Assignment)) => {
+                        env.insert(var_name, (reassigned_value.clone(), value_story));
+                    }
+                    _ => (),
+                };
+            }
+            Ok((env, value, control_flow))
+        }
         Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
             Ok(value) => Ok((env.clone(), value, FlowControl::Normal)),
             Err(e) => Err(e),
@@ -139,41 +152,16 @@ fn interp_statement<'a>(
             }
             None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
         },
-        Statement::If(cond_expr, then_statements, else_statements_option) => {
+        Statement::If(cond_expr, then_block, else_statements_option) => {
             let cond_value = interp_expression(env.clone(), cond_expr)?;
             match cond_value {
                 Value::Bool(b) => {
                     if b {
-                        let (then_env, then_value, return_flag) =
-                            interp_statements(env.clone(), then_statements, inside_loop)?;
-
-                        for (var_name, (_, value_story)) in env.clone() {
-                            match then_env.get(&var_name) {
-                                Some((reassigned_value, ValueStory::Assignment)) => {
-                                    env.insert(var_name, (reassigned_value.clone(), value_story));
-                                }
-                                _ => (),
-                            };
-                        }
-                        Ok((env, then_value, return_flag))
+                        interp_statement(env.clone(), *then_block, inside_loop)
                     } else {
                         match else_statements_option {
-                            Some(else_statements) => {
-                                let (else_env, else_value, return_flag) =
-                                    interp_statements(env.clone(), else_statements, inside_loop)?;
-
-                                for (var_name, (_, value_story)) in env.clone() {
-                                    match else_env.get(&var_name) {
-                                        Some((reassigned_value, ValueStory::Assignment)) => {
-                                            env.insert(
-                                                var_name,
-                                                (reassigned_value.clone(), value_story),
-                                            );
-                                        }
-                                        _ => (),
-                                    };
-                                }
-                                Ok((env, else_value, return_flag))
+                            Some(else_block) => {
+                                interp_statement(env.clone(), *else_block, inside_loop)
                             }
                             None => Ok((env.clone(), Value::Void, FlowControl::Normal)),
                         }
@@ -189,14 +177,14 @@ fn interp_statement<'a>(
             },
             None => Ok((env, Value::Void, FlowControl::Return)),
         },
-        Statement::While(condition, body) => {
+        Statement::While(condition, while_block) => {
             let mut env = env.clone();
             return Ok(loop {
                 let condition_value = interp_expression(env.clone(), condition.clone())?;
                 match condition_value {
                     Value::Bool(true) => {
                         let (updated_env, body_value, body_return_flag) =
-                            interp_statements(env.clone(), body.clone(), true)?;
+                            interp_statement(env.clone(), *while_block.clone(), true)?;
                         match body_return_flag {
                             FlowControl::Return => {
                                 break (env.clone(), body_value, body_return_flag)

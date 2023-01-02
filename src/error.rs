@@ -23,6 +23,7 @@ pub enum ParseError<'a> {
     KeywordAsProc(&'a str),
     KeywordAsParam(&'a str),
     ExpectedStatement,
+    ExpectedBlock,
     Custom(String),
 }
 
@@ -75,6 +76,7 @@ impl fmt::Display for LingerError<'_> {
                 }
                 ParseError::ExpectedSomething => write!(f, "expected token"),
                 ParseError::ExpectedStatement => write!(f, "expected statement"),
+                ParseError::ExpectedBlock => write!(f, "expected block"),
             },
             LingerError::TokenizerError(err) => match err {
                 TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
@@ -112,7 +114,9 @@ impl fmt::Display for LingerError<'_> {
                     write!(f, "unary operator \"{}\" used as binary operator", op)
                 }
                 RuntimeError::BreakNotInLoop => write!(f, "tried to break while not within a loop"),
-                RuntimeError::ContinueNotInLoop => write!(f, "continue statement found outside of a loop"),
+                RuntimeError::ContinueNotInLoop => {
+                    write!(f, "continue statement found outside of a loop")
+                }
             },
         }
     }
