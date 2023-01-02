@@ -164,7 +164,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                             'r' => string_token_content.push('\r'),
                             't' => string_token_content.push('\t'),
                             '\\' => string_token_content.push('\\'),
-                            '0' => string_token_content.push('0'),
+                            '0' => string_token_content.push('\0'),
                             '"' => string_token_content.push('"'),
                             '\'' => string_token_content.push('\''),
                             c => return Err(TokenizerError(InvalidEscapeSequence(c))),
