@@ -2,11 +2,7 @@
 
 ## URGENT PROBLEMS THAT NEED FIXING
 
-<!-- Nothing so far, let's keep it that way. -->
-
-- [ ] "new scope" statement
-  - will allow for proper scoping behavior in for-loop
-  - updated test .rs files with new test programs for loops
+Nothing so far, let's keep it that way.
 
 ## Language Features
 
@@ -30,10 +26,11 @@
 - [x] while loops
   - [x] break keyword
   - [x] continue keyword
-- [ ] for-loops
+- [x] for-loops
 - [ ] bitwise operations
 - [ ] more robust builtin print function with formatting
 - [x] escape sequences
+- [ ] decimal numbers
 - [x] closures (static-scope)
 
 ## Bugs
@@ -42,7 +39,7 @@
 
 ## Language Optimizations
 
-- [ ] implement for-loops as syntactic sugar on top of while loops
+- [x] implement for-loops as syntactic sugar on top of while loops
 - [ ] immediately return error the moment we parse two main procedures
 
 ## Potential Code Improvements
