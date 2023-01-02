@@ -26,6 +26,7 @@ pub enum TokenValue<'a> {
     QUOTE,
     COMMA,
     THIN_ARROW,
+    WHITESPACE,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -83,6 +84,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::QUOTE => write!(f, "\""),
             TokenValue::STR(s) => write!(f, "\"{s}\""),
             TokenValue::THIN_ARROW => write!(f, "->"),
+            TokenValue::WHITESPACE => write!(f, "<whitespace>"),
         }
     }
 }
@@ -129,26 +131,25 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
         return Ok(vec![]);
     }
 
-    let (token_option, token_length) = get_token(s, line_num, col_num)?;
-    let token = match token_option {
+    let (token_value_option, token_length) = get_token_value(s)?;
+    let token_value = match token_value_option {
         Some(token) => token,
         None => return tokenize_helper(&s[token_length..], line_num, col_num + token_length),
     };
 
-    match token {
-        Token(TokenValue::QUOTE, ..) => {
+    match token_value {
+        TokenValue::QUOTE => {
             let s = &s[token_length..];
             let mut string_token_content = String::new();
             let mut enumerated_character_iter = s.chars().enumerate();
             while let Some((index, char)) = enumerated_character_iter.next() {
                 match char {
                     '"' => {
-                        let string_token = Token(
+                        let mut tokens = vec![Token(
                             TokenValue::STR(string_token_content.to_string()),
                             line_num,
                             col_num,
-                        );
-                        let mut tokens = vec![string_token];
+                        )];
                         let mut rest_tokens = tokenize_helper(
                             &s[index + 1..],
                             line_num,
@@ -176,118 +177,77 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
             }
             return Err(TokenizerError(UnterminatedStringLiteral));
         }
-        token => {
-            let mut tokens = vec![token];
-            let mut rest_tokens = tokenize_helper(&s[token_length..], line_num, col_num + token_length)?;
+        token_value => {
+            let mut tokens = vec![Token(token_value, line_num, col_num)];
+            let mut rest_tokens =
+                tokenize_helper(&s[token_length..], line_num, col_num + token_length)?;
             tokens.append(&mut rest_tokens);
             return Ok(tokens);
         }
     }
 }
 
-fn get_token(s: &str, row: usize, col: usize) -> Result<(Option<Token>, usize), LingerError> {
+fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> {
+    // WHITESPACE TOKEN
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
+
+    // TWO-CHARACTER TOKENS
     } else if let Some(mat) = find(NE_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Ne), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::Ne)), mat.end()))
     } else if let Some(mat) = find(EQ_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Eq), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::Eq)), mat.end()))
     } else if let Some(mat) = find(LTE_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::LTE), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::LTE)), mat.end()))
     } else if let Some(mat) = find(GTE_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::GTE), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::GTE)), mat.end()))
     } else if let Some(mat) = find(LOGIC_AND_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::LogicAnd), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::LogicAnd)), mat.end()))
     } else if let Some(mat) = find(LOGIC_OR_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::LogicOr), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::LogicOr)), mat.end()))
     } else if let Some(mat) = find(THIN_ARROW_REGEX, s) {
-        Ok((Some(Token(TokenValue::THIN_ARROW, row, col)), mat.end()))
+        Ok((Some(TokenValue::THIN_ARROW), mat.end()))
+
+    // ONE-CHARACTER TOKENS
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
-        Ok((Some(Token(TokenValue::ASSIGN, row, col)), mat.end()))
+        Ok((Some(TokenValue::ASSIGN), mat.end()))
     } else if let Some(mat) = find(LT_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::LT), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::LT)), mat.end()))
     } else if let Some(mat) = find(GT_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::GT), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::GT)), mat.end()))
     } else if let Some(mat) = find(STAR_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Times), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::Times)), mat.end()))
     } else if let Some(mat) = find(MOD_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Mod), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::Mod)), mat.end()))
     } else if let Some(mat) = find(SLASH_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Div), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::OP(Operator::Div)), mat.end()))
+    } else if let Some(mat) = find(PLUS_REGEX, s) {
+        Ok((Some(TokenValue::OP(Operator::Plus)), mat.end()))
+    } else if let Some(mat) = find(MINUS_REGEX, s) {
+        Ok((Some(TokenValue::OP(Operator::Minus)), mat.end()))
+    } else if let Some(mat) = find(LPAREN_REGEX, s) {
+        Ok((Some(TokenValue::LPAREN), mat.end()))
+    } else if let Some(mat) = find(RPAREN_REGEX, s) {
+        Ok((Some(TokenValue::RPAREN), mat.end()))
+    } else if let Some(mat) = find(LBRACKET_REGEX, s) {
+        Ok((Some(TokenValue::LBRACKET), mat.end()))
+    } else if let Some(mat) = find(RBRACKET_REGEX, s) {
+        Ok((Some(TokenValue::RBRACKET), mat.end()))
+    } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
+        Ok((Some(TokenValue::SEMICOLON), mat.end()))
+    } else if let Some(mat) = find(COMMA_REGEX, s) {
+        Ok((Some(TokenValue::COMMA), mat.end()))
+    } else if let Some(mat) = find(QUOTE_REGEX, s) {
+        Ok((Some(TokenValue::QUOTE), mat.end()))
+    } else if let Some(mat) = find(LOGIC_NOT_REGEX, s) {
+        Ok((Some(TokenValue::OP(Operator::LogicNot)), mat.end()))
+
+    // VARIABLE-LENGTH TOKENS
     } else if let Some(mat) = find(ID_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::ID(mat.as_str()), row, col)),
-            mat.end(),
-        ))
+        Ok((Some(TokenValue::ID(mat.as_str())), mat.end()))
     } else if let Some(mat) = find(NUM_REGEX, s) {
         Ok((
-            Some(Token(
-                TokenValue::NUM(mat.as_str().parse::<i64>().unwrap()),
-                row,
-                col,
-            )),
-            mat.end(),
-        ))
-    } else if let Some(mat) = find(PLUS_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Plus), row, col)),
-            mat.end(),
-        ))
-    } else if let Some(mat) = find(MINUS_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::Minus), row, col)),
-            mat.end(),
-        ))
-    } else if let Some(mat) = find(LPAREN_REGEX, s) {
-        Ok((Some(Token(TokenValue::LPAREN, row, col)), mat.end()))
-    } else if let Some(mat) = find(RPAREN_REGEX, s) {
-        Ok((Some(Token(TokenValue::RPAREN, row, col)), mat.end()))
-    } else if let Some(mat) = find(LBRACKET_REGEX, s) {
-        Ok((Some(Token(TokenValue::LBRACKET, row, col)), mat.end()))
-    } else if let Some(mat) = find(RBRACKET_REGEX, s) {
-        Ok((Some(Token(TokenValue::RBRACKET, row, col)), mat.end()))
-    } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
-        Ok((Some(Token(TokenValue::SEMICOLON, row, col)), mat.end()))
-    } else if let Some(mat) = find(COMMA_REGEX, s) {
-        Ok((Some(Token(TokenValue::COMMA, row, col)), mat.end()))
-    } else if let Some(mat) = find(QUOTE_REGEX, s) {
-        Ok((Some(Token(TokenValue::QUOTE, row, col)), mat.end()))
-    } else if let Some(mat) = find(LOGIC_NOT_REGEX, s) {
-        Ok((
-            Some(Token(TokenValue::OP(Operator::LogicNot), row, col)),
+            Some(TokenValue::NUM(mat.as_str().parse::<i64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
             mat.end(),
         ))
     } else {
