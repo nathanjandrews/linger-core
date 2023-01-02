@@ -69,21 +69,20 @@ impl fmt::Display for Operator {
 
 impl fmt::Display for TokenValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut format_msg = |s: &str| write!(f, "{s}");
         match self {
-            TokenValue::ID(id) => format_msg(id),
-            TokenValue::NUM(n) => format_msg(n.to_string().as_str()),
-            TokenValue::ASSIGN => format_msg("="),
-            TokenValue::LPAREN => format_msg("("),
-            TokenValue::RPAREN => format_msg(")"),
-            TokenValue::LBRACKET => format_msg("{"),
-            TokenValue::RBRACKET => format_msg("}"),
-            TokenValue::SEMICOLON => format_msg(";"),
-            TokenValue::COMMA => format_msg(","),
-            TokenValue::OP(op) => format_msg(op.to_string().as_str()),
-            TokenValue::QUOTE => format_msg("\""),
-            TokenValue::STR(s) => format_msg(s),
-            TokenValue::THIN_ARROW => format_msg("->"),
+            TokenValue::ID(id) => write!(f, "{id}"),
+            TokenValue::NUM(n) => write!(f, "{n}"),
+            TokenValue::ASSIGN => write!(f, "="),
+            TokenValue::LPAREN => write!(f, "("),
+            TokenValue::RPAREN => write!(f, ")"),
+            TokenValue::LBRACKET => write!(f, "{{"),
+            TokenValue::RBRACKET => write!(f, "}}"),
+            TokenValue::SEMICOLON => write!(f, ";"),
+            TokenValue::COMMA => write!(f, ","),
+            TokenValue::OP(op) => write!(f, "{op}"),
+            TokenValue::QUOTE => write!(f, "\""),
+            TokenValue::STR(s) => write!(f, "\"{s}\""),
+            TokenValue::THIN_ARROW => write!(f, "->"),
         }
     }
 }
