@@ -94,7 +94,7 @@ fn interp_statements<'a>(
                     if is_loop {
                         return Ok((new_env, Value::Void, ControlFlow::Continue));
                     } else {
-                        return Err(RuntimeError(BreakNotInLoop));
+                        return Err(RuntimeError(ContinueNotInLoop));
                     }
                 }
             },
@@ -167,7 +167,7 @@ fn interp_statement<'a>(
                         }
                     }
                 }
-                v => return Err(RuntimeError(BadCondition(v))),
+                v => return Err(RuntimeError(ExpectedBool(v))),
             }
         }
         Statement::Return(expr_option) => match expr_option {

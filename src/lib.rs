@@ -2,18 +2,22 @@ use interpreter::interp_program;
 use parser::parse_program;
 use tokenizer::tokenize;
 
-pub mod desugar;
-pub mod error;
+mod desugar;
+mod error;
 pub mod interpreter;
 pub mod parser;
 mod test;
 pub mod tokenizer;
 
+/// The keywords for the Linger programming language
 pub static KEYWORDS: &'static [&str] = &[
     "if", "else", "proc", "let", "true", "false", "return", "lam", "while", "break", "continue",
     "for",
 ];
 
+/// Executes a linger program. On success, this program returns the return value of the main
+/// procedure as a String. If there is an error in any step of the program (tokenization, parsing,
+/// or interpreting), this function will return that error as a [String].
 pub fn interp<'a>(s: String) -> Result<String, String> {
     let tokens = match tokenize(s.as_str()) {
         Ok(tokens) => tokens,
