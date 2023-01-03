@@ -3,7 +3,7 @@ use std::vec;
 use crate::desugar::{desugar_statements, Procedure, Statement};
 use crate::tokenizer::Operator::{self, *};
 use crate::{
-    error::{unexpected_token, LingerError, LingerError::ParseError, ParseError::*},
+    error::{LingerError, LingerError::ParseError, ParseError::*},
     tokenizer::{
         Token as T,
         TokenValue::{self, *},
@@ -11,12 +11,21 @@ use crate::{
     KEYWORDS,
 };
 
+/// A representation of a Linger program.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Program<'a> {
+    /// The top-level procedures of the program, excluding the main procedure.
     pub procedures: Vec<Procedure<'a>>,
+    /// The body of the main procedure of the program.
     pub main: Vec<Statement<'a>>,
 }
 
+/// A representation for a procedure in the Linger programming language.
+///
+/// Structs beginning with the word "Sugared" mean that they are the part of
+/// the user-facing syntax of the language. These statements are later
+/// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
+/// a subset of the language which is then executed.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SugaredProcedure<'a> {
     pub name: &'a str,
@@ -24,6 +33,12 @@ pub struct SugaredProcedure<'a> {
     pub body: Vec<SugaredStatement<'a>>,
 }
 
+/// A representation of a statement in the Linger programming language.
+///
+/// Structs beginning with the word "Sugared" mean that they are the part of
+/// the user-facing syntax of the language. These statements are later
+/// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
+/// a subset of the language which is then executed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SugaredStatement<'a> {
     Expr(SugaredExpr<'a>),
@@ -48,6 +63,12 @@ pub enum SugaredStatement<'a> {
     Return(Option<SugaredExpr<'a>>),
 }
 
+/// A representation of an expression in the Linger programming language.
+///
+/// Structs beginning with the word "Sugared" mean that they are the part of
+/// the user-facing syntax of the language. These statements are later
+/// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
+/// a subset of the language which is then executed.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SugaredExpr<'a> {
     Num(i64),
@@ -61,11 +82,18 @@ pub enum SugaredExpr<'a> {
     Lambda(Vec<&'a str>, Vec<SugaredStatement<'a>>),
 }
 
+/// A built in procedure in the Linger programming language.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Builtin {
     Print,
 }
 
+/// A helper function to create an [UnexpectedToken Error](UnexpectedToken).
+fn unexpected_token<'a>(tokens: &'a [T<'a>]) -> LingerError<'a> {
+    return LingerError::ParseError(UnexpectedToken(tokens.first().unwrap().to_owned()));
+}
+
+/// A helper function to check if `s` matches one of the [Builtin] procedures.
 pub fn check_builtin(s: &str) -> Option<Builtin> {
     match s {
         "print" => Some(Builtin::Print),
@@ -73,6 +101,9 @@ pub fn check_builtin(s: &str) -> Option<Builtin> {
     }
 }
 
+/// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
+/// this function returns `tokens` with the first element removed. On failure, this function returns
+/// an [Expected] error.
 fn consume_token<'a>(
     target: TokenValue<'a>,
     tokens: &'a [T<'a>],
@@ -84,6 +115,10 @@ fn consume_token<'a>(
     }
 }
 
+/// This function conditionally tries to consume a [SEMICOLON] token if `should_consume` is true.
+/// If `should_consume` is true, then this function returns the result of [consume_token] with a
+/// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
+/// list unmodified.
 fn conditionally_consume_semicolon<'a>(
     tokens: &'a [T<'a>],
     should_consume: bool,
@@ -95,6 +130,10 @@ fn conditionally_consume_semicolon<'a>(
     }
 }
 
+/// This function tries to consume an [OP] token with an associated [Operator] found in `operators`.
+/// If such a token is successfully consumed, this function returns the token's operator and the
+/// list of tokens that comes after as a pair. If `tokens` does not start with such an operator,
+/// then this function returns `None`.
 fn match_operator<'a>(
     operators: &[Operator],
     tokens: &'a [T<'a>],
@@ -114,9 +153,11 @@ fn match_operator<'a>(
     }
 }
 
+/// Type alias for the return value of a binary expression parsing function.
 type BinaryExpressionParser<'a> =
     fn(&'a [T<'a>]) -> Result<(SugaredExpr<'a>, &'a [T<'a>]), LingerError<'a>>;
 
+/// A helper function for parsing binary expressions.
 fn parse_binary_expr<'a>(
     parse_expr: BinaryExpressionParser<'a>,
     operators: Vec<Operator>,
@@ -135,6 +176,7 @@ fn parse_binary_expr<'a>(
     }
 }
 
+/// A helper function for creating a [Binary Expression](SugaredExpr::Binary)
 fn binary_expression<'a>(
     op: Operator,
     first_arg: SugaredExpr<'a>,
@@ -143,6 +185,9 @@ fn binary_expression<'a>(
     SugaredExpr::Binary(op, Box::new(first_arg), Box::new(second_arg))
 }
 
+/// Ensures that `statement_option` is a Some variant which contains a
+/// [Block Statement](SugaredStatement::Block). Otherwise, this function returns
+/// an [ExpectedBlock] parse error.
 fn ensure_block<'a>(
     statement_option: Option<SugaredStatement<'a>>,
 ) -> Result<SugaredStatement, LingerError> {
@@ -155,6 +200,7 @@ fn ensure_block<'a>(
     }
 }
 
+/// Parses a program from a list of tokens.
 pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError> {
     let (procedures, rest) = parse_procs(tokens)?;
 
@@ -172,15 +218,10 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
         .into_iter()
         .partition(|proc| proc.name == "main");
 
-    if main_procs.len() == 0 {
-        return Err(ParseError(NoMain)); // no main procedure
-    } else if main_procs.len() > 1 {
-        // this case should no longer be necessary since the parser checks that there is only one main function
-        // maybe turn main into option
-        return Err(ParseError(MultipleMain)); // more than one main procedure
-    }
-
-    let main_proc = main_procs.first().unwrap();
+    let main_proc = match main_procs.first() {
+        Some(proc) => proc,
+        None => return Err(ParseError(NoMain)),
+    };
 
     return Ok(Program {
         procedures: procs,
@@ -264,10 +305,9 @@ fn parse_statements<'a>(
 ) -> Result<(Vec<SugaredStatement<'a>>, &[T<'a>]), LingerError> {
     let (statement_option, tokens) = parse_statement(tokens, true)?;
 
-    let statement = if statement_option.is_some() {
-        statement_option.unwrap()
-    } else {
-        return Ok((vec![], tokens));
+    let statement = match statement_option {
+        Some(statement) => statement,
+        None => return Ok((vec![], tokens)),
     };
 
     let (mut rest_statements, tokens) = parse_statements(tokens)?;
