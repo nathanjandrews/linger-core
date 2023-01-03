@@ -27,7 +27,7 @@ pub struct Program<'a> {
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct SugaredProcedure<'a> {
+struct SugaredProcedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
     pub body: Vec<SugaredStatement<'a>>,
