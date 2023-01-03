@@ -3,6 +3,9 @@ use crate::{
     tokenizer::Operator,
 };
 
+/// A desugared representation of a program in the Linger programming language.
+///
+/// This is the expanded form of the [SugaredProcedure](crate::parser::SugaredProcedure).
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Procedure<'a> {
     pub name: &'a str,
@@ -10,6 +13,9 @@ pub struct Procedure<'a> {
     pub body: Vec<Statement<'a>>,
 }
 
+/// A desugared representation of a statement in the Linger programming language.
+///
+/// This is the expanded form of the [SugaredStatement](SugaredStatement).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
     Expr(Expr<'a>),
@@ -23,6 +29,9 @@ pub enum Statement<'a> {
     Continue,
 }
 
+/// A desugared representation of a expression in the Linger programming language.
+///
+/// This is the expanded form of the [SugaredExpr](SugaredExpr).
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Expr<'a> {
     Num(i64),
@@ -36,6 +45,7 @@ pub enum Expr<'a> {
     Lambda(Vec<&'a str>, Vec<Statement<'a>>),
 }
 
+/// desugars a list of [SugaredStatements](SugaredStatement) in a list of [Statements](Statement).
 pub fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
     sugared_statements
         .iter()

@@ -10,16 +10,24 @@ use crate::{
     tokenizer::Operator,
 };
 
+/// A value in the Linger programming language.
 #[derive(Clone, Debug)]
 pub enum Value<'a> {
+    /// A numerical value
     Num(i64),
+    /// A boolean value
     Bool(bool),
+    /// A string value
     Str(String),
+    /// A function value
     Lambda(Vec<&'a str>, Vec<Statement<'a>>, Environment<'a>),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
+    /// The void value; the value that represents the absence of a value.
     Void,
 }
 
+/// The `ControlFlow` enum is used to determine the return behavior of different statements during
+/// interpretation.
 enum ControlFlow {
     Return,
     Normal,
@@ -27,26 +35,17 @@ enum ControlFlow {
     Continue,
 }
 
+/// Described whether a variable in the environment was most recently initialized or assigned.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub enum ValueStory {
-    Assignment,
-    Initialization,
+pub enum ValueWas {
+    Assigned,
+    Initialized,
 }
 
-impl fmt::Display for Value<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Value::Num(n) => write!(f, "{}", n),
-            Value::Bool(b) => write!(f, "{}", b),
-            Value::Void => write!(f, "<void>"),
-            Value::Str(s) => write!(f, "{}", s),
-            Value::Lambda(..) => write!(f, "<lambda>"),
-        }
-    }
-}
+/// Type alias for the environment.
+type Environment<'a> = HashMap<String, (Value<'a>, ValueWas)>;
 
-type Environment<'a> = HashMap<String, (Value<'a>, ValueStory)>;
-
+/// Interprets a [Program] and returns either a [Value] or a [RuntimeError].
 pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     let mut initial_env = Environment::new();
     for Procedure { name, params, body } in p.procedures {
@@ -54,7 +53,7 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
             name.to_string(),
             (
                 Value::Lambda(params, body, Environment::new()),
-                ValueStory::Initialization,
+                ValueWas::Initialized,
             ),
         );
     }
@@ -65,34 +64,31 @@ pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
     };
 }
 
+/// Interprets a statement
 fn interp_statements<'a>(
     env: Environment<'a>,
     statements: Vec<Statement<'a>>,
     is_loop: bool,
 ) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
     let mut env = env;
-    let mut return_value = Value::Void;
+    let mut value = Value::Void;
     for statement in statements {
-        let is_return_statement = match statement {
-            Statement::Return(_) => true,
-            _ => false,
-        };
-        let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
-            Ok((new_env, value, control_flow)) => match control_flow {
-                ControlFlow::Return => return Ok((new_env, value, control_flow)),
-                ControlFlow::Normal => (new_env, value),
+        let (updated_env, updated_value) = match interp_statement(env.clone(), statement, is_loop) {
+            Ok((updated_env, updated_value, control_flow)) => match control_flow {
+                ControlFlow::Return => return Ok((updated_env, updated_value, control_flow)),
+                ControlFlow::Normal => (updated_env, updated_value),
 
                 // if the statements are part of a loop, then break out of the nearest loop
                 ControlFlow::Break => {
                     if is_loop {
-                        return Ok((new_env, Value::Void, ControlFlow::Break));
+                        return Ok((updated_env, Value::Void, ControlFlow::Break));
                     } else {
                         return Err(RuntimeError(BreakNotInLoop));
                     }
                 }
                 ControlFlow::Continue => {
                     if is_loop {
-                        return Ok((new_env, Value::Void, ControlFlow::Continue));
+                        return Ok((updated_env, Value::Void, ControlFlow::Continue));
                     } else {
                         return Err(RuntimeError(ContinueNotInLoop));
                     }
@@ -100,14 +96,10 @@ fn interp_statements<'a>(
             },
             Err(e) => return Err(e),
         };
-
-        env = new_env;
-        return_value = value;
-        if is_return_statement {
-            return Ok((env, return_value, ControlFlow::Return));
-        }
+        env = updated_env;
+        value = updated_value;
     }
-    return Ok((env, return_value, ControlFlow::Normal));
+    return Ok((env, value, ControlFlow::Normal));
 }
 
 fn interp_statement<'a>(
@@ -121,7 +113,7 @@ fn interp_statement<'a>(
                 interp_statements(env.clone(), statements, inside_loop)?;
             for (var_name, (_, value_story)) in env.clone() {
                 match updated_env.get(&var_name) {
-                    Some((reassigned_value, ValueStory::Assignment)) => {
+                    Some((reassigned_value, ValueWas::Assigned)) => {
                         env.insert(var_name, (reassigned_value.clone(), value_story));
                     }
                     _ => (),
@@ -136,7 +128,7 @@ fn interp_statement<'a>(
         Statement::Let(id, let_expr) => match interp_expression(env.clone(), let_expr) {
             Ok(value) => {
                 let mut env = env.clone();
-                env.insert(id.to_string(), (value, ValueStory::Initialization));
+                env.insert(id.to_string(), (value, ValueWas::Initialized));
                 Ok((env, Value::Void, ControlFlow::Normal))
             }
             Err(e) => Err(e),
@@ -146,7 +138,7 @@ fn interp_statement<'a>(
                 let mut updated_env = env.clone();
                 updated_env.insert(
                     id.to_string(),
-                    (interp_expression(env, new_expr)?, ValueStory::Assignment),
+                    (interp_expression(env, new_expr)?, ValueWas::Assigned),
                 );
                 Ok((updated_env, Value::Void, ControlFlow::Normal))
             }
@@ -404,7 +396,7 @@ fn interp_expression<'a>(
 
             let bindings = params.iter().zip(values);
             for (param, value) in bindings {
-                body_env.insert(param.to_string(), (value, ValueStory::Initialization));
+                body_env.insert(param.to_string(), (value, ValueWas::Initialized));
             }
 
             return match interp_statements(body_env.clone(), body.to_vec(), false) {
@@ -427,5 +419,17 @@ fn interp_expression<'a>(
                 Ok(Value::Void)
             }
         },
+    }
+}
+
+impl fmt::Display for Value<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Num(n) => write!(f, "{}", n),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Void => write!(f, "<void>"),
+            Value::Str(s) => write!(f, "{}", s),
+            Value::Lambda(..) => write!(f, "<lambda>"),
+        }
     }
 }
