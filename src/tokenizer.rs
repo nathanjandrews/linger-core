@@ -7,9 +7,12 @@ use crate::error::{
     TokenizerError::*,
 };
 
+/// A Linger token.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Token<'a>(pub TokenValue<'a>, pub usize, pub usize);
 
+/// A Linger token value. This is an enum which represents the type of the
+/// token along with any associated data with that type.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[allow(non_camel_case_types)]
 pub enum TokenValue<'a> {
@@ -28,6 +31,9 @@ pub enum TokenValue<'a> {
     THIN_ARROW,
 }
 
+/// An operator. This enum represents all of the valid operators in the Linger
+/// programming language. The variants of this enum are the associated data for
+/// the [OP TokenValue](TokenValue::OP) variant.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Operator {
     Plus,
@@ -46,74 +52,34 @@ pub enum Operator {
     LogicNot,
 }
 
-impl fmt::Display for Operator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Operator::Plus => write!(f, "+"),
-            Operator::Minus => write!(f, "-"),
-            Operator::Times => write!(f, "*"),
-            Operator::Eq => write!(f, "=="),
-            Operator::Ne => write!(f, "!="),
-            Operator::LT => write!(f, "<"),
-            Operator::GT => write!(f, ">"),
-            Operator::LTE => write!(f, "<="),
-            Operator::GTE => write!(f, ">="),
-            Operator::Mod => write!(f, "%"),
-            Operator::LogicOr => write!(f, "||"),
-            Operator::LogicAnd => write!(f, "&&"),
-            Operator::Div => write!(f, "/"),
-            Operator::LogicNot => write!(f, "!"),
-        }
-    }
-}
+const WHITESPACE_REGEX: &str = r"[[:space:]]+";
+const ASSIGN_REGEX: &str = r"=";
+const THIN_ARROW_REGEX: &str = r"->";
+const EQ_REGEX: &str = r"==";
+const NE_REGEX: &str = r"!=";
+const LT_REGEX: &str = r"<";
+const GT_REGEX: &str = r">";
+const LTE_REGEX: &str = r"<=";
+const GTE_REGEX: &str = r">=";
+const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
+const NUM_REGEX: &str = r"(\d+)\b";
+const PLUS_REGEX: &str = r"\+";
+const MINUS_REGEX: &str = r"\-";
+const STAR_REGEX: &str = r"\*";
+const SLASH_REGEX: &str = r"/";
+const MOD_REGEX: &str = "%";
+const LPAREN_REGEX: &str = r"\(";
+const RPAREN_REGEX: &str = r"\)";
+const LBRACKET_REGEX: &str = r"\{";
+const RBRACKET_REGEX: &str = r"\}";
+const SEMICOLON_REGEX: &str = ";";
+const COMMA_REGEX: &str = ",";
+const QUOTE_REGEX: &str = "\"";
+const LOGIC_OR_REGEX: &str = r"\|\|";
+const LOGIC_AND_REGEX: &str = "&&";
+const LOGIC_NOT_REGEX: &str = "!";
 
-impl fmt::Display for TokenValue<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TokenValue::ID(id) => write!(f, "{id}"),
-            TokenValue::NUM(n) => write!(f, "{n}"),
-            TokenValue::ASSIGN => write!(f, "="),
-            TokenValue::LPAREN => write!(f, "("),
-            TokenValue::RPAREN => write!(f, ")"),
-            TokenValue::LBRACKET => write!(f, "{{"),
-            TokenValue::RBRACKET => write!(f, "}}"),
-            TokenValue::SEMICOLON => write!(f, ";"),
-            TokenValue::COMMA => write!(f, ","),
-            TokenValue::OP(op) => write!(f, "{op}"),
-            TokenValue::QUOTE => write!(f, "\""),
-            TokenValue::STR(s) => write!(f, "\"{s}\""),
-            TokenValue::THIN_ARROW => write!(f, "->"),
-        }
-    }
-}
-
-pub const WHITESPACE_REGEX: &str = r"[[:space:]]+";
-pub const ASSIGN_REGEX: &str = r"=";
-pub const THIN_ARROW_REGEX: &str = r"->";
-pub const EQ_REGEX: &str = r"==";
-pub const NE_REGEX: &str = r"!=";
-pub const LT_REGEX: &str = r"<";
-pub const GT_REGEX: &str = r">";
-pub const LTE_REGEX: &str = r"<=";
-pub const GTE_REGEX: &str = r">=";
-pub const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
-pub const NUM_REGEX: &str = r"(\d+)\b";
-pub const PLUS_REGEX: &str = r"\+";
-pub const MINUS_REGEX: &str = r"\-";
-pub const STAR_REGEX: &str = r"\*";
-pub const SLASH_REGEX: &str = r"/";
-pub const MOD_REGEX: &str = "%";
-pub const LPAREN_REGEX: &str = r"\(";
-pub const RPAREN_REGEX: &str = r"\)";
-pub const LBRACKET_REGEX: &str = r"\{";
-pub const RBRACKET_REGEX: &str = r"\}";
-pub const SEMICOLON_REGEX: &str = ";";
-pub const COMMA_REGEX: &str = ",";
-pub const QUOTE_REGEX: &str = "\"";
-pub const LOGIC_OR_REGEX: &str = r"\|\|";
-pub const LOGIC_AND_REGEX: &str = "&&";
-pub const LOGIC_NOT_REGEX: &str = "!";
-
+/// Returns the [Tokens](Token) which make up the program `s`.
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
     let enumerated_lines = s.split("\n").enumerate();
     let mut tokens: Vec<Token> = vec![];
@@ -124,6 +90,9 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
     Ok(tokens)
 }
 
+/// Returns the [Tokens](Token) which make up the program `s`. This is a helper function which is
+/// wrapped by [tokenize]. This function also takes a line and column number which are passed to
+/// created token structures.
 fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, LingerError> {
     if s.len() == 0 {
         return Ok(vec![]);
@@ -151,7 +120,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                         let mut rest_tokens = tokenize_helper(
                             &s[index + 1..],
                             line_num,
-                            // the "plus 2" if to account for the opening and closing quotes for the string literal
+                            // the "plus 2" is to account for the opening and closing quotes for the string literal
                             col_num + string_token_content.len() + 2,
                         )?;
                         tokens.append(&mut rest_tokens);
@@ -185,6 +154,9 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
     }
 }
 
+/// Tries to get a token beginning at the start of `s`. On success, this function returns an option
+/// of a [Token] that is None in the case of whitespace, or Some(Token) in all other cases. If the
+/// beginning of `s` is not a known token, this function returns a [TokenizerError].
 fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> {
     // WHITESPACE TOKEN
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
@@ -248,20 +220,66 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
             Some(TokenValue::NUM(mat.as_str().parse::<i64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
             mat.end(),
         ))
+
+    // THE ERROR CASE
     } else {
         Err(TokenizerError(UnknownToken({
             let mut split =
                 s.split(|c: char| str_to_regex(WHITESPACE_REGEX).is_match(c.to_string().as_str()));
-            let unknown_token = split.nth(0).unwrap();
-            format!("\"{}\"", unknown_token).to_string()
+            let unknown_token = split.nth(0).expect("some non-whitespace text since whitespace would have been matched on the first branch of the if statement");
+            format!("{}", unknown_token).to_string()
         })))
     }
 }
 
+/// Takes a string and returns the corresponding [Regex].
 fn str_to_regex(s: &str) -> Regex {
-    return Regex::new(format!("^({s})").as_str()).unwrap();
+    return Regex::new(format!("^({s})").as_str())
+        .expect("strings to be valid regular expressions");
 }
 
+/// Checks if `s` starts with the regular expression represented by `re`.
 fn find<'a>(re: &'a str, s: &'a str) -> Option<Match<'a>> {
     return str_to_regex(re).find(s);
+}
+
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Operator::Plus => write!(f, "+"),
+            Operator::Minus => write!(f, "-"),
+            Operator::Times => write!(f, "*"),
+            Operator::Eq => write!(f, "=="),
+            Operator::Ne => write!(f, "!="),
+            Operator::LT => write!(f, "<"),
+            Operator::GT => write!(f, ">"),
+            Operator::LTE => write!(f, "<="),
+            Operator::GTE => write!(f, ">="),
+            Operator::Mod => write!(f, "%"),
+            Operator::LogicOr => write!(f, "||"),
+            Operator::LogicAnd => write!(f, "&&"),
+            Operator::Div => write!(f, "/"),
+            Operator::LogicNot => write!(f, "!"),
+        }
+    }
+}
+
+impl fmt::Display for TokenValue<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TokenValue::ID(id) => write!(f, "{id}"),
+            TokenValue::NUM(n) => write!(f, "{n}"),
+            TokenValue::ASSIGN => write!(f, "="),
+            TokenValue::LPAREN => write!(f, "("),
+            TokenValue::RPAREN => write!(f, ")"),
+            TokenValue::LBRACKET => write!(f, "{{"),
+            TokenValue::RBRACKET => write!(f, "}}"),
+            TokenValue::SEMICOLON => write!(f, ";"),
+            TokenValue::COMMA => write!(f, ","),
+            TokenValue::OP(op) => write!(f, "{op}"),
+            TokenValue::QUOTE => write!(f, "\""),
+            TokenValue::STR(s) => write!(f, "\"{s}\""),
+            TokenValue::THIN_ARROW => write!(f, "->"),
+        }
+    }
 }
