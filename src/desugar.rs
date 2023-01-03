@@ -43,8 +43,7 @@ pub fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Stat
         .collect()
 }
 
-// this function now needs to return a vector of statements
-pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
+fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
     match sugared_statement {
         SugaredStatement::Expr(sugared_expr) => Statement::Expr(desugar_expression(sugared_expr)),
         SugaredStatement::Let(name, sugared_expr) => {
@@ -123,7 +122,7 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
     }
 }
 
-pub fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
+fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
     match sugared_expr {
         SugaredExpr::Num(n) => Expr::Num(n),
         SugaredExpr::Bool(b) => Expr::Bool(b),
