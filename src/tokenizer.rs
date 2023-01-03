@@ -29,6 +29,7 @@ pub enum TokenValue<'a> {
     QUOTE,
     COMMA,
     THIN_ARROW,
+    DOUBLE_SLASH,
 }
 
 /// An operator. This enum represents all of the valid operators in the Linger
@@ -67,6 +68,7 @@ const PLUS_REGEX: &str = r"\+";
 const MINUS_REGEX: &str = r"\-";
 const STAR_REGEX: &str = r"\*";
 const SLASH_REGEX: &str = r"/";
+const DOUBLE_SLASH_REGEX: &str = r"//";
 const MOD_REGEX: &str = "%";
 const LPAREN_REGEX: &str = r"\(";
 const RPAREN_REGEX: &str = r"\)";
@@ -144,6 +146,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
             }
             return Err(TokenizerError(UnterminatedStringLiteral));
         }
+        TokenValue::DOUBLE_SLASH => return Ok(vec![]),
         token_value => {
             let mut tokens = vec![Token(token_value, line_num, col_num)];
             let mut rest_tokens =
@@ -175,6 +178,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
         Ok((Some(TokenValue::OP(Operator::LogicAnd)), mat.end()))
     } else if let Some(mat) = find(LOGIC_OR_REGEX, s) {
         Ok((Some(TokenValue::OP(Operator::LogicOr)), mat.end()))
+    } else if let Some(mat) = find(DOUBLE_SLASH_REGEX, s) {
+        Ok((Some(TokenValue::DOUBLE_SLASH), mat.end()))
     } else if let Some(mat) = find(THIN_ARROW_REGEX, s) {
         Ok((Some(TokenValue::THIN_ARROW), mat.end()))
 
@@ -280,6 +285,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::QUOTE => write!(f, "\""),
             TokenValue::STR(s) => write!(f, "\"{s}\""),
             TokenValue::THIN_ARROW => write!(f, "->"),
+            TokenValue::DOUBLE_SLASH => write!(f, "//"),
         }
     }
 }
