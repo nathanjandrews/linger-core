@@ -27,7 +27,7 @@ pub struct Program<'a> {
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct SugaredProcedure<'a> {
+struct SugaredProcedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
     pub body: Vec<SugaredStatement<'a>>,
@@ -86,118 +86,6 @@ pub enum SugaredExpr<'a> {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Builtin {
     Print,
-}
-
-/// A helper function to create an [UnexpectedToken Error](UnexpectedToken).
-fn unexpected_token<'a>(tokens: &'a [T<'a>]) -> LingerError<'a> {
-    return LingerError::ParseError(UnexpectedToken(tokens.first().unwrap().to_owned()));
-}
-
-/// A helper function to check if `s` matches one of the [Builtin] procedures.
-pub fn check_builtin(s: &str) -> Option<Builtin> {
-    match s {
-        "print" => Some(Builtin::Print),
-        _ => None,
-    }
-}
-
-/// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
-/// this function returns `tokens` with the first element removed. On failure, this function returns
-/// an [Expected] error.
-fn consume_token<'a>(
-    target: TokenValue<'a>,
-    tokens: &'a [T<'a>],
-) -> Result<&'a [T<'a>], LingerError<'a>> {
-    match tokens {
-        [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
-        [token, ..] => Err(ParseError(Expected(target, token.clone()))),
-        _ => unreachable!(),
-    }
-}
-
-/// This function conditionally tries to consume a [SEMICOLON] token if `should_consume` is true.
-/// If `should_consume` is true, then this function returns the result of [consume_token] with a
-/// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
-/// list unmodified.
-fn conditionally_consume_semicolon<'a>(
-    tokens: &'a [T<'a>],
-    should_consume: bool,
-) -> Result<&'a [T<'a>], LingerError<'a>> {
-    if should_consume {
-        return consume_token(SEMICOLON, tokens);
-    } else {
-        return Ok(tokens);
-    }
-}
-
-/// This function tries to consume an [OP] token with an associated [Operator] found in `operators`.
-/// If such a token is successfully consumed, this function returns the token's operator and the
-/// list of tokens that comes after as a pair. If `tokens` does not start with such an operator,
-/// then this function returns `None`.
-fn match_operator<'a>(
-    operators: &[Operator],
-    tokens: &'a [T<'a>],
-) -> Option<(Operator, &'a [T<'a>])> {
-    match tokens {
-        [T(value, ..), rest @ ..] => match value {
-            OP(b) => {
-                if operators.contains(b) {
-                    return Some((*b, rest));
-                } else {
-                    return None;
-                }
-            }
-            _ => None,
-        },
-        _ => None,
-    }
-}
-
-/// Type alias for the return value of a binary expression parsing function.
-type BinaryExpressionParser<'a> =
-    fn(&'a [T<'a>]) -> Result<(SugaredExpr<'a>, &'a [T<'a>]), LingerError<'a>>;
-
-/// A helper function for parsing binary expressions.
-fn parse_binary_expr<'a>(
-    parse_expr: BinaryExpressionParser<'a>,
-    operators: Vec<Operator>,
-    tokens: &'a [T<'a>],
-) -> Result<(SugaredExpr<'a>, &'a [T<'a>]), LingerError<'a>> {
-    let (mut expr, mut tokens) = parse_expr(tokens)?;
-    loop {
-        match match_operator(operators.as_slice(), tokens) {
-            Some((op, rest)) => {
-                let (right, rest) = parse_expr(rest)?;
-                expr = binary_expression(op, expr, right);
-                tokens = rest;
-            }
-            None => return Ok((expr, tokens)),
-        }
-    }
-}
-
-/// A helper function for creating a [Binary Expression](SugaredExpr::Binary)
-fn binary_expression<'a>(
-    op: Operator,
-    first_arg: SugaredExpr<'a>,
-    second_arg: SugaredExpr<'a>,
-) -> SugaredExpr<'a> {
-    SugaredExpr::Binary(op, Box::new(first_arg), Box::new(second_arg))
-}
-
-/// Ensures that `statement_option` is a Some variant which contains a
-/// [Block Statement](SugaredStatement::Block). Otherwise, this function returns
-/// an [ExpectedBlock] parse error.
-fn ensure_block<'a>(
-    statement_option: Option<SugaredStatement<'a>>,
-) -> Result<SugaredStatement, LingerError> {
-    match statement_option {
-        Some(statement) => match statement {
-            SugaredStatement::Block(_) => Ok(statement),
-            _ => Err(ParseError(ExpectedBlock)),
-        },
-        None => Err(ParseError(ExpectedBlock)),
-    }
 }
 
 /// Parses a program from a list of tokens.
@@ -597,5 +485,121 @@ fn parse_rest_args<'a>(
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
         [T(COMMA, ..), tokens @ ..] => parse_args(tokens),
         tokens => Err(unexpected_token(tokens)),
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Helper Functions
+//////////////////////////////////////////////////////////////////////////
+
+/// A helper function to create an [UnexpectedToken Error](UnexpectedToken).
+fn unexpected_token<'a>(tokens: &'a [T<'a>]) -> LingerError<'a> {
+    return LingerError::ParseError(UnexpectedToken(tokens.first().unwrap().to_owned()));
+}
+
+/// A helper function to check if `s` matches one of the [Builtin] procedures.
+pub fn check_builtin(s: &str) -> Option<Builtin> {
+    match s {
+        "print" => Some(Builtin::Print),
+        _ => None,
+    }
+}
+
+/// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
+/// this function returns `tokens` with the first element removed. On failure, this function returns
+/// an [Expected] error.
+fn consume_token<'a>(
+    target: TokenValue<'a>,
+    tokens: &'a [T<'a>],
+) -> Result<&'a [T<'a>], LingerError<'a>> {
+    match tokens {
+        [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
+        [token, ..] => Err(ParseError(Expected(target, token.clone()))),
+        _ => unreachable!(),
+    }
+}
+
+/// This function conditionally tries to consume a [SEMICOLON] token if `should_consume` is true.
+/// If `should_consume` is true, then this function returns the result of [consume_token] with a
+/// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
+/// list unmodified.
+fn conditionally_consume_semicolon<'a>(
+    tokens: &'a [T<'a>],
+    should_consume: bool,
+) -> Result<&'a [T<'a>], LingerError<'a>> {
+    if should_consume {
+        return consume_token(SEMICOLON, tokens);
+    } else {
+        return Ok(tokens);
+    }
+}
+
+/// This function tries to consume an [OP] token with an associated [Operator] found in `operators`.
+/// If such a token is successfully consumed, this function returns the token's operator and the
+/// list of tokens that comes after as a pair. If `tokens` does not start with such an operator,
+/// then this function returns `None`.
+fn match_operator<'a>(
+    operators: &[Operator],
+    tokens: &'a [T<'a>],
+) -> Option<(Operator, &'a [T<'a>])> {
+    match tokens {
+        [T(value, ..), rest @ ..] => match value {
+            OP(b) => {
+                if operators.contains(b) {
+                    return Some((*b, rest));
+                } else {
+                    return None;
+                }
+            }
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Type alias for the return value of a binary expression parsing function.
+type BinaryExpressionParser<'a> =
+    fn(&'a [T<'a>]) -> Result<(SugaredExpr<'a>, &'a [T<'a>]), LingerError<'a>>;
+
+/// A helper function for parsing binary expressions.
+fn parse_binary_expr<'a>(
+    parse_expr: BinaryExpressionParser<'a>,
+    operators: Vec<Operator>,
+    tokens: &'a [T<'a>],
+) -> Result<(SugaredExpr<'a>, &'a [T<'a>]), LingerError<'a>> {
+    let (mut expr, mut tokens) = parse_expr(tokens)?;
+    loop {
+        match match_operator(operators.as_slice(), tokens) {
+            Some((op, rest)) => {
+                let (right, rest) = parse_expr(rest)?;
+                expr = binary_expression(op, expr, right);
+                tokens = rest;
+            }
+            None => return Ok((expr, tokens)),
+        }
+    }
+}
+
+/// A helper function for creating a [Binary Expression](SugaredExpr::Binary)
+fn binary_expression<'a>(
+    op: Operator,
+    first_arg: SugaredExpr<'a>,
+    second_arg: SugaredExpr<'a>,
+) -> SugaredExpr<'a> {
+    SugaredExpr::Binary(op, Box::new(first_arg), Box::new(second_arg))
+}
+
+/// Ensures that `statement_option` is a Some variant which contains a
+/// [Block Statement](SugaredStatement::Block). Otherwise, this function returns
+/// an [ExpectedBlock] parse error.
+fn ensure_block<'a>(
+    statement_option: Option<SugaredStatement<'a>>,
+) -> Result<SugaredStatement, LingerError> {
+    match statement_option {
+        Some(statement) => match statement {
+            SugaredStatement::Block(_) => Ok(statement),
+            _ => Err(ParseError(ExpectedBlock)),
+        },
+        None => Err(ParseError(ExpectedBlock)),
     }
 }
