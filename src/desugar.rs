@@ -1,3 +1,4 @@
+use crate::tokenizer::AssignOp;
 use crate::{
     parser::{Builtin, SugaredExpr, SugaredStatement},
     tokenizer::Operator,
@@ -119,6 +120,12 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
         SugaredStatement::Block(sugared_statements) => {
             Statement::Block(desugar_statements(sugared_statements))
         }
+        SugaredStatement::OperatorAssignment(assign_op, id, expr) => match assign_op {
+            AssignOp::Plus => Statement::Assign(
+                id.to_string(),
+                Expr::Binary(Operator::Plus, Box::new(Expr::Var(id)), Box::new(desugar_expression(expr))),
+            ),
+        },
     }
 }
 

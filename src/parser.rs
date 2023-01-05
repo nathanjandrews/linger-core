@@ -1,6 +1,7 @@
 use std::vec;
 
 use crate::desugar::{desugar_statement, Procedure, Statement};
+use crate::tokenizer::AssignOp;
 use crate::tokenizer::Operator::{self, *};
 use crate::{
     error::{LingerError, LingerError::ParseError, ParseError::*},
@@ -44,6 +45,7 @@ pub enum SugaredStatement {
     Expr(SugaredExpr),
     Let(String, SugaredExpr),
     Assign(String, SugaredExpr),
+    OperatorAssignment(AssignOp, String, SugaredExpr),
     Block(Vec<SugaredStatement>),
     If(
         SugaredExpr,
@@ -221,6 +223,20 @@ fn parse_statement(
                 tokens,
             ))
         }
+        [T(ID(var_name), ..), T(ASSIGN_OP(assign_op), ..), tokens @ ..] => {
+            let (var_expr, tokens) = parse_expr(tokens)?;
+
+            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
+
+            Ok((
+                Some(SugaredStatement::OperatorAssignment(
+                    *assign_op,
+                    var_name.to_string(),
+                    var_expr,
+                )),
+                tokens,
+            ))
+        }
         [T(KW(If), ..), T(LPAREN, ..), tokens @ ..] => {
             let (cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = consume_token(RPAREN, tokens)?;
@@ -294,7 +310,7 @@ fn parse_statement(
 
             let (reassign_statement_option, tokens) = parse_statement(tokens, false)?;
             let reassign_statement = match reassign_statement_option {
-                Some(statement) =>  {
+                Some(statement) => {
                     if is_assignment_or_initialization(&statement) {
                         statement
                     } else {
@@ -302,7 +318,7 @@ fn parse_statement(
                             "expected variable assignment".to_string(),
                         )));
                     }
-                },
+                }
                 None => return Err(ParseError(ExpectedStatement)),
             };
             let tokens = consume_token(RPAREN, tokens)?;
@@ -592,6 +608,7 @@ fn ensure_block(
 fn is_assignment(statement: &SugaredStatement) -> bool {
     match statement {
         SugaredStatement::Assign(_, _) => true,
+        SugaredStatement::OperatorAssignment(_, _, _) => true,
         SugaredStatement::Expr(expr) => match expr {
             SugaredExpr::Unary(op, _) => match op {
                 PreIncrement | PostIncrement | PreDecrement | PostDecrement => true,
@@ -606,6 +623,6 @@ fn is_assignment(statement: &SugaredStatement) -> bool {
 fn is_assignment_or_initialization(statement: &SugaredStatement) -> bool {
     match statement {
         SugaredStatement::Let(_, _) => true,
-        statement => is_assignment(statement)
+        statement => is_assignment(statement),
     }
 }

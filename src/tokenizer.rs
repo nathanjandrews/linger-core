@@ -22,6 +22,7 @@ pub enum TokenValue {
     ASSIGN,
     OP(Operator),
     KW(Keyword),
+    ASSIGN_OP(AssignOp),
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -58,6 +59,11 @@ pub enum Operator {
     PostIncrement,
     PreDecrement,
     PostDecrement,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+pub enum AssignOp {
+    Plus,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -105,6 +111,7 @@ const QUOTE_REGEX: &str = "\"";
 const LOGIC_OR_REGEX: &str = r"\|\|";
 const LOGIC_AND_REGEX: &str = "&&";
 const LOGIC_NOT_REGEX: &str = "!";
+const ASSIGNMENT_PLUS_REGEX: &str = r"\+=";
 
 /// Returns the [Tokens](Token) which make up the program `s`.
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
@@ -237,6 +244,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
         Ok((Some(TokenValue::DOUBLE_PLUS), mat.end()))
     } else if let Some(mat) = find(DOUBLE_MINUS_REGEX, s) {
         Ok((Some(TokenValue::DOUBLE_MINUS), mat.end()))
+    } else if let Some(mat) = find(ASSIGNMENT_PLUS_REGEX, s) {
+        Ok((Some(TokenValue::ASSIGN_OP(AssignOp::Plus)), mat.end()))
 
     // ONE-CHARACTER TOKENS
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
@@ -303,6 +312,14 @@ fn find<'a>(re: &'a str, s: &'a str) -> Option<Match<'a>> {
     return str_to_regex(re).find(s);
 }
 
+impl fmt::Display for AssignOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AssignOp::Plus => write!(f, "+="),
+        }
+    }
+}
+
 impl fmt::Display for Operator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -367,6 +384,7 @@ impl fmt::Display for TokenValue {
             TokenValue::KW(kw) => write!(f, "{kw}"),
             TokenValue::DOUBLE_PLUS => write!(f, "++"),
             TokenValue::DOUBLE_MINUS => write!(f, "--"),
+            TokenValue::ASSIGN_OP(op) => write!(f, "{op}"),
         }
     }
 }
