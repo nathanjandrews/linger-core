@@ -8,12 +8,14 @@ use crate::{
     interpreter::Value,
 };
 
+type Binding = (String, Value);
+
 #[derive(Debug, Clone)]
 pub struct Environment {
     values: HashMap<String, Value>,
 }
 
-impl<'a> Environment {
+impl Environment {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
@@ -27,7 +29,7 @@ impl<'a> Environment {
         }
     }
 
-    pub fn extend(mut self, bindings: Vec<(String, Value)>) -> Self {
+    pub fn extend(mut self, bindings: Vec<Binding>) -> Self {
         for (var, value) in bindings {
             self.values.insert(var, value);
         }
@@ -36,5 +38,9 @@ impl<'a> Environment {
 
     pub fn update(&mut self, key: String, value: Value) {
         self.values.insert(key, value);
+    }
+
+    pub fn bindings(&self) -> Vec<Binding> {
+        return self.values.clone().into_iter().collect();
     }
 }

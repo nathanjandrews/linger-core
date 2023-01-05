@@ -42,15 +42,15 @@ impl fmt::Display for Value {
 }
 
 pub fn interp_program<'a>(p: Program) -> Result<Value, LingerError> {
-    let mut initial_env = Environment::new();
+    let mut tmp_initial_env = Environment::new();
     for Procedure { name, params, body } in p.procedures {
-        initial_env.update(
+        tmp_initial_env.update(
             name.to_string(),
             Value::Proc(params, body, Environment::new()),
         )
     }
 
-    return match interp_statement(&mut initial_env, p.main, false)? {
+    return match interp_statement(&mut tmp_initial_env, p.main, false)? {
         (value, _) => Ok(value),
     };
 }
@@ -355,7 +355,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 .zip(arg_values)
                 .collect();
 
-            return match interp_statement(&mut f_env.extend(bindings), f_body, false)? {
+            return match interp_statement(&mut f_env.extend(env.bindings()).extend(bindings), f_body, false)? {
                 (value, _) => Ok(value),
             };
         }
