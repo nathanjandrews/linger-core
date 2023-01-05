@@ -32,8 +32,8 @@ Nothing so far, let's keep it that way.
 - [x] escape sequences
 - [ ] decimal numbers
 - [x] closures (static-scope)
-- [x] comments (static-scope)
-- [ ] increment/decrement unary operators
+- [x] comments
+- [x] increment/decrement unary operators
 
 ## Bugs
 
@@ -46,7 +46,7 @@ Nothing so far, let's keep it that way.
 
 ## Potential Code Improvements
 
-- [ ] make keywords and enum
+- [x] make keywords and enum
 - [ ] use Option<Value> in place of an explicit Void type
 
 ## Testing
