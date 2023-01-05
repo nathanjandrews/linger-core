@@ -1,0 +1,6 @@
+proc main() {
+  for (let a = 0; a < 10; a++) {
+    print(a);
+    print(" ");
+  }
+}

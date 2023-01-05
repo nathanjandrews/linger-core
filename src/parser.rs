@@ -278,14 +278,15 @@ fn parse_statement(
         [T(KW(For), ..), T(LPAREN, ..), tokens @ ..] => {
             let (var_statement_option, tokens) = parse_statement(tokens, true)?;
             let var_statement = match var_statement_option {
-                Some(statement) => match statement {
-                    s @ (SugaredStatement::Let(_, _) | SugaredStatement::Assign(_, _)) => s,
-                    _ => {
+                Some(statement) => {
+                    if is_assignment_or_initialization(&statement) {
+                        statement
+                    } else {
                         return Err(ParseError(Custom(
                             "expected variable assignment or initialization".to_string(),
-                        )))
+                        )));
                     }
-                },
+                }
                 None => return Err(ParseError(ExpectedStatement)),
             };
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
@@ -293,12 +294,13 @@ fn parse_statement(
 
             let (reassign_statement_option, tokens) = parse_statement(tokens, false)?;
             let reassign_statement = match reassign_statement_option {
-                Some(statement) => match statement {
-                    s @ SugaredStatement::Assign(_, _) => s,
-                    _ => {
+                Some(statement) =>  {
+                    if is_assignment_or_initialization(&statement) {
+                        statement
+                    } else {
                         return Err(ParseError(Custom(
                             "expected variable assignment".to_string(),
-                        )))
+                        )));
                     }
                 },
                 None => return Err(ParseError(ExpectedStatement)),
@@ -346,7 +348,7 @@ fn parse_statement(
         }
         tokens => match parse_expr(tokens)? {
             (expr, tokens) => {
-                let tokens = conditionally_consume_semicolon(tokens, true)?;
+                let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
                 Ok((Some(SugaredStatement::Expr(expr)), tokens))
             }
         },
@@ -584,5 +586,26 @@ fn ensure_block(
             _ => Err(ParseError(ExpectedBlock)),
         },
         None => Err(ParseError(ExpectedBlock)),
+    }
+}
+
+fn is_assignment(statement: &SugaredStatement) -> bool {
+    match statement {
+        SugaredStatement::Assign(_, _) => true,
+        SugaredStatement::Expr(expr) => match expr {
+            SugaredExpr::Unary(op, _) => match op {
+                PreIncrement | PostIncrement | PreDecrement | PostDecrement => true,
+                _ => false,
+            },
+            _ => false,
+        },
+        _ => false,
+    }
+}
+
+fn is_assignment_or_initialization(statement: &SugaredStatement) -> bool {
+    match statement {
+        SugaredStatement::Let(_, _) => true,
+        statement => is_assignment(statement)
     }
 }
