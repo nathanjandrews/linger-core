@@ -3,6 +3,7 @@ use parser::parse_program;
 use tokenizer::tokenize;
 
 mod desugar;
+pub mod environment;
 mod error;
 pub mod interpreter;
 pub mod parser;
