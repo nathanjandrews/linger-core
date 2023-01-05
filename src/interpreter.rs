@@ -8,6 +8,7 @@ use crate::{
         RuntimeError::*,
     },
     parser::Program,
+    tokenizer::Operator,
 };
 
 #[derive(Clone, Debug)]
@@ -145,7 +146,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
         Expr::Proc(params, body) => Ok(Value::Proc(params, *body, env.clone())),
         Expr::Var(id) => env.get(id.to_string()),
         Expr::Binary(op, left, right) => match op {
-            crate::tokenizer::Operator::Plus => {
+            Operator::Plus => {
                 match (
                     interp_expression(env, *left)?,
                     interp_expression(env, *right)?,
@@ -160,10 +161,127 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                     (v, _) => Err(RuntimeError(BadArg(v))),
                 }
             }
-            _ => todo!(),
+            Operator::Minus => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left - num_right))
+                }
+                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
+                (v, _) => Err(RuntimeError(BadArg(v))),
+            },
+            Operator::Eq => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left == num_right))
+                }
+                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                    Ok(Value::Bool(bool_left == bool_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Ne => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left != num_right))
+                }
+                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
+                    Ok(Value::Bool(bool_left != bool_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LT => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left < num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::GT => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left > num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LTE => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left <= num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::GTE => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Bool(num_left >= num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::LogicOr => match interp_expression(env, *left)? {
+                Value::Bool(b) => match b {
+                    true => Ok(Value::Bool(true)),
+                    false => match interp_expression(env, *right)? {
+                        Value::Bool(b) => Ok(Value::Bool(b)),
+                        right_value => Err(RuntimeError(BadArg(right_value))),
+                    },
+                },
+                left_value => Err(RuntimeError(BadArg(left_value))),
+            },
+            Operator::LogicAnd => match interp_expression(env, *left)? {
+                Value::Bool(b) => match b {
+                    false => Ok(Value::Bool(false)),
+                    true => match interp_expression(env, *right)? {
+                        Value::Bool(b) => Ok(Value::Bool(b)),
+                        right_value => Err(RuntimeError(BadArg(right_value))),
+                    },
+                },
+                left_value => Err(RuntimeError(BadArg(left_value))),
+            },
+            Operator::Times => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left * num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Mod => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left % num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            Operator::Div => match (
+                interp_expression(env, *left)?,
+                interp_expression(env, *right)?,
+            ) {
+                (Value::Num(num_left), Value::Num(num_right)) => {
+                    Ok(Value::Num(num_left / num_right))
+                }
+                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+            },
+            op => Err(RuntimeError(UnaryAsBinary(op))),
         },
         Expr::Unary(op, operand) => match op {
-            crate::tokenizer::Operator::PreIncrement => {
+            Operator::PreIncrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
                     _ => return Err(RuntimeError(InvalidAssignmentTarget)),
@@ -178,7 +296,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
 
                 return Ok(Value::Num(num_value + 1));
             }
-            crate::tokenizer::Operator::PostIncrement => {
+            Operator::PostIncrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
                     _ => return Err(RuntimeError(InvalidAssignmentTarget)),
@@ -193,7 +311,15 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
 
                 return Ok(Value::Num(original_num_value));
             }
-            _ => todo!(),
+            Operator::Minus => match interp_expression(env, *operand)? {
+                Value::Num(n) => Ok(Value::Num(-n)),
+                v => Err(RuntimeError(BadArg(v))),
+            },
+            Operator::LogicNot => match interp_expression(env, *operand)? {
+                Value::Bool(b) => Ok(Value::Bool(!b)),
+                v => Err(RuntimeError(BadArg(v))),
+            },
+            op => Err(RuntimeError(BinaryAsUnary(op))),
         },
         Expr::Call(f_expr, args) => {
             let f_name = match *f_expr {
