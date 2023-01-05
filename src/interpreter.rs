@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{
     desugar::{Expr, Procedure, Statement},
-    environment::Environment,
+    environment::{AssignmentType, Binding, Entry, Environment},
     error::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
@@ -44,7 +44,7 @@ impl fmt::Display for Value {
 pub fn interp_program<'a>(p: Program) -> Result<Value, LingerError> {
     let mut tmp_initial_env = Environment::new();
     for Procedure { name, params, body } in p.procedures {
-        tmp_initial_env.update(
+        tmp_initial_env.insert_new(
             name.to_string(),
             Value::Proc(params, body, Environment::new()),
         )
@@ -66,12 +66,12 @@ pub fn interp_statement(
         },
         Statement::Let(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
-            env.update(id, new_value);
+            env.insert_new(id, new_value);
             Ok((Value::Void, ControlFlow::Normal))
         }
         Statement::Assign(id, expr) => {
             let value = interp_expression(env, expr)?;
-            env.update(id, value);
+            env.reassign(id, value)?;
             Ok((Value::Void, ControlFlow::Normal))
         }
         Statement::If(cond_expr, then_statement, else_statement_option) => {
@@ -112,12 +112,17 @@ pub fn interp_statement(
         Statement::Continue => Ok((Value::Void, ControlFlow::Continue)),
         Statement::Block(statements) => {
             let mut block_value = Value::Void;
+            let mut block_env = env.clone();
             for statement in statements {
-                let statement_value = match interp_statement(env, statement, in_loop)? {
+                let statement_value = match interp_statement(&mut block_env, statement, in_loop)? {
                     (value, ControlFlow::Normal) => value,
-                    (value, ControlFlow::Return) => return Ok((value, ControlFlow::Return)),
+                    (value, ControlFlow::Return) => {
+                        env.update_reassigned_entries(&block_env)?;
+                        return Ok((value, ControlFlow::Return));
+                    }
                     (value, ControlFlow::Break) => {
                         if in_loop {
+                            env.update_reassigned_entries(&block_env)?;
                             return Ok((value, ControlFlow::Break));
                         } else {
                             return Err(RuntimeError(BreakNotInLoop));
@@ -125,6 +130,7 @@ pub fn interp_statement(
                     }
                     (value, ControlFlow::Continue) => {
                         if in_loop {
+                            env.update_reassigned_entries(&block_env)?;
                             return Ok((value, ControlFlow::Continue));
                         } else {
                             return Err(RuntimeError(ContinueNotInLoop));
@@ -133,6 +139,7 @@ pub fn interp_statement(
                 };
                 block_value = statement_value;
             }
+            env.update_reassigned_entries(&block_env)?;
             return Ok((block_value, ControlFlow::Normal));
         }
     }
@@ -144,7 +151,9 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
         Expr::Proc(params, body) => Ok(Value::Proc(params, *body, env.clone())),
-        Expr::Var(id) => env.get(id.to_string()),
+        Expr::Var(id) => match env.get(id.to_string())? {
+            (v, _) => Ok(v),
+        },
         Expr::Binary(op, left, right) => match op {
             Operator::Plus => {
                 match (
@@ -292,7 +301,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                     v => return Err(RuntimeError(BadArg(v))),
                 };
 
-                env.update(var_name, Value::Num(num_value + 1));
+                env.reassign(var_name, Value::Num(num_value + 1))?;
 
                 return Ok(Value::Num(num_value + 1));
             }
@@ -307,7 +316,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                     v => return Err(RuntimeError(BadArg(v))),
                 };
 
-                env.update(var_name, Value::Num(original_num_value + 1));
+                env.reassign(var_name, Value::Num(original_num_value + 1))?;
 
                 return Ok(Value::Num(original_num_value));
             }
@@ -349,13 +358,22 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 Err(e) => return Err(e),
             };
 
-            let bindings: Vec<(String, Value)> = f_params
-                .iter()
-                .map(|param| param.to_string())
-                .zip(arg_values)
+            let entries: Vec<Entry> = arg_values
+                .into_iter()
+                .map(|v| (v, AssignmentType::Initialized))
                 .collect();
 
-            return match interp_statement(&mut f_env.extend(env.bindings()).extend(bindings), f_body, false)? {
+            let bindings: Vec<Binding> = f_params
+                .iter()
+                .map(|param| param.to_string())
+                .zip(entries)
+                .collect();
+
+            return match interp_statement(
+                &mut f_env.extend_new_bindings(env.bindings()).extend(bindings),
+                f_body,
+                false,
+            )? {
                 (value, _) => Ok(value),
             };
         }

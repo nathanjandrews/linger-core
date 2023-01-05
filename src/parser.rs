@@ -143,7 +143,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerErro
 
 fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerError> {
     match tokens {
-        [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), _] => {
+        [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => {
             Err(ParseError(KeywordAsProc(kw.to_string())))
         }
         [T(KW(Proc), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
@@ -168,7 +168,7 @@ fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerEr
 fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
-        [T(KW(kw), ..), _] => Err(ParseError(KeywordAsParam(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(ParseError(KeywordAsParam(kw.to_string()))),
         [T(ID(param_name), ..), rest_toks @ ..] => {
             let (mut rest_params, rest_toks) = parse_params(rest_toks)?;
             let mut params = vec![param_name.to_string()];
@@ -199,9 +199,7 @@ fn parse_statement(
 ) -> Result<(Option<SugaredStatement>, &[T]), LingerError> {
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
-        [T(KW(Let), ..), T(KW(kw), ..), T(ASSIGN, ..), _] => {
-            Err(ParseError(KeywordAsVar(kw.to_string())))
-        }
+        [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
         [T(KW(Let), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -212,7 +210,7 @@ fn parse_statement(
                 tokens,
             ))
         }
-        [T(KW(kw), ..), T(ASSIGN, ..), _] => Err(ParseError(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), T(ASSIGN, ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
         [T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -346,12 +344,11 @@ fn parse_statement(
             let (statements, tokens) = parse_statements(tokens)?;
             Ok((Some(SugaredStatement::Block(statements)), tokens))
         }
-        tokens => match parse_expr(tokens) {
-            Ok((expr, tokens)) => {
+        tokens => match parse_expr(tokens)? {
+            (expr, tokens) => {
                 let tokens = conditionally_consume_semicolon(tokens, true)?;
                 Ok((Some(SugaredStatement::Expr(expr)), tokens))
             }
-            Err(e) => return Err(e),
         },
     }
 }
@@ -432,7 +429,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
-        [T(KW(kw), ..), _] => Err(ParseError(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
         [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = parse_expr(tokens)?;
