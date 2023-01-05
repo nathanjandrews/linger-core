@@ -89,7 +89,7 @@ pub enum Builtin {
 }
 
 /// Parses a program from a list of tokens.
-pub fn parse_program<'a>(tokens: &'a [T]) -> Result<Program, LingerError> {
+pub fn parse_program(tokens: &[T]) -> Result<Program, LingerError> {
     let (procedures, rest) = parse_procs(tokens)?;
 
     if !rest.is_empty() {
@@ -117,7 +117,7 @@ pub fn parse_program<'a>(tokens: &'a [T]) -> Result<Program, LingerError> {
     });
 }
 
-fn parse_procs<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredProcedure>, &'a [T]), LingerError> {
+fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerError> {
     let (proc_option, tokens) = parse_proc(tokens)?;
 
     match proc_option {
@@ -141,7 +141,7 @@ fn parse_procs<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredProcedure>, &'a [T]), 
     }
 }
 
-fn parse_proc<'a>(tokens: &'a [T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerError> {
+fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerError> {
     match tokens {
         [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), _] => {
             Err(ParseError(KeywordAsProc(kw.to_string())))
@@ -165,7 +165,7 @@ fn parse_proc<'a>(tokens: &'a [T]) -> Result<(Option<SugaredProcedure>, &[T]), L
     }
 }
 
-fn parse_params<'a>(tokens: &'a [T]) -> Result<(Vec<String>, &[T]), LingerError> {
+fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
         [T(KW(kw), ..), _] => Err(ParseError(KeywordAsParam(kw.to_string()))),
@@ -179,7 +179,7 @@ fn parse_params<'a>(tokens: &'a [T]) -> Result<(Vec<String>, &[T]), LingerError>
     }
 }
 
-fn parse_statements<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredStatement>, &[T]), LingerError> {
+fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), LingerError> {
     let (statement_option, tokens) = parse_statement(tokens, true)?;
 
     let statement = match statement_option {
@@ -193,8 +193,8 @@ fn parse_statements<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredStatement>, &[T])
     Ok((vec, tokens))
 }
 
-fn parse_statement<'a>(
-    tokens: &'a [T],
+fn parse_statement(
+    tokens: &[T],
     parse_semicolon: bool,
 ) -> Result<(Option<SugaredStatement>, &[T]), LingerError> {
     match tokens {
@@ -356,35 +356,35 @@ fn parse_statement<'a>(
     }
 }
 
-fn parse_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     parse_logical_or_expr(tokens)
 }
 
-fn parse_logical_or_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_logical_or_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_logical_and_expr, vec![LogicOr], tokens);
 }
 
-fn parse_logical_and_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_logical_and_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_equality_expr, vec![LogicAnd], tokens);
 }
 
-fn parse_equality_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_equality_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_relational_expr, vec![Eq, Ne], tokens);
 }
 
-fn parse_relational_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_relational_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_additive_expr, vec![LT, GT, LTE, GTE], tokens);
 }
 
-fn parse_additive_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_additive_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_multiplicative_expr, vec![Plus, Minus], tokens);
 }
 
-fn parse_multiplicative_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     return parse_binary_expr(parse_unary_expr, vec![Times, Mod, Div], tokens);
 }
 
-fn parse_unary_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     match match_operator(vec![Minus, LogicNot].as_slice(), tokens) {
         Some((op, tokens)) => {
             let (operand, tokens) = parse_terminal_expr(tokens)?;
@@ -394,7 +394,7 @@ fn parse_unary_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), Linge
     }
 }
 
-fn parse_terminal_expr<'a>(tokens: &'a [T]) -> Result<(SugaredExpr, &'a [T]), LingerError> {
+fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     match tokens {
         [T(KW(Lam), ..), T(LPAREN, ..), tokens @ ..] => {
             let (params, tokens) = parse_params(tokens)?;
@@ -455,7 +455,7 @@ fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError> {
     }
 }
 
-fn parse_rest_args<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredExpr>, &'a [T]), LingerError> {
+fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
@@ -469,7 +469,7 @@ fn parse_rest_args<'a>(tokens: &'a [T]) -> Result<(Vec<SugaredExpr>, &'a [T]), L
 //////////////////////////////////////////////////////////////////////////
 
 /// A helper function to create an [UnexpectedToken Error](UnexpectedToken).
-fn unexpected_token<'a>(tokens: &'a [T]) -> LingerError {
+fn unexpected_token(tokens: &[T]) -> LingerError {
     return LingerError::ParseError(UnexpectedToken(tokens.first().unwrap().to_owned()));
 }
 
@@ -484,7 +484,7 @@ pub fn check_builtin(s: &str) -> Option<Builtin> {
 /// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
 /// this function returns `tokens` with the first element removed. On failure, this function returns
 /// an [Expected] error.
-fn consume_token<'a>(target: TokenValue, tokens: &'a [T]) -> Result<&'a [T], LingerError> {
+fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], LingerError> {
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
         [token, ..] => Err(ParseError(Expected(target, token.clone()))),
@@ -496,10 +496,10 @@ fn consume_token<'a>(target: TokenValue, tokens: &'a [T]) -> Result<&'a [T], Lin
 /// If `should_consume` is true, then this function returns the result of [consume_token] with a
 /// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
 /// list unmodified.
-fn conditionally_consume_semicolon<'a>(
-    tokens: &'a [T],
+fn conditionally_consume_semicolon(
+    tokens: &[T],
     should_consume: bool,
-) -> Result<&'a [T], LingerError> {
+) -> Result<&[T], LingerError> {
     if should_consume {
         return consume_token(SEMICOLON, tokens);
     } else {
@@ -550,18 +550,14 @@ fn parse_binary_expr(
 }
 
 /// A helper function for creating a [Binary Expression](SugaredExpr::Binary)
-fn binary_expression<'a>(
-    op: Operator,
-    first_arg: SugaredExpr,
-    second_arg: SugaredExpr,
-) -> SugaredExpr {
+fn binary_expression(op: Operator, first_arg: SugaredExpr, second_arg: SugaredExpr) -> SugaredExpr {
     SugaredExpr::Binary(op, Box::new(first_arg), Box::new(second_arg))
 }
 
 /// Ensures that `statement_option` is a Some variant which contains a
 /// [Block Statement](SugaredStatement::Block). Otherwise, this function returns
 /// an [ExpectedBlock] parse error.
-fn ensure_block<'a>(
+fn ensure_block(
     statement_option: Option<SugaredStatement>,
 ) -> Result<SugaredStatement, LingerError> {
     match statement_option {
