@@ -15,7 +15,7 @@ pub enum Value {
     Num(i64),
     Bool(bool),
     Str(String),
-    Lambda(Vec<String>, Statement, Environment),
+    Proc(Vec<String>, Statement, Environment),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -35,7 +35,7 @@ impl fmt::Display for Value {
             Value::Bool(b) => write!(f, "{}", b),
             Value::Void => write!(f, "<void>"),
             Value::Str(s) => write!(f, "{}", s),
-            Value::Lambda(..) => write!(f, "<lambda>"),
+            Value::Proc(..) => write!(f, "<lambda>"),
         }
     }
 }
@@ -45,7 +45,7 @@ pub fn interp_program<'a>(p: Program) -> Result<Value, LingerError> {
     for Procedure { name, params, body } in p.procedures {
         initial_env.update(
             name.to_string(),
-            Value::Lambda(params, body, Environment::new()),
+            Value::Proc(params, body, Environment::new()),
         )
     }
 
@@ -142,7 +142,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
-        Expr::Proc(params, body) => Ok(Value::Lambda(params, *body, env.clone())),
+        Expr::Proc(params, body) => Ok(Value::Proc(params, *body, env.clone())),
         Expr::Var(id) => env.get(id.to_string()),
         Expr::Binary(op, left, right) => match op {
             crate::tokenizer::Operator::Plus => {
@@ -170,7 +170,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             };
 
             let (f_params, f_body, f_env) = match interp_expression(env, *f_expr)? {
-                Value::Lambda(params, body, env) => (params, body, env),
+                Value::Proc(params, body, env) => (params, body, env),
                 v => return Err(RuntimeError(BadArg(v))),
             };
 
