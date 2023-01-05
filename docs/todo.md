@@ -52,6 +52,10 @@ Nothing so far, let's keep it that way.
 - [ ] make binary operators and unary operators separate enums
 - [ ] use Option<Value> in place of an explicit Void type
 
+## Repository Hygiene
+
+- [ ] document code
+
 ## Testing
 
 ## Miscellaneous
