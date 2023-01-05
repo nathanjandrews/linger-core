@@ -16,18 +16,19 @@ statements :=
   | statement `<rest-statements>`
 
 rest-statements :=
-  | `<statement>` `<rest-statements>`
+  | epsilon
+  | SEMICOLON `<statement>` `<rest-statements>`
 
 statement :=
-  | LET ID ASSIGN `<expr>` SEMICOLON
-  | RETURN `<expr>` SEMICOLON
-  | RETURN SEMICOLON
+  | LET ID ASSIGN `<expr>`
+  | RETURN `<expr>`
+  | RETURN
   | IF LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET `<else-if-statements>`
   | IF LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET `<else-if-statements>` ELSE LBRACKET `<statements>` RBRACKET
   | WHILE LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET
-  | FOR LPAREN `<statement>` `<expr>` SEMICOLON `<statement>` RPAREN LBRACKET `<statements>` RBRACKET
-  | `<expr>` SEMICOLON
-  | ID `<assign-op>` `<expr>` SEMICOLON
+  | FOR LPAREN `<statement>` SEMICOLON `<expr>` SEMICOLON `<statement>` RPAREN LBRACKET `<statements>` RBRACKET
+  | `<expr>`
+  | ID `<assign-op>` `<expr>`
   | BREAK
   | CONTINUE
 
