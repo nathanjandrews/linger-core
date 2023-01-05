@@ -386,6 +386,7 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
         [T(OP(Minus), ..), tokens @ ..] => (Some(Minus), tokens),
         [T(OP(LogicNot), ..), tokens @ ..] => (Some(LogicNot), tokens),
         [T(DOUBLE_PLUS, ..), tokens @ ..] => (Some(PreIncrement), tokens),
+        [T(DOUBLE_MINUS, ..), tokens @ ..] => (Some(PreDecrement), tokens),
         tokens => (None, tokens),
     };
 
@@ -397,6 +398,12 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
             [T(DOUBLE_PLUS, ..), tokens @ ..] => {
                 return Ok((
                     SugaredExpr::Unary(PostIncrement, Box::new(terminal_expr)),
+                    tokens,
+                ))
+            }
+            [T(DOUBLE_MINUS, ..), tokens @ ..] => {
+                return Ok((
+                    SugaredExpr::Unary(PostDecrement, Box::new(terminal_expr)),
                     tokens,
                 ))
             }

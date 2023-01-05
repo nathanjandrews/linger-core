@@ -320,6 +320,36 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
 
                 return Ok(Value::Num(original_num_value));
             }
+            Operator::PreDecrement => {
+                let var_name = match *operand {
+                    Expr::Var(ref id) => id.to_string(),
+                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                };
+
+                let num_value = match interp_expression(env, *operand)? {
+                    Value::Num(n) => n,
+                    v => return Err(RuntimeError(BadArg(v))),
+                };
+
+                env.reassign(var_name, Value::Num(num_value - 1))?;
+
+                return Ok(Value::Num(num_value - 1));
+            }
+            Operator::PostDecrement => {
+                let var_name = match *operand {
+                    Expr::Var(ref id) => id.to_string(),
+                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                };
+
+                let original_num_value = match interp_expression(env, *operand)? {
+                    Value::Num(n) => n,
+                    v => return Err(RuntimeError(BadArg(v))),
+                };
+
+                env.reassign(var_name, Value::Num(original_num_value - 1))?;
+
+                return Ok(Value::Num(original_num_value));
+            }
             Operator::Minus => match interp_expression(env, *operand)? {
                 Value::Num(n) => Ok(Value::Num(-n)),
                 v => Err(RuntimeError(BadArg(v))),
