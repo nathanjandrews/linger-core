@@ -162,7 +162,39 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             }
             _ => todo!(),
         },
-        Expr::Unary(_, _) => todo!(),
+        Expr::Unary(op, operand) => match op {
+            crate::tokenizer::Operator::PreIncrement => {
+                let var_name = match *operand {
+                    Expr::Var(ref id) => id.to_string(),
+                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                };
+
+                let num_value = match interp_expression(env, *operand)? {
+                    Value::Num(n) => n,
+                    v => return Err(RuntimeError(BadArg(v))),
+                };
+
+                env.update(var_name, Value::Num(num_value + 1));
+
+                return Ok(Value::Num(num_value + 1));
+            }
+            crate::tokenizer::Operator::PostIncrement => {
+                let var_name = match *operand {
+                    Expr::Var(ref id) => id.to_string(),
+                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                };
+
+                let original_num_value = match interp_expression(env, *operand)? {
+                    Value::Num(n) => n,
+                    v => return Err(RuntimeError(BadArg(v))),
+                };
+
+                env.update(var_name, Value::Num(original_num_value + 1));
+
+                return Ok(Value::Num(original_num_value));
+            }
+            _ => todo!(),
+        },
         Expr::Call(f_expr, args) => {
             let f_name = match *f_expr {
                 Expr::Var(ref f_name) => f_name.to_string(),

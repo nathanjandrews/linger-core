@@ -385,12 +385,26 @@ fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), Linger
 }
 
 fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
-    match match_operator(vec![Minus, LogicNot].as_slice(), tokens) {
-        Some((op, tokens)) => {
-            let (operand, tokens) = parse_terminal_expr(tokens)?;
-            return Ok((SugaredExpr::Unary(op, Box::new(operand)), tokens));
-        }
-        None => return parse_terminal_expr(tokens),
+    let (op_option, tokens) = match tokens {
+        [T(OP(Minus), ..), tokens @ ..] => (Some(Minus), tokens),
+        [T(OP(LogicNot), ..), tokens @ ..] => (Some(LogicNot), tokens),
+        [T(DOUBLE_PLUS, ..), tokens @ ..] => (Some(PreIncrement), tokens),
+        tokens => (None, tokens),
+    };
+
+    let (terminal_expr, tokens) = parse_terminal_expr(tokens)?;
+
+    match op_option {
+        Some(op) => return Ok((SugaredExpr::Unary(op, Box::new(terminal_expr)), tokens)),
+        None => match tokens {
+            [T(DOUBLE_PLUS, ..), tokens @ ..] => {
+                return Ok((
+                    SugaredExpr::Unary(PostIncrement, Box::new(terminal_expr)),
+                    tokens,
+                ))
+            }
+            tokens => return Ok((terminal_expr, tokens)),
+        },
     }
 }
 

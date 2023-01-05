@@ -64,6 +64,7 @@ pub enum RuntimeError {
     BreakNotInLoop,
     /// This error occurs when a `continue` statement occurs outside of a loop.
     ContinueNotInLoop,
+    InvalidAssignmentTarget,
 }
 
 /// A LingerError. This is a wrapper enum around all of [TokenizerError], [ParseError], and
@@ -145,6 +146,7 @@ impl fmt::Display for LingerError {
                 RuntimeError::ContinueNotInLoop => {
                     write!(f, "continue statement found outside of a loop")
                 }
+                RuntimeError::InvalidAssignmentTarget => write!(f, "invalid assignment target"),
             },
         }
     }

@@ -31,6 +31,7 @@ pub enum TokenValue {
     COMMA,
     THIN_ARROW,
     DOUBLE_SLASH,
+    DOUBLE_PLUS,
 }
 
 /// An operator. This enum represents all of the valid operators in the Linger
@@ -52,6 +53,8 @@ pub enum Operator {
     LogicOr,
     LogicAnd,
     LogicNot,
+    PreIncrement,
+    PostIncrement,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -86,6 +89,7 @@ const MINUS_REGEX: &str = r"\-";
 const STAR_REGEX: &str = r"\*";
 const SLASH_REGEX: &str = r"/";
 const DOUBLE_SLASH_REGEX: &str = r"//";
+const DOUBLE_PLUS_REGEX: &str = r"\+\+";
 const MOD_REGEX: &str = "%";
 const LPAREN_REGEX: &str = r"\(";
 const RPAREN_REGEX: &str = r"\)";
@@ -225,6 +229,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
         Ok((Some(TokenValue::DOUBLE_SLASH), mat.end()))
     } else if let Some(mat) = find(THIN_ARROW_REGEX, s) {
         Ok((Some(TokenValue::THIN_ARROW), mat.end()))
+    } else if let Some(mat) = find(DOUBLE_PLUS_REGEX, s) {
+        Ok((Some(TokenValue::DOUBLE_PLUS), mat.end()))
 
     // ONE-CHARACTER TOKENS
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
@@ -308,6 +314,8 @@ impl fmt::Display for Operator {
             Operator::LogicAnd => write!(f, "&&"),
             Operator::Div => write!(f, "/"),
             Operator::LogicNot => write!(f, "!"),
+            Operator::PreIncrement => write!(f, "++"),
+            Operator::PostIncrement => write!(f, "++"),
         }
     }
 }
@@ -349,6 +357,7 @@ impl fmt::Display for TokenValue {
             TokenValue::THIN_ARROW => write!(f, "->"),
             TokenValue::DOUBLE_SLASH => write!(f, "//"),
             TokenValue::KW(kw) => write!(f, "{kw}"),
+            TokenValue::DOUBLE_PLUS => write!(f, "++"),
         }
     }
 }
