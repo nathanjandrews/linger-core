@@ -69,3 +69,16 @@ fn inc_and_dec_operators() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn assignment_operators() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("assignment_operators"));
+    cmd.assert()
+        .success()
+        // numbers are currently only integers so division is actual integer division
+        .stdout(predicate::str::contains("15"));
+
+    Ok(())
+}

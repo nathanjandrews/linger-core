@@ -102,3 +102,15 @@ fn for_with_increment_op() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn for_with_assignment_op() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("for_with_assignment_op"));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("2 4 6 8"));
+
+    Ok(())
+}
