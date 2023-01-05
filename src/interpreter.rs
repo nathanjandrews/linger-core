@@ -1,39 +1,34 @@
-use std::{collections::HashMap, fmt};
+use std::fmt;
 
 use crate::{
     desugar::{Expr, Procedure, Statement},
+    environment::Environment,
     error::{
         LingerError::{self, RuntimeError},
         RuntimeError::*,
     },
     parser::Program,
-    tokenizer::Operator,
 };
 
 #[derive(Clone, Debug)]
-pub enum Value<'a> {
+pub enum Value {
     Num(i64),
     Bool(bool),
     Str(String),
-    Lambda(Vec<&'a str>, Vec<Statement<'a>>, Environment<'a>),
+    Lambda(Vec<String>, Statement, Environment),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
 
-enum ControlFlow {
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum ControlFlow {
     Return,
     Normal,
     Break,
     Continue,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub enum ValueStory {
-    Assignment,
-    Initialization,
-}
-
-impl fmt::Display for Value<'_> {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Num(n) => write!(f, "{}", n),
@@ -45,378 +40,172 @@ impl fmt::Display for Value<'_> {
     }
 }
 
-type Environment<'a> = HashMap<String, (Value<'a>, ValueStory)>;
-
-pub fn interp_program<'a>(p: Program<'a>) -> Result<Value, LingerError<'a>> {
+pub fn interp_program<'a>(p: Program) -> Result<Value, LingerError> {
     let mut initial_env = Environment::new();
     for Procedure { name, params, body } in p.procedures {
-        initial_env.insert(
+        initial_env.update(
             name.to_string(),
-            (
-                Value::Lambda(params, body, Environment::new()),
-                ValueStory::Initialization,
-            ),
-        );
+            Value::Lambda(params, body, Environment::new()),
+        )
     }
 
-    return match interp_statements(initial_env, p.main, false) {
-        Ok((_, value, _)) => Ok(value),
-        Err(e) => Err(e),
+    return match interp_statement(&mut initial_env, p.main, false)? {
+        (value, _) => Ok(value),
     };
 }
 
-fn interp_statements<'a>(
-    env: Environment<'a>,
-    statements: Vec<Statement<'a>>,
-    is_loop: bool,
-) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
-    let mut env = env;
-    let mut return_value = Value::Void;
-    for statement in statements {
-        let is_return_statement = match statement {
-            Statement::Return(_) => true,
-            _ => false,
-        };
-        let (new_env, value) = match interp_statement(env.clone(), statement, is_loop) {
-            Ok((new_env, value, control_flow)) => match control_flow {
-                ControlFlow::Return => return Ok((new_env, value, control_flow)),
-                ControlFlow::Normal => (new_env, value),
-
-                // if the statements are part of a loop, then break out of the nearest loop
-                ControlFlow::Break => {
-                    if is_loop {
-                        return Ok((new_env, Value::Void, ControlFlow::Break));
-                    } else {
-                        return Err(RuntimeError(BreakNotInLoop));
-                    }
-                }
-                ControlFlow::Continue => {
-                    if is_loop {
-                        return Ok((new_env, Value::Void, ControlFlow::Continue));
-                    } else {
-                        return Err(RuntimeError(ContinueNotInLoop));
-                    }
-                }
-            },
-            Err(e) => return Err(e),
-        };
-
-        env = new_env;
-        return_value = value;
-        if is_return_statement {
-            return Ok((env, return_value, ControlFlow::Return));
-        }
-    }
-    return Ok((env, return_value, ControlFlow::Normal));
-}
-
-fn interp_statement<'a>(
-    mut env: Environment<'a>,
-    statement: Statement<'a>,
-    inside_loop: bool,
-) -> Result<(Environment<'a>, Value<'a>, ControlFlow), LingerError<'a>> {
+pub fn interp_statement(
+    env: &mut Environment,
+    statement: Statement,
+    in_loop: bool,
+) -> Result<(Value, ControlFlow), LingerError> {
     match statement {
-        Statement::Block(statements) => {
-            let (updated_env, value, control_flow) =
-                interp_statements(env.clone(), statements, inside_loop)?;
-            for (var_name, (_, value_story)) in env.clone() {
-                match updated_env.get(&var_name) {
-                    Some((reassigned_value, ValueStory::Assignment)) => {
-                        env.insert(var_name, (reassigned_value.clone(), value_story));
-                    }
-                    _ => (),
-                };
-            }
-            Ok((env, value, control_flow))
+        Statement::Expr(expr) => match interp_expression(env, expr)? {
+            value => Ok((value, ControlFlow::Normal)),
+        },
+        Statement::Let(id, new_expr) => {
+            let new_value = interp_expression(env, new_expr)?;
+            env.update(id, new_value);
+            Ok((Value::Void, ControlFlow::Normal))
         }
-        Statement::Expr(expr) => match interp_expression(env.clone(), expr) {
-            Ok(value) => Ok((env.clone(), value, ControlFlow::Normal)),
-            Err(e) => Err(e),
-        },
-        Statement::Let(id, let_expr) => match interp_expression(env.clone(), let_expr) {
-            Ok(value) => {
-                let mut env = env.clone();
-                env.insert(id.to_string(), (value, ValueStory::Initialization));
-                Ok((env, Value::Void, ControlFlow::Normal))
+        Statement::Assign(id, expr) => {
+            let value = interp_expression(env, expr)?;
+            env.update(id, value);
+            Ok((Value::Void, ControlFlow::Normal))
+        }
+        Statement::If(cond_expr, then_statement, else_statement_option) => {
+            let cond_bool = match interp_expression(env, cond_expr)? {
+                Value::Bool(b) => b,
+                v => return Err(RuntimeError(BadArg(v))),
+            };
+            if cond_bool {
+                interp_statement(env, *then_statement, in_loop)
+            } else {
+                match else_statement_option {
+                    Some(else_statement) => interp_statement(env, *else_statement, in_loop),
+                    None => Ok((Value::Void, ControlFlow::Normal)),
+                }
             }
-            Err(e) => Err(e),
-        },
-        Statement::Assign(id, new_expr) => match env.get(id) {
-            Some(_) => {
-                let mut updated_env = env.clone();
-                updated_env.insert(
-                    id.to_string(),
-                    (interp_expression(env, new_expr)?, ValueStory::Assignment),
-                );
-                Ok((updated_env, Value::Void, ControlFlow::Normal))
+        }
+        Statement::While(cond_expr, while_block) => Ok(loop {
+            let cond_bool = match interp_expression(env, cond_expr.clone())? {
+                Value::Bool(b) => b,
+                v => return Err(RuntimeError(BadArg(v))),
+            };
+            if cond_bool {
+                match interp_statement(env, *while_block.clone(), true)? {
+                    (value, ControlFlow::Return) => break (value, ControlFlow::Return),
+                    (_, ControlFlow::Break) => break (Value::Void, ControlFlow::Normal),
+                    (_, ControlFlow::Normal) => (),
+                    (_, ControlFlow::Continue) => (),
+                };
+            } else {
+                break (Value::Void, ControlFlow::Normal);
             }
-            None => return Err(RuntimeError(UnknownVariable(id.to_string()))),
+        }),
+        Statement::Return(expr_option) => match expr_option {
+            Some(expr) => Ok((interp_expression(env, expr)?, ControlFlow::Return)),
+            None => Ok((Value::Void, ControlFlow::Return)),
         },
-        Statement::If(cond_expr, then_block, else_statements_option) => {
-            let cond_value = interp_expression(env.clone(), cond_expr)?;
-            match cond_value {
-                Value::Bool(b) => {
-                    if b {
-                        interp_statement(env.clone(), *then_block, inside_loop)
-                    } else {
-                        match else_statements_option {
-                            Some(else_block) => {
-                                interp_statement(env.clone(), *else_block, inside_loop)
-                            }
-                            None => Ok((env.clone(), Value::Void, ControlFlow::Normal)),
+        Statement::Break => Ok((Value::Void, ControlFlow::Break)),
+        Statement::Continue => Ok((Value::Void, ControlFlow::Continue)),
+        Statement::Block(statements) => {
+            let mut block_value = Value::Void;
+            for statement in statements {
+                let statement_value = match interp_statement(env, statement, in_loop)? {
+                    (value, ControlFlow::Normal) => value,
+                    (value, ControlFlow::Return) => return Ok((value, ControlFlow::Return)),
+                    (value, ControlFlow::Break) => {
+                        if in_loop {
+                            return Ok((value, ControlFlow::Break));
+                        } else {
+                            return Err(RuntimeError(BreakNotInLoop));
                         }
                     }
-                }
-                v => return Err(RuntimeError(ExpectedBool(v))),
-            }
-        }
-        Statement::Return(expr_option) => match expr_option {
-            Some(expr) => match interp_expression(env.clone(), expr) {
-                Ok(value) => Ok((env, value, ControlFlow::Return)),
-                Err(e) => return Err(e),
-            },
-            None => Ok((env, Value::Void, ControlFlow::Return)),
-        },
-        Statement::While(condition, while_block) => {
-            let mut env = env.clone();
-            return Ok(loop {
-                let condition_value = interp_expression(env.clone(), condition.clone())?;
-                match condition_value {
-                    Value::Bool(true) => {
-                        let (updated_env, body_value, body_control_flow) =
-                            interp_statement(env.clone(), *while_block.clone(), true)?;
-                        match body_control_flow {
-                            ControlFlow::Return => {
-                                break (env.clone(), body_value, body_control_flow)
-                            }
-                            ControlFlow::Break => break (env, Value::Void, ControlFlow::Normal),
-                            ControlFlow::Normal => (),
-                            ControlFlow::Continue => (),
-                        };
-                        env = updated_env;
+                    (value, ControlFlow::Continue) => {
+                        if in_loop {
+                            return Ok((value, ControlFlow::Continue));
+                        } else {
+                            return Err(RuntimeError(ContinueNotInLoop));
+                        }
                     }
-                    Value::Bool(false) => break (env, Value::Void, ControlFlow::Normal),
-                    _ => return Err(RuntimeError(BadArg(condition_value))),
-                }
-            });
+                };
+                block_value = statement_value;
+            }
+            return Ok((block_value, ControlFlow::Normal));
         }
-        Statement::Break => Ok((env, Value::Void, ControlFlow::Break)),
-        Statement::Continue => Ok((env, Value::Void, ControlFlow::Continue)),
     }
 }
 
-fn interp_expression<'a>(
-    env: Environment<'a>,
-    expr: Expr<'a>,
-) -> Result<Value<'a>, LingerError<'a>> {
+fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, LingerError> {
     match expr {
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
-        Expr::Lambda(params, body) => Ok(Value::Lambda(params, body, env)),
-        Expr::Var(id) => match env.get(id) {
-            Some((value, _)) => Ok(value.clone()),
-            None => Err(RuntimeError(UnknownVariable(id.to_string()))),
-        },
+        Expr::Proc(params, body) => Ok(Value::Lambda(params, *body, env.clone())),
+        Expr::Var(id) => env.get(id.to_string()),
         Expr::Binary(op, left, right) => match op {
-            Operator::Plus => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Num(num_left + num_right))
+            crate::tokenizer::Operator::Plus => {
+                match (
+                    interp_expression(env, *left)?,
+                    interp_expression(env, *right)?,
+                ) {
+                    (Value::Num(num_left), Value::Num(num_right)) => {
+                        Ok(Value::Num(num_left + num_right))
+                    }
+                    (Value::Str(num_left), Value::Str(num_right)) => {
+                        Ok(Value::Str(num_left + num_right.as_str()))
+                    }
+                    (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
+                    (v, _) => Err(RuntimeError(BadArg(v))),
                 }
-                (Value::Str(num_left), Value::Str(num_right)) => {
-                    Ok(Value::Str(num_left + num_right.as_str()))
-                }
-                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                (v, _) => Err(RuntimeError(BadArg(v))),
-            },
-            Operator::Minus => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Num(num_left - num_right))
-                }
-                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                (v, _) => Err(RuntimeError(BadArg(v))),
-            },
-            Operator::Eq => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left == num_right))
-                }
-                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                    Ok(Value::Bool(bool_left == bool_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::Ne => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left != num_right))
-                }
-                (Value::Bool(bool_left), Value::Bool(bool_right)) => {
-                    Ok(Value::Bool(bool_left != bool_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::LT => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left < num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::GT => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left > num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::LTE => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left <= num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::GTE => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Bool(num_left >= num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::LogicOr => match interp_expression(env.clone(), *left)? {
-                Value::Bool(b) => match b {
-                    true => Ok(Value::Bool(true)),
-                    false => match interp_expression(env.clone(), *right)? {
-                        Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value))),
-                    },
-                },
-                left_value => Err(RuntimeError(BadArg(left_value))),
-            },
-            Operator::LogicAnd => match interp_expression(env.clone(), *left)? {
-                Value::Bool(b) => match b {
-                    false => Ok(Value::Bool(false)),
-                    true => match interp_expression(env.clone(), *right)? {
-                        Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value))),
-                    },
-                },
-                left_value => Err(RuntimeError(BadArg(left_value))),
-            },
-            Operator::Times => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Num(num_left * num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::Mod => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Num(num_left % num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            Operator::Div => match (
-                interp_expression(env.clone(), *left)?,
-                interp_expression(env.clone(), *right)?,
-            ) {
-                (Value::Num(num_left), Value::Num(num_right)) => {
-                    Ok(Value::Num(num_left / num_right))
-                }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
-            },
-            op => Err(RuntimeError(UnaryAsBinary(op))),
-        },
-        Expr::Unary(op, arg) => {
-            let arg_value = interp_expression(env, *arg)?;
-            match op {
-                Operator::Minus => match arg_value {
-                    Value::Num(n) => Ok(Value::Num(-n)),
-                    _ => Err(RuntimeError(BadArg(arg_value))),
-                },
-                Operator::LogicNot => match arg_value {
-                    Value::Bool(b) => Ok(Value::Bool(!b)),
-                    _ => Err(RuntimeError(BadArg(arg_value))),
-                },
-                op => Err(RuntimeError(BinaryAsUnary(op))),
             }
-        }
+            _ => todo!(),
+        },
+        Expr::Unary(_, _) => todo!(),
         Expr::Call(f_expr, args) => {
             let f_name = match *f_expr {
-                Expr::Var(f_name) => f_name,
-                _ => "<lambda>",
-            };
-            let f_value = interp_expression(env.clone(), *f_expr)?;
-            let (params, body, closure_env) = match f_value {
-                Value::Lambda(params, body, env) => (params, body, env),
-                _ => return Err(RuntimeError(BadArg(f_value))),
+                Expr::Var(ref f_name) => f_name.to_string(),
+                _ => "<lambda>".to_string(),
             };
 
-            if params.len() != args.len() {
+            let (f_params, f_body, f_env) = match interp_expression(env, *f_expr)? {
+                Value::Lambda(params, body, env) => (params, body, env),
+                v => return Err(RuntimeError(BadArg(v))),
+            };
+
+            if args.len() != f_params.len() {
                 return Err(RuntimeError(ArgMismatch(
                     f_name.to_string(),
                     args.len(),
-                    params.len(),
+                    f_params.len(),
                 )));
             }
 
-            let mut values: Vec<Value> = vec![];
-            for expr in args {
-                match interp_expression(env.clone(), expr) {
-                    Ok(v) => values.push(v),
-                    Err(e) => return Err(e),
-                }
-            }
+            let arg_values_result: Result<Vec<Value>, LingerError> = args
+                .into_iter()
+                .map(|arg| interp_expression(env, arg))
+                .collect();
+            let arg_values = match arg_values_result {
+                Ok(values) => values,
+                Err(e) => return Err(e),
+            };
 
-            let mut body_env = env.clone();
-            for (name, value) in closure_env {
-                match body_env.get(&name) {
-                    Some(_) => {
-                        body_env.insert(name, value);
-                    }
-                    None => (),
-                }
-            }
+            let bindings: Vec<(String, Value)> = f_params
+                .iter()
+                .map(|param| param.to_string())
+                .zip(arg_values)
+                .collect();
 
-            let bindings = params.iter().zip(values);
-            for (param, value) in bindings {
-                body_env.insert(param.to_string(), (value, ValueStory::Initialization));
-            }
-
-            return match interp_statements(body_env.clone(), body.to_vec(), false) {
-                Ok((_, value, _)) => Ok(value),
-                Err(e) => Err(e),
+            return match interp_statement(&mut f_env.extend(bindings), f_body, false)? {
+                (value, _) => Ok(value),
             };
         }
         Expr::PrimitiveCall(builtin, args) => match builtin {
             crate::parser::Builtin::Print => {
                 let mut values: Vec<Value> = vec![];
                 for expr in args {
-                    match interp_expression(env.clone(), expr) {
+                    match interp_expression(env, expr) {
                         Ok(v) => values.push(v),
                         Err(e) => return Err(e),
                     }

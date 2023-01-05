@@ -19,7 +19,7 @@ fn main() {
         }
     };
 
-    let debug_tokens = true;
+    let debug_tokens = false;
     let debug_program = false;
     let debug_value = false;
 
