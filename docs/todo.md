@@ -34,6 +34,7 @@ Nothing so far, let's keep it that way.
 - [x] closures (static-scope)
 - [x] comments
 - [x] increment/decrement unary operators
+- [ ] assignment operators (+=, -=, etc.)
 
 ## Bugs
 
@@ -43,10 +44,12 @@ Nothing so far, let's keep it that way.
 
 - [x] implement for-loops as syntactic sugar on top of while loops
 - [x] immediately return error the moment we parse two main procedures
+- [ ] implement assignment operators (+=, -=) as syntactic sugar on top of assignment statements
 
 ## Potential Code Improvements
 
 - [x] make keywords and enum
+- [ ] make binary operators and unary operators separate enums
 - [ ] use Option<Value> in place of an explicit Void type
 
 ## Testing
