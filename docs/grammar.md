@@ -27,8 +27,12 @@ statement :=
   | WHILE LPAREN `<expr>` RPAREN LBRACKET `<statements>` RBRACKET
   | FOR LPAREN `<statement>` `<expr>` SEMICOLON `<statement>` RPAREN LBRACKET `<statements>` RBRACKET
   | `<expr>` SEMICOLON
+  | ID `<assign-op>` `<expr>` SEMICOLON
   | BREAK
   | CONTINUE
+
+assign-op :=
+  | ADDITION_ASSIGNMENT
 
 else-if-statements :=
   | epsilon
@@ -93,11 +97,18 @@ multiplicative_expr' :=
 
 unary_expr :=
   | `<unary_expr'>` `<terminal>`
+  | `<terminal>` `<trailing-unary-op>`
 
 unary_expr' :=
   | epsilon
   | LOGIC_NOT
   | MINUS
+  | PRE_INCREMENT
+  | PRE_DECREMENT
+
+trailing-unary-op :=
+  | POST_INCREMENT
+  | POST_DECREMENT
 
 terminal :=
   | ID
