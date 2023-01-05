@@ -20,21 +20,21 @@ pub enum TokenizerError {
 
 /// A Parse Error
 #[derive(Debug, Clone)]
-pub enum ParseError<'a> {
+pub enum ParseError {
     /// This error occurs when there is no `main` procedure.
     NoMain,
     /// This error occurs when there are multiple top-level procedures with the same name.
     MultipleSameNamedProcs(String),
     /// This error occurs when there is an unexpected token consumed when parsing.
-    UnexpectedToken(Token<'a>),
+    UnexpectedToken(Token),
     /// This error occurs when the consume token differs from the token that was expected.
-    Expected(TokenValue<'a>, Token<'a>),
+    Expected(TokenValue, Token),
     /// This error occurs when a keyword is used a variable name.
-    KeywordAsVar(&'a str),
+    KeywordAsVar(String),
     /// This error occurs when a keyword is used as the name of a top-level procedure.
-    KeywordAsProc(&'a str),
+    KeywordAsProc(String),
     /// This error occurs when a keyword is used as the name of a procedure parameter.
-    KeywordAsParam(&'a str),
+    KeywordAsParam(String),
     /// This error occurs when the parser expects to parse a statement but was unsuccessful.
     ExpectedStatement,
     /// This error occurs when the parser expects to parse a block statement but was unsuccessful.
@@ -44,18 +44,18 @@ pub enum ParseError<'a> {
 
 /// A Runtime Error
 #[derive(Debug, Clone)]
-pub enum RuntimeError<'a> {
+pub enum RuntimeError {
     /// This error occurs when the interpreter encounters an variable unbound in the environment.
     UnknownVariable(String),
     /// This error occurs when a single argument to a procedure is incorrect.
-    BadArg(Value<'a>),
+    BadArg(Value),
     /// This error occurs when multiple arguments to a procedure are incorrect.
-    BadArgs(Vec<Value<'a>>),
+    BadArgs(Vec<Value>),
     /// This error occurs when the number of arguments passed to a procedure is different from the
     /// number of parameters defined for that procedure.
     ArgMismatch(String, usize, usize),
     /// This error occurs when a value is expected to be a boolean but is not.
-    ExpectedBool(Value<'a>),
+    ExpectedBool(Value),
     /// This error occurs when a binary operator is used as a unary operator.
     BinaryAsUnary(Operator),
     /// This error occurs when a unary operator is used as a binary operator.
@@ -69,16 +69,16 @@ pub enum RuntimeError<'a> {
 /// A LingerError. This is a wrapper enum around all of [TokenizerError], [ParseError], and
 /// [RuntimeError].
 #[derive(Debug, Clone)]
-pub enum LingerError<'a> {
+pub enum LingerError {
     /// A [ParseError]
-    ParseError(ParseError<'a>),
+    ParseError(ParseError),
     /// A [TokenizerError]
     TokenizerError(TokenizerError),
     /// A [RuntimeError]
-    RuntimeError(RuntimeError<'a>),
+    RuntimeError(RuntimeError),
 }
 
-impl fmt::Display for LingerError<'_> {
+impl fmt::Display for LingerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LingerError::ParseError(err) => match err {

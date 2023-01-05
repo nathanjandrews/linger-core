@@ -38,13 +38,13 @@ fn numbers() {
 
 #[test]
 fn ids() {
-    assert!(tokenize_success("abc", vec![ID("abc")]));
-    assert!(tokenize_success("AbC", vec![ID("AbC")]));
-    assert!(tokenize_success("aBc_", vec![ID("aBc_")]));
-    assert!(tokenize_success("abc_12", vec![ID("abc_12")]));
-    assert!(tokenize_success("abc_12_DE", vec![ID("abc_12_DE")]));
+    assert!(tokenize_success("abc", vec![ID("abc".to_string())]));
+    assert!(tokenize_success("AbC", vec![ID("AbC".to_string())]));
+    assert!(tokenize_success("aBc_", vec![ID("aBc_".to_string())]));
+    assert!(tokenize_success("abc_12", vec![ID("abc_12".to_string())]));
+    assert!(tokenize_success("abc_12_DE", vec![ID("abc_12_DE".to_string().to_string())]));
 
-    assert!(tokenize_mismatch("12345", vec![ID("12345")]));
+    assert!(tokenize_mismatch("12345", vec![ID("12345".to_string())]));
 
     assert!(tokenize_error("1a"));
     assert!(tokenize_error("_abc"));

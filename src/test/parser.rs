@@ -4,6 +4,7 @@ use crate::{
     tokenizer::{
         Token,
         TokenValue::{self, *},
+        Keyword
     },
 };
 
@@ -42,12 +43,12 @@ fn parse_error(values: Vec<TokenValue>) -> bool {
 fn print_ten() {
     assert!(parse_success(
         vec![
-            ID("proc"),
-            ID("main"),
+            KW(Keyword::Proc),
+            ID("main".to_string()),
             LPAREN,
             RPAREN,
             LBRACKET,
-            ID("print"),
+            ID("print".to_string()),
             LPAREN,
             NUM(10),
             RPAREN,

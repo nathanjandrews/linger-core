@@ -9,18 +9,19 @@ use crate::error::{
 
 /// A Linger token.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Token<'a>(pub TokenValue<'a>, pub usize, pub usize);
+pub struct Token(pub TokenValue, pub usize, pub usize);
 
 /// A Linger token value. This is an enum which represents the type of the
 /// token along with any associated data with that type.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[allow(non_camel_case_types)]
-pub enum TokenValue<'a> {
-    ID(&'a str),
+pub enum TokenValue {
+    ID(String),
     STR(String),
     NUM(i64),
     ASSIGN,
     OP(Operator),
+    KW(Keyword),
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -51,6 +52,22 @@ pub enum Operator {
     LogicOr,
     LogicAnd,
     LogicNot,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+pub enum Keyword {
+    If,
+    Else,
+    Proc,
+    Let,
+    True,
+    False,
+    Return,
+    Lam,
+    While,
+    Break,
+    Continue,
+    For,
 }
 
 const WHITESPACE_REGEX: &str = r"[[:space:]]+";
@@ -165,6 +182,32 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
 
+    // KEYWORDS
+    } else if let Some(mat) = find("if", s) {
+        Ok((Some(TokenValue::KW(Keyword::If)), mat.end()))
+    } else if let Some(mat) = find("else", s) {
+        Ok((Some(TokenValue::KW(Keyword::Else)), mat.end()))
+    } else if let Some(mat) = find("proc", s) {
+        Ok((Some(TokenValue::KW(Keyword::Proc)), mat.end()))
+    } else if let Some(mat) = find("let", s) {
+        Ok((Some(TokenValue::KW(Keyword::Let)), mat.end()))
+    } else if let Some(mat) = find("true", s) {
+        Ok((Some(TokenValue::KW(Keyword::True)), mat.end()))
+    } else if let Some(mat) = find("false", s) {
+        Ok((Some(TokenValue::KW(Keyword::False)), mat.end()))
+    } else if let Some(mat) = find("return", s) {
+        Ok((Some(TokenValue::KW(Keyword::Return)), mat.end()))
+    } else if let Some(mat) = find("lam", s) {
+        Ok((Some(TokenValue::KW(Keyword::Lam)), mat.end()))
+    } else if let Some(mat) = find("while", s) {
+        Ok((Some(TokenValue::KW(Keyword::While)), mat.end()))
+    } else if let Some(mat) = find("break", s) {
+        Ok((Some(TokenValue::KW(Keyword::Break)), mat.end()))
+    } else if let Some(mat) = find("continue", s) {
+        Ok((Some(TokenValue::KW(Keyword::Continue)), mat.end()))
+    } else if let Some(mat) = find("for", s) {
+        Ok((Some(TokenValue::KW(Keyword::For)), mat.end()))
+
     // TWO-CHARACTER TOKENS
     } else if let Some(mat) = find(NE_REGEX, s) {
         Ok((Some(TokenValue::OP(Operator::Ne)), mat.end()))
@@ -219,7 +262,7 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
 
     // VARIABLE-LENGTH TOKENS
     } else if let Some(mat) = find(ID_REGEX, s) {
-        Ok((Some(TokenValue::ID(mat.as_str())), mat.end()))
+        Ok((Some(TokenValue::ID(mat.as_str().to_string())), mat.end()))
     } else if let Some(mat) = find(NUM_REGEX, s) {
         Ok((
             Some(TokenValue::NUM(mat.as_str().parse::<i64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
@@ -269,7 +312,26 @@ impl fmt::Display for Operator {
     }
 }
 
-impl fmt::Display for TokenValue<'_> {
+impl fmt::Display for Keyword {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Keyword::If => write!(f, "if"),
+            Keyword::Else => write!(f, "else"),
+            Keyword::Proc => write!(f, "proc"),
+            Keyword::Let => write!(f, "let"),
+            Keyword::True => write!(f, "true"),
+            Keyword::False => write!(f, "false"),
+            Keyword::Return => write!(f, "return"),
+            Keyword::Lam => write!(f, "lam"),
+            Keyword::While => write!(f, "while"),
+            Keyword::Break => write!(f, "break"),
+            Keyword::Continue => write!(f, "continue"),
+            Keyword::For => write!(f, "for"),
+        }
+    }
+}
+
+impl fmt::Display for TokenValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TokenValue::ID(id) => write!(f, "{id}"),
@@ -286,6 +348,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::STR(s) => write!(f, "\"{s}\""),
             TokenValue::THIN_ARROW => write!(f, "->"),
             TokenValue::DOUBLE_SLASH => write!(f, "//"),
+            TokenValue::KW(kw) => write!(f, "{kw}"),
         }
     }
 }

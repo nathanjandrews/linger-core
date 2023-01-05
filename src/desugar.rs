@@ -4,36 +4,36 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Procedure<'a> {
-    pub name: &'a str,
-    pub params: Vec<&'a str>,
-    pub body: Statement<'a>,
+pub struct Procedure {
+    pub name: String,
+    pub params: Vec<String>,
+    pub body: Statement,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Statement<'a> {
-    Expr(Expr<'a>),
-    Let(&'a str, Expr<'a>),
-    Assign(&'a str, Expr<'a>),
-    If(Expr<'a>, Box<Statement<'a>>, Option<Box<Statement<'a>>>),
-    While(Expr<'a>, Box<Statement<'a>>),
-    Block(Vec<Statement<'a>>),
-    Return(Option<Expr<'a>>),
+pub enum Statement {
+    Expr(Expr),
+    Let(String, Expr),
+    Assign(String, Expr),
+    If(Expr, Box<Statement>, Option<Box<Statement>>),
+    While(Expr, Box<Statement>),
+    Block(Vec<Statement>),
+    Return(Option<Expr>),
     Break,
     Continue,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Expr<'a> {
+pub enum Expr {
     Num(i64),
     Bool(bool),
     Str(String),
-    Var(&'a str),
-    Binary(Operator, Box<Expr<'a>>, Box<Expr<'a>>),
-    Unary(Operator, Box<Expr<'a>>),
-    PrimitiveCall(Builtin, Vec<Expr<'a>>),
-    Call(Box<Expr<'a>>, Vec<Expr<'a>>),
-    Proc(Vec<&'a str>, Box<Statement<'a>>),
+    Var(String),
+    Binary(Operator, Box<Expr>, Box<Expr>),
+    Unary(Operator, Box<Expr>),
+    PrimitiveCall(Builtin, Vec<Expr>),
+    Call(Box<Expr>, Vec<Expr>),
+    Proc(Vec<String>, Box<Statement>),
 }
 
 fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
