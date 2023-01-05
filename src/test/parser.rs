@@ -56,7 +56,7 @@ fn print_ten() {
         ],
         Program {
             procedures: vec![],
-            main: vec![Statement::Expr(PrimitiveCall(Print, vec![Num(10)]))]
+            main: Statement::Block(vec![Statement::Expr(PrimitiveCall(Print, vec![Num(10)]))])
         }
     ))
 }

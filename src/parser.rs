@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::desugar::{desugar_statements, Procedure, Statement};
+use crate::desugar::{desugar_statement, Procedure, Statement};
 use crate::tokenizer::Operator::{self, *};
 use crate::{
     error::{LingerError, LingerError::ParseError, ParseError::*},
@@ -17,7 +17,7 @@ pub struct Program<'a> {
     /// The top-level procedures of the program, excluding the main procedure.
     pub procedures: Vec<Procedure<'a>>,
     /// The body of the main procedure of the program.
-    pub main: Vec<Statement<'a>>,
+    pub main: Statement<'a>,
 }
 
 /// A representation for a procedure in the Linger programming language.
@@ -30,7 +30,7 @@ pub struct Program<'a> {
 struct SugaredProcedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
-    pub body: Vec<SugaredStatement<'a>>,
+    pub body: SugaredStatement<'a>,
 }
 
 /// A representation of a statement in the Linger programming language.
@@ -79,7 +79,7 @@ pub enum SugaredExpr<'a> {
     Unary(Operator, Box<SugaredExpr<'a>>),
     PrimitiveCall(Builtin, Vec<SugaredExpr<'a>>),
     Call(Box<SugaredExpr<'a>>, Vec<SugaredExpr<'a>>),
-    Lambda(Vec<&'a str>, Vec<SugaredStatement<'a>>),
+    Lambda(Vec<&'a str>, Box<SugaredStatement<'a>>),
 }
 
 /// A built in procedure in the Linger programming language.
@@ -99,7 +99,7 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
     let desugared_procs = procedures.iter().map(|proc| Procedure {
         name: proc.name,
         params: proc.params.clone(),
-        body: desugar_statements(proc.body.clone()),
+        body: desugar_statement(proc.body.clone()),
     });
 
     let (main_procs, procs): (Vec<Procedure>, Vec<Procedure>) = desugared_procs
@@ -113,7 +113,7 @@ pub fn parse_program<'a>(tokens: &'a [T<'a>]) -> Result<Program<'a>, LingerError
 
     return Ok(Program {
         procedures: procs,
-        main: main_proc.body.to_vec(),
+        main: main_proc.body.clone(),
     });
 }
 
@@ -154,15 +154,14 @@ fn parse_proc<'a>(
 
             let (params, tokens) = parse_params(rest)?;
 
-            let tokens = consume_token(LBRACKET, tokens)?;
-
-            let (body_statements, tokens) = parse_statements(tokens)?;
+            let (body_block_option, tokens) = parse_statement(tokens, true)?;
+            let body_block = ensure_block(body_block_option)?;
 
             Ok((
                 Some(SugaredProcedure {
                     name,
                     params,
-                    body: body_statements,
+                    body: body_block,
                 }),
                 tokens,
             ))
@@ -416,9 +415,11 @@ fn parse_terminal_expr<'a>(tokens: &'a [T<'a>]) -> Result<(SugaredExpr, &'a [T<'
         [T(ID("lam"), ..), T(LPAREN, ..), tokens @ ..] => {
             let (params, tokens) = parse_params(tokens)?;
             let tokens = consume_token(THIN_ARROW, tokens)?;
-            let tokens = consume_token(LBRACKET, tokens)?;
-            let (lambda_body, tokens) = parse_statements(tokens)?;
-            return Ok((SugaredExpr::Lambda(params, lambda_body), tokens));
+
+            let (lambda_body_option, tokens) = parse_statement(tokens, true)?;
+            let lambda_body = ensure_block(lambda_body_option)?;
+
+            return Ok((SugaredExpr::Lambda(params, Box::new(lambda_body)), tokens));
         }
         [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
             let (args, tokens) = parse_args(tokens)?;

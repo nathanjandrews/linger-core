@@ -7,7 +7,7 @@ use crate::{
 pub struct Procedure<'a> {
     pub name: &'a str,
     pub params: Vec<&'a str>,
-    pub body: Vec<Statement<'a>>,
+    pub body: Statement<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,17 +33,17 @@ pub enum Expr<'a> {
     Unary(Operator, Box<Expr<'a>>),
     PrimitiveCall(Builtin, Vec<Expr<'a>>),
     Call(Box<Expr<'a>>, Vec<Expr<'a>>),
-    Lambda(Vec<&'a str>, Vec<Statement<'a>>),
+    Proc(Vec<&'a str>, Box<Statement<'a>>),
 }
 
-pub fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
+fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
     sugared_statements
         .iter()
         .map(|s| desugar_statement(s.clone()))
         .collect()
 }
 
-fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
+pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
     match sugared_statement {
         SugaredStatement::Expr(sugared_expr) => Statement::Expr(desugar_expression(sugared_expr)),
         SugaredStatement::Let(name, sugared_expr) => {
@@ -149,7 +149,7 @@ fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
                 .collect(),
         ),
         SugaredExpr::Lambda(params, sugared_body) => {
-            Expr::Lambda(params, desugar_statements(sugared_body))
+            Expr::Proc(params, Box::new(desugar_statement(*sugared_body)))
         }
     }
 }
