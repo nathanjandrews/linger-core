@@ -1,7 +1,8 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use predicates::prelude::predicate::str::contains;
+use linger::error::{ParseError, TokenizerError};
+use predicates::prelude::predicate::str::{contains, starts_with};
 
 fn file_name_to_path(s: &str) -> String {
     return format!("test_programs/miscellaneous/{}.ling", s);
@@ -15,6 +16,42 @@ fn comments() -> TestResult {
 
     cmd.arg(file_name_to_path("comments"));
     cmd.assert().success().stdout(contains("success"));
+
+    Ok(())
+}
+
+#[test]
+fn err_missing_main() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-missing_main"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(ParseError::NoMain.to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn err_multiple_top_level_procs() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-multiple_top_level_procs"));
+    cmd.assert().failure().stderr(starts_with(
+        ParseError::MultipleSameNamedProcs("main".to_string()).to_string(),
+    ));
+
+    Ok(())
+}
+
+#[test]
+fn err_invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-invalid_escape_sequence"));
+    cmd.assert().failure().stderr(starts_with(
+        TokenizerError::InvalidEscapeSequence('f').to_string(),
+    ));
 
     Ok(())
 }
