@@ -1,0 +1,4 @@
+proc main() {
+  let var = 5;
+  var = 10;
+}

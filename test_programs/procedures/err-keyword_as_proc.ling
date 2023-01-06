@@ -1,0 +1,5 @@
+proc main() {
+  10 / 0;
+}
+
+proc for() {}

@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use linger::error::ParseError;
 use predicates::prelude::predicate::str::contains;
 
 fn file_name_to_path(s: &str) -> String {
@@ -37,6 +38,18 @@ fn higher_order_procedure() -> TestResult {
 
     cmd.arg(file_name_to_path("higher_order_procedure"));
     cmd.assert().success().stdout(contains("17 25"));
+
+    Ok(())
+}
+
+#[test]
+fn err_keyword_as_proc() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-keyword_as_proc"));
+    cmd.assert().failure().stderr(contains(
+        ParseError::KeywordAsProc("for".to_string()).to_string(),
+    ));
 
     Ok(())
 }
