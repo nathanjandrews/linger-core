@@ -64,7 +64,9 @@ fn nested_continue() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("nested_continue"));
-    cmd.assert().success().stdout(contains("4 2 0 \n4 2 0 \n4 2 0 "));
+    cmd.assert()
+        .success()
+        .stdout(contains("4 2 0 \n4 2 0 \n4 2 0 "));
 
     Ok(())
 }
