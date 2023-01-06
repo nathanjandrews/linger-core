@@ -1,8 +1,0 @@
-proc main() {
-  let num = 5;
-  while (num > 0) {
-    print(num);
-    print(" ");
-    num = num - 1;
-  }
-}

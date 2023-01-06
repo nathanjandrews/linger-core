@@ -1,3 +1,0 @@
-proc main() {
-  print((lam(x) -> {x + x;})(10));
-}

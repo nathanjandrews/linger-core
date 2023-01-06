@@ -1,3 +1,0 @@
-proc main() {
-  print("first line\nsecond line"); 
-}

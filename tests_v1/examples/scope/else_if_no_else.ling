@@ -1,7 +1,0 @@
-proc main() {
-  if (false) {
-    print("branch 1");
-  } else if (true) {
-    print("branch 2");
-  }
-}

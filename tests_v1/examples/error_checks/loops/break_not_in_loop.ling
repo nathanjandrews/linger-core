@@ -1,5 +1,0 @@
-proc main() {
-  let a = 5;
-  break;
-  let b = 6;
-}
