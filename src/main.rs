@@ -26,7 +26,7 @@ fn main() -> ExitCode {
     let tokens = match tokenize(linger_file_content.as_str()) {
         Ok(t) => t,
         Err(e) => {
-            println!("{e}");
+            eprintln!("{e}");
             return ExitCode::FAILURE;
         }
     };
@@ -38,7 +38,7 @@ fn main() -> ExitCode {
     let program = match parse_program(tokens.as_slice()) {
         Ok(p) => p,
         Err(e) => {
-            println!("{e}");
+            eprintln!("{e}");
             return ExitCode::FAILURE;
         }
     };
@@ -50,7 +50,7 @@ fn main() -> ExitCode {
     let value = match interp_program(program) {
         Ok(v) => v,
         Err(e) => {
-            println!("{e}");
+            eprintln!("{e}");
             return ExitCode::FAILURE;
         }
     };

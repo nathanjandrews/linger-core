@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Display};
 
 use crate::{
     interpreter::Value,
@@ -84,73 +84,90 @@ pub enum LingerError {
 impl fmt::Display for LingerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LingerError::ParseError(err) => match err {
-                ParseError::NoMain => write!(f, "main procedure not found"),
-                ParseError::UnexpectedToken(token) => write!(
-                    f,
-                    "unexpected token {} @ ({}, {})",
-                    token.0, token.1, token.2
-                ),
-                ParseError::Expected(target, token) => write!(
-                    f,
-                    "expected token {} @ ({}, {}), instead got {}",
-                    target, token.1, token.2, token.0
-                ),
-                ParseError::Custom(s) => write!(f, "{}", s),
-                ParseError::KeywordAsVar(keyword) => {
-                    write!(f, "keyword \"{}\" used as variable", keyword)
-                }
-                ParseError::KeywordAsProc(keyword) => {
-                    write!(f, "keyword \"{}\" used as procedure name", keyword)
-                }
-                ParseError::KeywordAsParam(keyword) => {
-                    write!(f, "keyword \"{}\" used as parameter name", keyword)
-                }
-                ParseError::ExpectedStatement => write!(f, "expected statement"),
-                ParseError::ExpectedBlock => write!(f, "expected block"),
-                ParseError::MultipleSameNamedProcs(proc_name) => {
-                    write!(f, "multiple procedures with name \"{proc_name}\"")
-                }
-                ParseError::UnexpectedEOF => write!(f, "unexpected end of file"),
-            },
-            LingerError::TokenizerError(err) => match err {
-                TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
-                TokenizerError::UnterminatedStringLiteral => {
-                    write!(f, "unterminated string literal")
-                }
-                TokenizerError::InvalidEscapeSequence(char) => {
-                    write!(f, "invalid escape sequence \"\\{char}\"")
-                }
-            },
-            LingerError::RuntimeError(err) => match err {
-                RuntimeError::UnknownVariable(id) => write!(f, "unknown variable \"{}\"", id),
-                RuntimeError::BadArg(v) => write!(f, "bad argument \"{}\"", v),
-                RuntimeError::ArgMismatch(proc_name, actual, expected) => write!(
-                    f,
-                    "procedure \"{}\" expected {} args, instead got {}",
-                    proc_name, expected, actual
-                ),
-                RuntimeError::ExpectedBool(v) => {
-                    write!(f, "expected boolean value, instead got {}", v)
-                }
-                RuntimeError::BadArgs(args) => {
-                    let arg_strings_vec: Vec<String> =
-                        args.iter().map(|arg| arg.to_string()).collect();
-                    let arg_string = arg_strings_vec.join(", ");
-                    write!(f, "bad args: [{}]", arg_string)
-                }
-                RuntimeError::BinaryAsUnary(op) => {
-                    write!(f, "binary operator \"{}\" used as unary operator", op)
-                }
-                RuntimeError::UnaryAsBinary(op) => {
-                    write!(f, "unary operator \"{}\" used as binary operator", op)
-                }
-                RuntimeError::BreakNotInLoop => write!(f, "tried to break while not within a loop"),
-                RuntimeError::ContinueNotInLoop => {
-                    write!(f, "continue statement found outside of a loop")
-                }
-                RuntimeError::InvalidAssignmentTarget => write!(f, "invalid assignment target"),
-            },
+            LingerError::ParseError(err) => write!(f, "{err}"),
+            LingerError::TokenizerError(err) => write!(f, "{err}"),
+            LingerError::RuntimeError(err) => write!(f, "{err}"),
+        }
+    }
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseError::NoMain => write!(f, "main procedure not found"),
+            ParseError::UnexpectedToken(token) => write!(
+                f,
+                "unexpected token {} @ ({}, {})",
+                token.0, token.1, token.2
+            ),
+            ParseError::Expected(target, token) => write!(
+                f,
+                "expected token {} @ ({}, {}), instead got {}",
+                target, token.1, token.2, token.0
+            ),
+            ParseError::Custom(s) => write!(f, "{}", s),
+            ParseError::KeywordAsVar(keyword) => {
+                write!(f, "keyword \"{}\" used as variable", keyword)
+            }
+            ParseError::KeywordAsProc(keyword) => {
+                write!(f, "keyword \"{}\" used as procedure name", keyword)
+            }
+            ParseError::KeywordAsParam(keyword) => {
+                write!(f, "keyword \"{}\" used as parameter name", keyword)
+            }
+            ParseError::ExpectedStatement => write!(f, "expected statement"),
+            ParseError::ExpectedBlock => write!(f, "expected block"),
+            ParseError::MultipleSameNamedProcs(proc_name) => {
+                write!(f, "multiple procedures with name \"{proc_name}\"")
+            }
+            ParseError::UnexpectedEOF => write!(f, "unexpected end of file"),
+        }
+    }
+}
+
+impl Display for TokenizerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
+            TokenizerError::UnterminatedStringLiteral => {
+                write!(f, "unterminated string literal")
+            }
+            TokenizerError::InvalidEscapeSequence(char) => {
+                write!(f, "invalid escape sequence \"\\{char}\"")
+            }
+        }
+    }
+}
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RuntimeError::UnknownVariable(id) => write!(f, "unknown variable \"{}\"", id),
+            RuntimeError::BadArg(v) => write!(f, "bad argument \"{}\"", v),
+            RuntimeError::ArgMismatch(proc_name, actual, expected) => write!(
+                f,
+                "procedure \"{}\" expected {} args, instead got {}",
+                proc_name, expected, actual
+            ),
+            RuntimeError::ExpectedBool(v) => {
+                write!(f, "expected boolean value, instead got {}", v)
+            }
+            RuntimeError::BadArgs(args) => {
+                let arg_strings_vec: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
+                let arg_string = arg_strings_vec.join(", ");
+                write!(f, "bad args: [{}]", arg_string)
+            }
+            RuntimeError::BinaryAsUnary(op) => {
+                write!(f, "binary operator \"{}\" used as unary operator", op)
+            }
+            RuntimeError::UnaryAsBinary(op) => {
+                write!(f, "unary operator \"{}\" used as binary operator", op)
+            }
+            RuntimeError::BreakNotInLoop => write!(f, "tried to break while not within a loop"),
+            RuntimeError::ContinueNotInLoop => {
+                write!(f, "continue statement found outside of a loop")
+            }
+            RuntimeError::InvalidAssignmentTarget => write!(f, "invalid assignment target"),
         }
     }
 }
