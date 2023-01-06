@@ -1,0 +1,21 @@
+proc main() {
+  print(
+    5 + 7,                   // 12
+    "\"hello " + "world\"",  // "hello world"
+    5 - 7,                   // -2
+    true && true,            // true
+    true && false,           // false
+    true || false,           // true
+    false || false,          // false
+    5 < 7,                   // true
+    5 > 7,                   // false
+    5 == 7,                  // false
+    5 <= 7,                  // true
+    5 >= 7,                  // false
+    5 != 7,                  // true
+    10 == 10,                // true
+    5 % 7,                   // 5
+    5 / 7,                   // 0
+    5 * 7                    // 35
+  );
+}

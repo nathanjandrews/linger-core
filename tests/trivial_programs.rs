@@ -24,7 +24,7 @@ fn basic_values() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("basic_values"));
-    cmd.assert().success().stdout(contains("10 -1 true false \"hello world\""));
+    cmd.assert().success().stdout(contains("10 -1 true false hello world"));
 
     Ok(())
 }

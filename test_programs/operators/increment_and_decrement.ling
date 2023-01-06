@@ -1,0 +1,7 @@
+proc main() {
+  let a = 5;
+  let b = 5;
+  print(++a, ++a, a++, a); // 6 7 7 8
+  print("\n");
+  print(--b, --b, b--, b); // 4 3 3 2
+}

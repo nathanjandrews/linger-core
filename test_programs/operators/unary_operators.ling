@@ -1,0 +1,9 @@
+proc main() {
+  print(
+    !true,
+    !!true,
+    !false,
+    -10,
+    -(-10)
+  );
+}

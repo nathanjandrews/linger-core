@@ -35,7 +35,7 @@ impl fmt::Display for Value {
             Value::Num(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
             Value::Void => write!(f, "<void>"),
-            Value::Str(s) => write!(f, "\"{}\"", s),
+            Value::Str(s) => write!(f, "{}", s),
             Value::Proc(..) => write!(f, "<lambda>"),
         }
     }
