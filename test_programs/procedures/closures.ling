@@ -1,0 +1,8 @@
+proc main() {
+  let y = 5;
+  let addY = lam(x) -> {
+    return x + y;
+  };
+  let y = 10;
+  print(addY(5)); // this should print 10, not 15
+}

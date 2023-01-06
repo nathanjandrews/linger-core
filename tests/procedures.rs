@@ -20,3 +20,27 @@ fn recursion() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn closures() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("closures"));
+    cmd.assert()
+        .success()
+        .stdout(contains("10"));
+
+    Ok(())
+}
+
+#[test]
+fn higher_order_procedure() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("higher_order_procedure"));
+    cmd.assert()
+        .success()
+        .stdout(contains("17 25"));
+
+    Ok(())
+}

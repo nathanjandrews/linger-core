@@ -35,6 +35,7 @@ Nothing so far, let's keep it that way.
 - [x] comments
 - [x] increment/decrement unary operators
 - [x] assignment operators (+=, -=, etc.)
+- [ ] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum" returns a function)
 
 ## Bugs
 

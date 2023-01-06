@@ -1,0 +1,14 @@
+proc main() {
+  let sum = lam (x) -> {
+    return lam (y) -> {
+      return x + y;
+    };
+  };
+  print(sum(10)(7)); // should print 17
+
+  print(" ");
+
+  let add5 = sum(5);
+
+  print(add5(20)); // should print 25
+}
