@@ -7,7 +7,6 @@ pub mod environment;
 mod error;
 pub mod interpreter;
 pub mod parser;
-mod test;
 pub mod tokenizer;
 
 /// Executes a linger program. On success, this program returns the return value of the main
