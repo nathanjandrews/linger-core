@@ -60,10 +60,10 @@ fn early_return() -> TestResult {
 }
 
 #[test]
-fn return_from_block() -> TestResult {
+fn nested_return() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
-    cmd.arg(file_name_to_path("return_from_block"));
+    cmd.arg(file_name_to_path("nested_return"));
     cmd.assert().success().stdout(contains("success"));
 
     Ok(())
