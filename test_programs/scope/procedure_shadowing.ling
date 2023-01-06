@@ -1,0 +1,10 @@
+proc main() {
+  let getNum = lam () -> {
+    return "success";
+  };
+  print(getNum());
+}
+
+proc getNum() {
+  return "failure";
+}

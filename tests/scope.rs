@@ -32,3 +32,15 @@ fn reassignment_in_block() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn procedure_shadowing() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("procedure_shadowing"));
+    cmd.assert().success().stdout(contains(
+        "success",
+    ));
+
+    Ok(())
+}
