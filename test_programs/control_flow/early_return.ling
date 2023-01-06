@@ -1,0 +1,5 @@
+proc main() {
+  print("success");
+  return;
+  10 / 0;
+}

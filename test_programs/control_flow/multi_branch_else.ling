@@ -1,0 +1,13 @@
+proc main() {
+  let result = "failure";
+  if (false) {
+    result = "failure";
+  } else if (false) {
+    result = "failure";
+  } else if (false) {
+    result = "failure";
+  } else {
+    result = "success";
+  }
+  print(result);
+}

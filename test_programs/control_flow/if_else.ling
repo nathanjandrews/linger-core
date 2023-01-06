@@ -1,0 +1,13 @@
+proc main() {
+  if (true) {
+    print("success ");
+  } else {
+    print("failure ");
+  }
+
+  if (false) {
+    print("failure");
+  } else {
+    print("success");
+  }
+}

@@ -1,0 +1,9 @@
+proc main() {
+  let num = 10;
+  if (num == 10) {
+    print("success");
+    return;
+  } else {
+    10 / 0;
+  }
+}
