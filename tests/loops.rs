@@ -1,7 +1,8 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use predicates::prelude::predicate::str::contains;
+use linger::error::RuntimeError;
+use predicates::{prelude::predicate::str::contains, str::starts_with};
 
 fn file_name_to_path(s: &str) -> String {
     return format!("test_programs/loops/{}.ling", s);
@@ -76,9 +77,7 @@ fn for_statement() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("for"));
-    cmd.assert()
-        .success()
-        .stdout(contains("success"));
+    cmd.assert().success().stdout(contains("success"));
 
     Ok(())
 }
@@ -88,9 +87,33 @@ fn for_with_existing_initial_value() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("for_with_existing_initial_value"));
+    cmd.assert().success().stdout(contains("55"));
+
+    Ok(())
+}
+
+#[test]
+fn err_break_not_in_loop() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-break_not_in_loop"));
     cmd.assert()
-        .success()
-        .stdout(contains("55"));
+        .failure()
+        .stderr(starts_with(RuntimeError::BreakNotInLoop.to_string()))
+        .stdout("");
+
+    Ok(())
+}
+
+#[test]
+fn err_continue_not_in_loop() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-continue_not_in_loop"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(RuntimeError::ContinueNotInLoop.to_string()))
+        .stdout("");
 
     Ok(())
 }
