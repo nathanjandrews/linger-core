@@ -475,14 +475,23 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
             return Ok((SugaredExpr::Lambda(params, Box::new(lambda_body)), tokens));
         }
         [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (args, tokens) = parse_args(tokens)?;
+            let (args, mut rest) = parse_args(tokens)?;
 
-            let expr = match check_builtin(proc_name) {
+            let mut expr = match check_builtin(proc_name) {
                 Some(builtin) => SugaredExpr::PrimitiveCall(builtin, args),
                 None => SugaredExpr::Call(Box::new(SugaredExpr::Var(proc_name.to_string())), args),
             };
 
-            return Ok((expr, tokens));
+            loop {
+                match rest {
+                    [T(LPAREN, ..), tokens @ ..] => {
+                        let (args, tokens) = parse_args(tokens)?;
+                        expr = SugaredExpr::Call(Box::new(expr), args);
+                        rest = tokens;
+                    }
+                    tokens => return Ok((expr, tokens)),
+                }
+            }
         }
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
@@ -496,11 +505,20 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
                 SugaredExpr::Lambda(params, body) => {
                     // expect an immediately invoked function, parse the arguments and return the call
                     let tokens = consume_token(LPAREN, tokens)?;
-                    let (args, tokens) = parse_args(tokens)?;
-                    Ok((
-                        SugaredExpr::Call(Box::new(SugaredExpr::Lambda(params, body)), args),
-                        tokens,
-                    ))
+                    let (args, mut rest) = parse_args(tokens)?;
+                    let mut expr =
+                        SugaredExpr::Call(Box::new(SugaredExpr::Lambda(params, body)), args);
+
+                    loop {
+                        match rest {
+                            [T(LPAREN, ..), tokens @ ..] => {
+                                let (args, tokens) = parse_args(tokens)?;
+                                expr = SugaredExpr::Call(Box::new(expr), args);
+                                rest = tokens;
+                            }
+                            tokens => return Ok((expr, tokens)),
+                        }
+                    }
                 }
                 expr => Ok((expr, tokens)),
             }

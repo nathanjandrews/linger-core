@@ -26,22 +26,17 @@ fn closures() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("closures"));
-    cmd.assert()
-        .success()
-        .stdout(contains("10"));
+    cmd.assert().success().stdout(contains("10"));
 
     Ok(())
 }
 
-#[ignore = "still writing tests"]
 #[test]
 fn higher_order_procedure() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("higher_order_procedure"));
-    cmd.assert()
-        .success()
-        .stdout(contains("17 25"));
+    cmd.assert().success().stdout(contains("17 25"));
 
     Ok(())
 }
