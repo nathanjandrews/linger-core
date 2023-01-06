@@ -33,6 +33,7 @@ fn closures() -> TestResult {
     Ok(())
 }
 
+#[ignore = "still writing tests"]
 #[test]
 fn higher_order_procedure() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
