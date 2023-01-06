@@ -1,12 +1,12 @@
-use std::{env, fs};
+use std::{env, fs, process::ExitCode};
 
 use linger::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
 
-fn main() {
+fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        println!("usage: linger <FILE>");
-        return;
+        eprintln!("usage: linger <FILE>");
+        return ExitCode::FAILURE;
     }
 
     let linger_file_name = args[1].as_str();
@@ -14,8 +14,8 @@ fn main() {
     let linger_file_content = match fs::read_to_string(linger_file_name) {
         Ok(content) => content,
         Err(e) => {
-            println!("error opening {linger_file_name}: {e}");
-            return;
+            eprintln!("error opening {linger_file_name}: {e}");
+            return ExitCode::FAILURE;
         }
     };
 
@@ -25,28 +25,39 @@ fn main() {
 
     let tokens = match tokenize(linger_file_content.as_str()) {
         Ok(t) => t,
-        Err(e) => return println!("{e}"),
+        Err(e) => {
+            println!("{e}");
+            return ExitCode::FAILURE;
+        }
     };
     if debug_tokens {
         dbg!(&tokens);
-        return
+        return ExitCode::FAILURE;
     }
 
     let program = match parse_program(tokens.as_slice()) {
         Ok(p) => p,
-        Err(e) => return println!("{e}"),
+        Err(e) => {
+            println!("{e}");
+            return ExitCode::FAILURE;
+        }
     };
     if debug_program {
         dbg!(&program);
-        return
+        return ExitCode::FAILURE;
     }
 
     let value = match interp_program(program) {
         Ok(v) => v,
-        Err(e) => return println!("{e}"),
+        Err(e) => {
+            println!("{e}");
+            return ExitCode::FAILURE;
+        }
     };
     if debug_value {
         dbg!(value);
-        return
+        return ExitCode::SUCCESS;
     }
+
+    return ExitCode::SUCCESS;
 }
