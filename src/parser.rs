@@ -529,7 +529,7 @@ fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], LingerError> 
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
         [token, ..] => Err(ParseError(Expected(target, token.clone()))),
-        _ => unreachable!(),
+        [] => Err(ParseError(UnexpectedEOF))
     }
 }
 
