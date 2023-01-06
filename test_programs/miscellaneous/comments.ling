@@ -1,0 +1,4 @@
+proc main() {
+  // this should not affect the program
+  print("success");
+}
