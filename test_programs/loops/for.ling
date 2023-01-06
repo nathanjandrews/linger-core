@@ -1,0 +1,13 @@
+proc main() {
+  let sum1 = 0;
+  let sum2 = 0;
+  let sum3 = 0;
+  for (let a = 0; a < 10; a = a + 1) { sum1 += a; }
+  for (let a = 0; a < 10; a += 1) { sum2 += a; }
+  for (let a = 0; a < 10; a++) { sum3 += a; }
+  if (sum1 == sum2 && sum3 == sum3) {
+    print("success");
+  } else {
+    print("failure");
+  }
+}

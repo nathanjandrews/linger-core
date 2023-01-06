@@ -70,3 +70,27 @@ fn nested_continue() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn for_statement() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("for"));
+    cmd.assert()
+        .success()
+        .stdout(contains("success"));
+
+    Ok(())
+}
+
+#[test]
+fn for_with_existing_initial_value() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("for_with_existing_initial_value"));
+    cmd.assert()
+        .success()
+        .stdout(contains("55"));
+
+    Ok(())
+}
