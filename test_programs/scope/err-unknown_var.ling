@@ -1,0 +1,6 @@
+proc main() {
+  {
+    let a = 5;
+  }
+  print(a);
+}
