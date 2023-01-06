@@ -1,0 +1,13 @@
+// this program prints the even numbers between 10 and 0 in descending order
+proc main() {
+  let num = 11;
+  while (num > 0) {
+    num--;
+    if (num % 2 == 0) {
+      print(num);
+      print(" ");
+    } else {
+      continue;
+    }
+  }
+}

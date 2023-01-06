@@ -1,0 +1,11 @@
+proc main() {
+  let num = 5;
+  while (num > 0) {
+    print(num);
+    print(" ");
+    if (num == 2) {
+      break;
+    }
+    num--;
+  }
+}

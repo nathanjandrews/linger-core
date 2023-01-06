@@ -1,0 +1,16 @@
+proc main() {
+  let num = 3;
+  while (num > 0) {
+    let count = 5;
+    while (count > 0) {
+      count--;
+      if (count % 2 == 0) {
+        print(count);
+        print(" ");
+      }
+      continue;
+    }
+    print("\n");
+    num--;
+  }
+}
