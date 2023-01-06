@@ -1,0 +1,3 @@
+proc main() {
+  print(10, -1, true, false, "hello world");
+}
