@@ -504,9 +504,14 @@ fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////
 
-/// A helper function to create an [UnexpectedToken Error](UnexpectedToken).
+/// A helper function to handle unexpected token patterns. This function returns an 
+/// [UnexpectedToken Error](UnexpectedToken), or an [Unexpected End-of-File](UnexpectedEOF) if
+/// `tokens` is empty.
 fn unexpected_token(tokens: &[T]) -> LingerError {
-    return LingerError::ParseError(UnexpectedToken(tokens.first().unwrap().to_owned()));
+    match tokens {
+        [unexpected_token, ..] => ParseError(UnexpectedToken(unexpected_token.to_owned())),
+        [] => ParseError(UnexpectedEOF),
+    }
 }
 
 /// A helper function to check if `s` matches one of the [Builtin] procedures.

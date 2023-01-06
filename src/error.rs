@@ -27,6 +27,8 @@ pub enum ParseError {
     MultipleSameNamedProcs(String),
     /// This error occurs when there is an unexpected token consumed when parsing.
     UnexpectedToken(Token),
+    /// This error occurs when the parser unexpectedly reached the end of the file
+    UnexpectedEOF,
     /// This error occurs when the consume token differs from the token that was expected.
     Expected(TokenValue, Token),
     /// This error occurs when a keyword is used a variable name.
@@ -109,6 +111,7 @@ impl fmt::Display for LingerError {
                 ParseError::MultipleSameNamedProcs(proc_name) => {
                     write!(f, "multiple procedures with name \"{proc_name}\"")
                 }
+                ParseError::UnexpectedEOF => write!(f, "unexpected end of file"),
             },
             LingerError::TokenizerError(err) => match err {
                 TokenizerError::UnknownToken(s) => write!(f, "unknown token: {s}"),
