@@ -64,6 +64,7 @@ pub enum Operator {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum AssignOp {
     Plus,
+    Minus,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -112,6 +113,7 @@ const LOGIC_OR_REGEX: &str = r"\|\|";
 const LOGIC_AND_REGEX: &str = "&&";
 const LOGIC_NOT_REGEX: &str = "!";
 const ASSIGNMENT_PLUS_REGEX: &str = r"\+=";
+const ASSIGNMENT_MINUS_REGEX: &str = r"\-=";
 
 /// Returns the [Tokens](Token) which make up the program `s`.
 pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
@@ -246,6 +248,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
         Ok((Some(TokenValue::DOUBLE_MINUS), mat.end()))
     } else if let Some(mat) = find(ASSIGNMENT_PLUS_REGEX, s) {
         Ok((Some(TokenValue::ASSIGN_OP(AssignOp::Plus)), mat.end()))
+    } else if let Some(mat) = find(ASSIGNMENT_MINUS_REGEX, s) {
+        Ok((Some(TokenValue::ASSIGN_OP(AssignOp::Minus)), mat.end()))
 
     // ONE-CHARACTER TOKENS
     } else if let Some(mat) = find(ASSIGN_REGEX, s) {
@@ -316,6 +320,7 @@ impl fmt::Display for AssignOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AssignOp::Plus => write!(f, "+="),
+            AssignOp::Minus => write!(f, "-="),
         }
     }
 }

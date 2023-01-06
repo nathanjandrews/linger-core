@@ -123,7 +123,19 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
         SugaredStatement::OperatorAssignment(assign_op, id, expr) => match assign_op {
             AssignOp::Plus => Statement::Assign(
                 id.to_string(),
-                Expr::Binary(Operator::Plus, Box::new(Expr::Var(id)), Box::new(desugar_expression(expr))),
+                Expr::Binary(
+                    Operator::Plus,
+                    Box::new(Expr::Var(id)),
+                    Box::new(desugar_expression(expr)),
+                ),
+            ),
+            AssignOp::Minus => Statement::Assign(
+                id.to_string(),
+                Expr::Binary(
+                    Operator::Minus,
+                    Box::new(Expr::Var(id)),
+                    Box::new(desugar_expression(expr)),
+                ),
             ),
         },
     }

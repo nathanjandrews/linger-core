@@ -78,7 +78,7 @@ fn assignment_operators() -> Result<(), Box<dyn std::error::Error>> {
     cmd.assert()
         .success()
         // numbers are currently only integers so division is actual integer division
-        .stdout(predicate::str::contains("15"));
+        .stdout(predicate::str::contains("15 -5"));
 
     Ok(())
 }
