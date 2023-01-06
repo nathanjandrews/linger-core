@@ -44,3 +44,15 @@ fn procedure_shadowing() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn recursion() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("recursion"));
+    cmd.assert().success().stdout(contains(
+        "10 9 8 7 6 5 4 3 2 1",
+    ));
+
+    Ok(())
+}
