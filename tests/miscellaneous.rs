@@ -61,9 +61,35 @@ fn err_missing_semicolon() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("err-missing_semicolon"));
-    cmd.assert().failure().stderr(starts_with(
-        "expected token \";\"",
-    ));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with("expected token \";\""));
+
+    Ok(())
+}
+
+#[test]
+fn err_unterminated_string_literal() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-unterminated_string_literal"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with("unterminated string literal"))
+        .stdout("");
+
+    Ok(())
+}
+
+#[test]
+fn err_unexpected_eof() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-unexpected_eof"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with("unexpected end of file"))
+        .stdout("");
 
     Ok(())
 }

@@ -53,3 +53,27 @@ fn err_keyword_as_proc() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn err_keyword_as_param_top_level_proc() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-keyword_as_param_tlp"));
+    cmd.assert().failure().stderr(contains(
+        ParseError::KeywordAsParam("if".to_string()).to_string(),
+    ));
+
+    Ok(())
+}
+
+#[test]
+fn err_keyword_as_param_top_level_lambda() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-keyword_as_param_lambda"));
+    cmd.assert().failure().stderr(contains(
+        ParseError::KeywordAsParam("if".to_string()).to_string(),
+    ));
+
+    Ok(())
+}

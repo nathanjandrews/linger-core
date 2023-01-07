@@ -309,7 +309,7 @@ fn parse_statement(
             let (reassign_statement_option, tokens) = parse_statement(tokens, false)?;
             let reassign_statement = match reassign_statement_option {
                 Some(statement) => {
-                    if is_assignment_or_initialization(&statement) {
+                    if is_assignment(&statement) {
                         statement
                     } else {
                         return Err(ParseError(ExpectedAssignment));
@@ -323,9 +323,9 @@ fn parse_statement(
             let for_block_statements = match for_block_option {
                 Some(statement) => match statement {
                     SugaredStatement::Block(statements) => statements,
-                    _ => return Err(ParseError(ExpectedStatement)),
+                    _ => return Err(ParseError(ExpectedBlock)),
                 },
-                None => return Err(ParseError(ExpectedStatement)),
+                None => return Err(ParseError(ExpectedBlock)),
             };
 
             return Ok((

@@ -1,7 +1,12 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use predicates::prelude::{predicate::str::contains, PredicateBooleanExt};
+use linger::error::RuntimeError;
+use linger::interpreter::Value;
+use predicates::{
+    prelude::{predicate::str::contains, PredicateBooleanExt},
+    str::starts_with,
+};
 
 fn file_name_to_path(s: &str) -> String {
     return format!("test_programs/operators/{}.ling", s);
@@ -73,6 +78,21 @@ fn short_circuiting() -> TestResult {
 
     cmd.arg(file_name_to_path("short_circuiting"));
     cmd.assert().success().stdout(contains("true false"));
+
+    Ok(())
+}
+
+#[test]
+fn err_bad_arg_plus_bool() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-bad_arg_plus_bool"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(
+            RuntimeError::BadArg(Value::Bool(true)).to_string(),
+        ))
+        .stdout("");
 
     Ok(())
 }

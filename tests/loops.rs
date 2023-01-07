@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::error::RuntimeError;
+use linger::error::{ParseError, RuntimeError};
 use predicates::{prelude::predicate::str::contains, str::starts_with};
 
 fn file_name_to_path(s: &str) -> String {
@@ -113,6 +113,34 @@ fn err_continue_not_in_loop() -> TestResult {
     cmd.assert()
         .failure()
         .stderr(starts_with(RuntimeError::ContinueNotInLoop.to_string()))
+        .stdout("");
+
+    Ok(())
+}
+
+#[test]
+fn err_expected_update_assignment() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-expected_update_assignment"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(ParseError::ExpectedAssignment.to_string()))
+        .stdout("");
+
+    Ok(())
+}
+
+#[test]
+fn err_expected_initial_assign_or_init() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-expected_initial_assign_or_init"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(
+            ParseError::ExpectedAssignmentOrInitialization.to_string(),
+        ))
         .stdout("");
 
     Ok(())
