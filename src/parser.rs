@@ -172,11 +172,20 @@ fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
         [T(KW(kw), ..), ..] => Err(ParseError(KeywordAsParam(kw.to_string()))),
         [T(ID(param_name), ..), rest_toks @ ..] => {
-            let (mut rest_params, rest_toks) = parse_params(rest_toks)?;
+            let (mut rest_params, rest_toks) = parse_rest_params(rest_toks)?;
             let mut params = vec![param_name.to_string()];
             params.append(&mut rest_params);
             Ok((params, rest_toks))
         }
+        tokens => Err(unexpected_token(tokens)),
+    }
+}
+
+fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
+    match tokens {
+        [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
+        [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
+        [T(COMMA, ..), tokens @ ..] => parse_params(tokens),
         tokens => Err(unexpected_token(tokens)),
     }
 }

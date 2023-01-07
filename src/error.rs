@@ -127,7 +127,9 @@ impl Display for ParseError {
             }
             ParseError::UnexpectedEOF => write!(f, "unexpected end of file"),
             ParseError::ExpectedAssignment => write!(f, "expected an assignment statement"),
-            ParseError::ExpectedAssignmentOrInitialization => write!(f, "expected an assignment or initialization statement"),
+            ParseError::ExpectedAssignmentOrInitialization => {
+                write!(f, "expected an assignment or initialization statement")
+            }
         }
     }
 }
@@ -151,7 +153,7 @@ impl Display for RuntimeError {
         match self {
             RuntimeError::UnknownVariable(id) => write!(f, "unknown variable \"{}\"", id),
             RuntimeError::BadArg(v) => write!(f, "bad argument \"{}\"", v),
-            RuntimeError::ArgMismatch(proc_name, actual, expected) => write!(
+            RuntimeError::ArgMismatch(proc_name, expected, actual) => write!(
                 f,
                 "procedure \"{}\" expected {} args, instead got {}",
                 proc_name, expected, actual

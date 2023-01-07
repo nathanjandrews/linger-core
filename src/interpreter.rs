@@ -374,8 +374,8 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             if args.len() != f_params.len() {
                 return Err(RuntimeError(ArgMismatch(
                     f_name.to_string(),
-                    args.len(),
-                    f_params.len(),
+                    f_params.len(), // expected
+                    args.len(),     // actual
                 )));
             }
 

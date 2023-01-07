@@ -1,0 +1,4 @@
+proc main() {
+  let foo = lam (bar, baz) -> {};
+  foo();
+}

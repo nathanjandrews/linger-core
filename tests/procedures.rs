@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::error::ParseError;
+use linger::error::{ParseError, RuntimeError};
 use predicates::prelude::predicate::str::contains;
 
 fn file_name_to_path(s: &str) -> String {
@@ -73,6 +73,18 @@ fn err_keyword_as_param_top_level_lambda() -> TestResult {
     cmd.arg(file_name_to_path("err-keyword_as_param_lambda"));
     cmd.assert().failure().stderr(contains(
         ParseError::KeywordAsParam("if".to_string()).to_string(),
+    ));
+
+    Ok(())
+}
+
+#[test]
+fn err_arg_mismatch() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-arg_mismatch"));
+    cmd.assert().failure().stderr(contains(
+        RuntimeError::ArgMismatch("foo".to_string(), 2, 0).to_string(),
     ));
 
     Ok(())
