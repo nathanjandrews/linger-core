@@ -1,8 +1,0 @@
-proc main() {
-  print(identity(5));
-  print(identity(true));
-}
-
-proc identity(arg) {
-  return arg;
-}

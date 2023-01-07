@@ -1,0 +1,17 @@
+proc main() {
+  for (let n = 1; n <= 100; n++) {
+    let print_num = true;
+    if (n % 3 == 0) {
+      print_num = false;
+      print("Fizz");
+    }
+    if (n % 5 == 0) {
+      print_num = false;
+      print("Buzz");
+    }
+    if (print_num) {
+      print(n);
+    }
+    print("\n");
+  }
+}
