@@ -298,9 +298,7 @@ fn parse_statement(
                     if is_assignment_or_initialization(&statement) {
                         statement
                     } else {
-                        return Err(ParseError(Custom(
-                            "expected variable assignment or initialization".to_string(),
-                        )));
+                        return Err(ParseError(ExpectedAssignmentOrInitialization));
                     }
                 }
                 None => return Err(ParseError(ExpectedStatement)),
@@ -314,9 +312,7 @@ fn parse_statement(
                     if is_assignment_or_initialization(&statement) {
                         statement
                     } else {
-                        return Err(ParseError(Custom(
-                            "expected variable assignment".to_string(),
-                        )));
+                        return Err(ParseError(ExpectedAssignment));
                     }
                 }
                 None => return Err(ParseError(ExpectedStatement)),

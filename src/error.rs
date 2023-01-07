@@ -41,7 +41,12 @@ pub enum ParseError {
     ExpectedStatement,
     /// This error occurs when the parser expects to parse a block statement but was unsuccessful.
     ExpectedBlock,
-    Custom(String),
+    /// This error occurs when the parser expects to parse an assignment statement but was
+    /// unsuccessful.
+    ExpectedAssignment,
+    /// This error occurs when the parser expects to parse an assignment statement or an
+    /// initialization statement but was unsuccessful.
+    ExpectedAssignmentOrInitialization,
 }
 
 /// A Runtime Error
@@ -66,6 +71,7 @@ pub enum RuntimeError {
     BreakNotInLoop,
     /// This error occurs when a `continue` statement occurs outside of a loop.
     ContinueNotInLoop,
+    /// This error occurs when an expression is not a variable expression
     InvalidAssignmentTarget,
 }
 
@@ -97,15 +103,14 @@ impl Display for ParseError {
             ParseError::NoMain => write!(f, "main procedure not found"),
             ParseError::UnexpectedToken(token) => write!(
                 f,
-                "unexpected token {} @ ({}, {})",
+                "unexpected token \"{}\" @ ({}, {})",
                 token.0, token.1, token.2
             ),
             ParseError::Expected(target, token) => write!(
                 f,
-                "expected token {} @ ({}, {}), instead got {}",
+                "expected token \"{}\" @ ({}, {}), instead got \"{}\"",
                 target, token.1, token.2, token.0
             ),
-            ParseError::Custom(s) => write!(f, "{}", s),
             ParseError::KeywordAsVar(keyword) => {
                 write!(f, "keyword \"{}\" used as variable", keyword)
             }
@@ -115,12 +120,14 @@ impl Display for ParseError {
             ParseError::KeywordAsParam(keyword) => {
                 write!(f, "keyword \"{}\" used as parameter name", keyword)
             }
-            ParseError::ExpectedStatement => write!(f, "expected statement"),
-            ParseError::ExpectedBlock => write!(f, "expected block"),
+            ParseError::ExpectedStatement => write!(f, "expected a statement"),
+            ParseError::ExpectedBlock => write!(f, "expected a block"),
             ParseError::MultipleSameNamedProcs(proc_name) => {
                 write!(f, "multiple procedures with name \"{proc_name}\"")
             }
             ParseError::UnexpectedEOF => write!(f, "unexpected end of file"),
+            ParseError::ExpectedAssignment => write!(f, "expected an assignment statement"),
+            ParseError::ExpectedAssignmentOrInitialization => write!(f, "expected an assignment or initialization statement"),
         }
     }
 }
@@ -163,7 +170,7 @@ impl Display for RuntimeError {
             RuntimeError::UnaryAsBinary(op) => {
                 write!(f, "unary operator \"{}\" used as binary operator", op)
             }
-            RuntimeError::BreakNotInLoop => write!(f, "tried to break while not within a loop"),
+            RuntimeError::BreakNotInLoop => write!(f, "break statement found outside of a loop"),
             RuntimeError::ContinueNotInLoop => {
                 write!(f, "continue statement found outside of a loop")
             }
