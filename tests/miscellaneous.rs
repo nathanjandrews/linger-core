@@ -55,3 +55,15 @@ fn err_invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn err_missing_semicolon() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-missing_semicolon"));
+    cmd.assert().failure().stderr(starts_with(
+        "expected token \";\"",
+    ));
+
+    Ok(())
+}
