@@ -35,7 +35,8 @@ Nothing so far, let's keep it that way.
 - [x] comments
 - [x] increment/decrement unary operators
 - [x] assignment operators (+=, -=, etc.)
-- [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum" returns a function)
+- [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum"
+      returns a function)
 
 ## Bugs
 
@@ -52,6 +53,11 @@ Nothing so far, let's keep it that way.
 - [x] make keywords and enum
 - [ ] make binary operators and unary operators separate enums
 - [ ] use Option<Value> in place of an explicit Void type
+- [ ] better error messages
+  - currently some errors cannot be reached due to the nature of the
+      the parser. For example, the expression "*10" will result in an
+      "unexpected token" error and not a "unary used as binary" error (However
+      this does seem to be the normal behavior in other languages).
 
 ## Repository Hygiene
 
