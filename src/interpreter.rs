@@ -4,7 +4,7 @@ use crate::{
     desugar::{Expr, Procedure, Statement},
     environment::{AssignmentType, Binding, Entry, Environment},
     error::{
-        LingerError::{self, RuntimeError},
+        LingerError::{self, RE},
         RuntimeError::*,
     },
     parser::Program,
@@ -77,7 +77,7 @@ pub fn interp_statement(
         Statement::If(cond_expr, then_statement, else_statement_option) => {
             let cond_bool = match interp_expression(env, cond_expr)? {
                 Value::Bool(b) => b,
-                v => return Err(RuntimeError(BadArg(v))),
+                v => return Err(RE(BadArg(v))),
             };
             if cond_bool {
                 interp_statement(env, *then_statement, in_loop)
@@ -91,7 +91,7 @@ pub fn interp_statement(
         Statement::While(cond_expr, while_block) => Ok(loop {
             let cond_bool = match interp_expression(env, cond_expr.clone())? {
                 Value::Bool(b) => b,
-                v => return Err(RuntimeError(BadArg(v))),
+                v => return Err(RE(BadArg(v))),
             };
             if cond_bool {
                 match interp_statement(env, *while_block.clone(), true)? {
@@ -125,7 +125,7 @@ pub fn interp_statement(
                             env.update_reassigned_entries(&block_env)?;
                             return Ok((value, ControlFlow::Break));
                         } else {
-                            return Err(RuntimeError(BreakNotInLoop));
+                            return Err(RE(BreakNotInLoop));
                         }
                     }
                     (value, ControlFlow::Continue) => {
@@ -133,7 +133,7 @@ pub fn interp_statement(
                             env.update_reassigned_entries(&block_env)?;
                             return Ok((value, ControlFlow::Continue));
                         } else {
-                            return Err(RuntimeError(ContinueNotInLoop));
+                            return Err(RE(ContinueNotInLoop));
                         }
                     }
                 };
@@ -166,8 +166,8 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                     (Value::Str(num_left), Value::Str(num_right)) => {
                         Ok(Value::Str(num_left + num_right.as_str()))
                     }
-                    (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                    (v, _) => Err(RuntimeError(BadArg(v))),
+                    (Value::Num(_), v) => Err(RE(BadArg(v))),
+                    (v, _) => Err(RE(BadArg(v))),
                 }
             }
             Operator::Minus => match (
@@ -177,8 +177,8 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left - num_right))
                 }
-                (Value::Num(_), v) => Err(RuntimeError(BadArg(v))),
-                (v, _) => Err(RuntimeError(BadArg(v))),
+                (Value::Num(_), v) => Err(RE(BadArg(v))),
+                (v, _) => Err(RE(BadArg(v))),
             },
             Operator::Eq => match (
                 interp_expression(env, *left)?,
@@ -190,7 +190,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                     Ok(Value::Bool(bool_left == bool_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::Ne => match (
                 interp_expression(env, *left)?,
@@ -202,7 +202,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Bool(bool_left), Value::Bool(bool_right)) => {
                     Ok(Value::Bool(bool_left != bool_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::LT => match (
                 interp_expression(env, *left)?,
@@ -211,7 +211,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left < num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::GT => match (
                 interp_expression(env, *left)?,
@@ -220,7 +220,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left > num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::LTE => match (
                 interp_expression(env, *left)?,
@@ -229,7 +229,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left <= num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::GTE => match (
                 interp_expression(env, *left)?,
@@ -238,27 +238,27 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left >= num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::LogicOr => match interp_expression(env, *left)? {
                 Value::Bool(b) => match b {
                     true => Ok(Value::Bool(true)),
                     false => match interp_expression(env, *right)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value))),
+                        right_value => Err(RE(BadArg(right_value))),
                     },
                 },
-                left_value => Err(RuntimeError(BadArg(left_value))),
+                left_value => Err(RE(BadArg(left_value))),
             },
             Operator::LogicAnd => match interp_expression(env, *left)? {
                 Value::Bool(b) => match b {
                     false => Ok(Value::Bool(false)),
                     true => match interp_expression(env, *right)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
-                        right_value => Err(RuntimeError(BadArg(right_value))),
+                        right_value => Err(RE(BadArg(right_value))),
                     },
                 },
-                left_value => Err(RuntimeError(BadArg(left_value))),
+                left_value => Err(RE(BadArg(left_value))),
             },
             Operator::Times => match (
                 interp_expression(env, *left)?,
@@ -267,7 +267,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left * num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::Mod => match (
                 interp_expression(env, *left)?,
@@ -276,7 +276,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left % num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
             Operator::Div => match (
                 interp_expression(env, *left)?,
@@ -285,20 +285,20 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left / num_right))
                 }
-                (v_left, v_right) => Err(RuntimeError(BadArgs(vec![v_left, v_right]))),
+                (v_left, v_right) => Err(RE(BadArgs(vec![v_left, v_right]))),
             },
-            op => Err(RuntimeError(UnaryAsBinary(op))),
+            op => Err(RE(UnaryAsBinary(op))),
         },
         Expr::Unary(op, operand) => match op {
             Operator::PreIncrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
-                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                    _ => return Err(RE(InvalidAssignmentTarget)),
                 };
 
                 let num_value = match interp_expression(env, *operand)? {
                     Value::Num(n) => n,
-                    v => return Err(RuntimeError(BadArg(v))),
+                    v => return Err(RE(BadArg(v))),
                 };
 
                 env.reassign(var_name, Value::Num(num_value + 1))?;
@@ -308,12 +308,12 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             Operator::PostIncrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
-                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                    _ => return Err(RE(InvalidAssignmentTarget)),
                 };
 
                 let original_num_value = match interp_expression(env, *operand)? {
                     Value::Num(n) => n,
-                    v => return Err(RuntimeError(BadArg(v))),
+                    v => return Err(RE(BadArg(v))),
                 };
 
                 env.reassign(var_name, Value::Num(original_num_value + 1))?;
@@ -323,12 +323,12 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             Operator::PreDecrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
-                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                    _ => return Err(RE(InvalidAssignmentTarget)),
                 };
 
                 let num_value = match interp_expression(env, *operand)? {
                     Value::Num(n) => n,
-                    v => return Err(RuntimeError(BadArg(v))),
+                    v => return Err(RE(BadArg(v))),
                 };
 
                 env.reassign(var_name, Value::Num(num_value - 1))?;
@@ -338,12 +338,12 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             Operator::PostDecrement => {
                 let var_name = match *operand {
                     Expr::Var(ref id) => id.to_string(),
-                    _ => return Err(RuntimeError(InvalidAssignmentTarget)),
+                    _ => return Err(RE(InvalidAssignmentTarget)),
                 };
 
                 let original_num_value = match interp_expression(env, *operand)? {
                     Value::Num(n) => n,
-                    v => return Err(RuntimeError(BadArg(v))),
+                    v => return Err(RE(BadArg(v))),
                 };
 
                 env.reassign(var_name, Value::Num(original_num_value - 1))?;
@@ -352,13 +352,13 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
             }
             Operator::Minus => match interp_expression(env, *operand)? {
                 Value::Num(n) => Ok(Value::Num(-n)),
-                v => Err(RuntimeError(BadArg(v))),
+                v => Err(RE(BadArg(v))),
             },
             Operator::LogicNot => match interp_expression(env, *operand)? {
                 Value::Bool(b) => Ok(Value::Bool(!b)),
-                v => Err(RuntimeError(BadArg(v))),
+                v => Err(RE(BadArg(v))),
             },
-            op => Err(RuntimeError(BinaryAsUnary(op))),
+            op => Err(RE(BinaryAsUnary(op))),
         },
         Expr::Call(f_expr, args) => {
             let f_name = match *f_expr {
@@ -368,11 +368,11 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Lin
 
             let (f_params, f_body, f_env) = match interp_expression(env, *f_expr)? {
                 Value::Proc(params, body, env) => (params, body, env),
-                v => return Err(RuntimeError(BadArg(v))),
+                v => return Err(RE(BadArg(v))),
             };
 
             if args.len() != f_params.len() {
-                return Err(RuntimeError(ArgMismatch(
+                return Err(RE(ArgMismatch(
                     f_name.to_string(),
                     f_params.len(), // expected
                     args.len(),     // actual

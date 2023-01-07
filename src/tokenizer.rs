@@ -171,14 +171,14 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                             '0' => string_token_content.push('\0'),
                             '"' => string_token_content.push('"'),
                             '\'' => string_token_content.push('\''),
-                            c => return Err(TokenizerError(InvalidEscapeSequence(c))),
+                            c => return Err(TE(InvalidEscapeSequence(c))),
                         },
-                        None => return Err(TokenizerError(UnterminatedStringLiteral)),
+                        None => return Err(TE(UnterminatedStringLiteral)),
                     },
                     _ => string_token_content.push(char),
                 }
             }
-            return Err(TokenizerError(UnterminatedStringLiteral));
+            return Err(TE(UnterminatedStringLiteral));
         }
         TokenValue::DOUBLE_SLASH => return Ok(vec![]),
         token_value => {
@@ -296,7 +296,7 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
 
     // THE ERROR CASE
     } else {
-        Err(TokenizerError(UnknownToken({
+        Err(TE(UnknownToken({
             let mut split =
                 s.split(|c: char| str_to_regex(WHITESPACE_REGEX).is_match(c.to_string().as_str()));
             let unknown_token = split.nth(0).expect("some non-whitespace text since whitespace would have been matched on the first branch of the if statement");

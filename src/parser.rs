@@ -4,7 +4,7 @@ use crate::desugar::{desugar_statement, Procedure, Statement};
 use crate::tokenizer::AssignOp;
 use crate::tokenizer::Operator::{self, *};
 use crate::{
-    error::{LingerError, LingerError::ParseError, ParseError::*},
+    error::{LingerError, LingerError::PE, ParseError::*},
     tokenizer::{
         Keyword::*,
         Token as T,
@@ -110,7 +110,7 @@ pub fn parse_program(tokens: &[T]) -> Result<Program, LingerError> {
 
     let main_proc = match main_procs.first() {
         Some(proc) => proc,
-        None => return Err(ParseError(NoMain)),
+        None => return Err(PE(NoMain)),
     };
 
     return Ok(Program {
@@ -132,7 +132,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerErro
                 .find(|p| p.name == proc.name)
                 .is_some()
             {
-                return Err(ParseError(MultipleSameNamedProcs(proc.name.to_string())));
+                return Err(PE(MultipleSameNamedProcs(proc.name.to_string())));
             }
 
             let mut vec = vec![proc];
@@ -146,7 +146,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerErro
 fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerError> {
     match tokens {
         [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => {
-            Err(ParseError(KeywordAsProc(kw.to_string())))
+            Err(PE(KeywordAsProc(kw.to_string())))
         }
         [T(KW(Proc), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
             let (params, tokens) = parse_params(rest)?;
@@ -170,7 +170,7 @@ fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerEr
 fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
-        [T(KW(kw), ..), ..] => Err(ParseError(KeywordAsParam(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(PE(KeywordAsParam(kw.to_string()))),
         [T(ID(param_name), ..), rest_toks @ ..] => {
             let (mut rest_params, rest_toks) = parse_rest_params(rest_toks)?;
             let mut params = vec![param_name.to_string()];
@@ -210,7 +210,7 @@ fn parse_statement(
 ) -> Result<(Option<SugaredStatement>, &[T]), LingerError> {
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
-        [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
+        [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
         [T(KW(Let), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -221,7 +221,7 @@ fn parse_statement(
                 tokens,
             ))
         }
-        [T(KW(kw), ..), T(ASSIGN, ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), T(ASSIGN, ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
         [T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -307,10 +307,10 @@ fn parse_statement(
                     if is_assignment_or_initialization(&statement) {
                         statement
                     } else {
-                        return Err(ParseError(ExpectedAssignmentOrInitialization));
+                        return Err(PE(ExpectedAssignmentOrInitialization));
                     }
                 }
-                None => return Err(ParseError(ExpectedStatement)),
+                None => return Err(PE(ExpectedStatement)),
             };
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
@@ -321,10 +321,10 @@ fn parse_statement(
                     if is_assignment(&statement) {
                         statement
                     } else {
-                        return Err(ParseError(ExpectedAssignment));
+                        return Err(PE(ExpectedAssignment));
                     }
                 }
-                None => return Err(ParseError(ExpectedStatement)),
+                None => return Err(PE(ExpectedStatement)),
             };
             let tokens = consume_token(RPAREN, tokens)?;
 
@@ -332,9 +332,9 @@ fn parse_statement(
             let for_block_statements = match for_block_option {
                 Some(statement) => match statement {
                     SugaredStatement::Block(statements) => statements,
-                    _ => return Err(ParseError(ExpectedBlock)),
+                    _ => return Err(PE(ExpectedBlock)),
                 },
-                None => return Err(ParseError(ExpectedBlock)),
+                None => return Err(PE(ExpectedBlock)),
             };
 
             return Ok((
@@ -472,7 +472,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
-        [T(KW(kw), ..), ..] => Err(ParseError(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
         [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = parse_expr(tokens)?;
@@ -536,8 +536,8 @@ fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError
 /// `tokens` is empty.
 fn unexpected_token(tokens: &[T]) -> LingerError {
     match tokens {
-        [unexpected_token, ..] => ParseError(UnexpectedToken(unexpected_token.to_owned())),
-        [] => ParseError(UnexpectedEOF),
+        [unexpected_token, ..] => PE(UnexpectedToken(unexpected_token.to_owned())),
+        [] => PE(UnexpectedEOF),
     }
 }
 
@@ -555,8 +555,8 @@ pub fn check_builtin(s: &str) -> Option<Builtin> {
 fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], LingerError> {
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
-        [token, ..] => Err(ParseError(Expected(target, token.clone()))),
-        [] => Err(ParseError(UnexpectedEOF)),
+        [token, ..] => Err(PE(Expected(target, token.clone()))),
+        [] => Err(PE(UnexpectedEOF)),
     }
 }
 
@@ -631,9 +631,9 @@ fn ensure_block(
     match statement_option {
         Some(statement) => match statement {
             SugaredStatement::Block(_) => Ok(statement),
-            _ => Err(ParseError(ExpectedBlock)),
+            _ => Err(PE(ExpectedBlock)),
         },
-        None => Err(ParseError(ExpectedBlock)),
+        None => Err(PE(ExpectedBlock)),
     }
 }
 

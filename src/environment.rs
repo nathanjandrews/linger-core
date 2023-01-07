@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::{
-        LingerError::{self, RuntimeError},
+        LingerError::{self, RE},
         RuntimeError::*,
     },
     interpreter::Value,
@@ -32,7 +32,7 @@ impl Environment {
     pub fn get(&self, key: String) -> Result<Entry, LingerError> {
         match self.values.get(&key) {
             Some(value) => Ok(value.clone()),
-            None => Err(RuntimeError(UnknownVariable(key))),
+            None => Err(RE(UnknownVariable(key))),
         }
     }
 
@@ -59,7 +59,7 @@ impl Environment {
 
     pub fn reassign(&mut self, key: String, value: Value) -> Result<(), LingerError> {
         if !self.values.contains_key(&key) {
-            return Err(RuntimeError(UnknownVariable(key)));
+            return Err(RE(UnknownVariable(key)));
         }
 
         self.values.insert(key, (value, AssignmentType::Reassigned));

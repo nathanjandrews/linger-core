@@ -80,19 +80,19 @@ pub enum RuntimeError {
 #[derive(Debug, Clone)]
 pub enum LingerError {
     /// A [ParseError]
-    ParseError(ParseError),
+    PE(ParseError),
     /// A [TokenizerError]
-    TokenizerError(TokenizerError),
+    TE(TokenizerError),
     /// A [RuntimeError]
-    RuntimeError(RuntimeError),
+    RE(RuntimeError),
 }
 
 impl fmt::Display for LingerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LingerError::ParseError(err) => write!(f, "{err}"),
-            LingerError::TokenizerError(err) => write!(f, "{err}"),
-            LingerError::RuntimeError(err) => write!(f, "{err}"),
+            LingerError::PE(err) => write!(f, "{err}"),
+            LingerError::TE(err) => write!(f, "{err}"),
+            LingerError::RE(err) => write!(f, "{err}"),
         }
     }
 }
