@@ -4,7 +4,7 @@ use crate::desugar::{desugar_statement, Procedure, Statement};
 use crate::tokenizer::AssignOp;
 use crate::tokenizer::Operator::{self, *};
 use crate::{
-    error::{LingerError, LingerError::PE, ParseError::*},
+    error::ParseError::{self, *},
     tokenizer::{
         Keyword::*,
         Token as T,
@@ -91,7 +91,7 @@ pub enum Builtin {
 }
 
 /// Parses a program from a list of tokens.
-pub fn parse_program(tokens: &[T]) -> Result<Program, LingerError> {
+pub fn parse_program(tokens: &[T]) -> Result<Program, ParseError> {
     let (procedures, rest) = parse_procs(tokens)?;
 
     if !rest.is_empty() {
@@ -110,7 +110,7 @@ pub fn parse_program(tokens: &[T]) -> Result<Program, LingerError> {
 
     let main_proc = match main_procs.first() {
         Some(proc) => proc,
-        None => return Err(PE(NoMain)),
+        None => return Err(NoMain),
     };
 
     return Ok(Program {
@@ -119,7 +119,7 @@ pub fn parse_program(tokens: &[T]) -> Result<Program, LingerError> {
     });
 }
 
-fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerError> {
+fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), ParseError> {
     let (proc_option, tokens) = parse_proc(tokens)?;
 
     match proc_option {
@@ -132,7 +132,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerErro
                 .find(|p| p.name == proc.name)
                 .is_some()
             {
-                return Err(PE(MultipleSameNamedProcs(proc.name.to_string())));
+                return Err(MultipleSameNamedProcs(proc.name.to_string()));
             }
 
             let mut vec = vec![proc];
@@ -143,10 +143,10 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), LingerErro
     }
 }
 
-fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerError> {
+fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), ParseError> {
     match tokens {
         [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => {
-            Err(PE(KeywordAsProc(kw.to_string())))
+            Err(KeywordAsProc(kw.to_string()))
         }
         [T(KW(Proc), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
             let (params, tokens) = parse_params(rest)?;
@@ -167,10 +167,10 @@ fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), LingerEr
     }
 }
 
-fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
+fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
-        [T(KW(kw), ..), ..] => Err(PE(KeywordAsParam(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(KeywordAsParam(kw.to_string())),
         [T(ID(param_name), ..), rest_toks @ ..] => {
             let (mut rest_params, rest_toks) = parse_rest_params(rest_toks)?;
             let mut params = vec![param_name.to_string()];
@@ -181,7 +181,7 @@ fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
     }
 }
 
-fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
+fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
@@ -190,7 +190,7 @@ fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), LingerError> {
     }
 }
 
-fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), LingerError> {
+fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), ParseError> {
     let (statement_option, tokens) = parse_statement(tokens, true)?;
 
     let statement = match statement_option {
@@ -207,10 +207,10 @@ fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), Linge
 fn parse_statement(
     tokens: &[T],
     parse_semicolon: bool,
-) -> Result<(Option<SugaredStatement>, &[T]), LingerError> {
+) -> Result<(Option<SugaredStatement>, &[T]), ParseError> {
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
-        [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
+        [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(KW(Let), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -221,7 +221,7 @@ fn parse_statement(
                 tokens,
             ))
         }
-        [T(KW(kw), ..), T(ASSIGN, ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), T(ASSIGN, ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -307,10 +307,10 @@ fn parse_statement(
                     if is_assignment_or_initialization(&statement) {
                         statement
                     } else {
-                        return Err(PE(ExpectedAssignmentOrInitialization));
+                        return Err(ExpectedAssignmentOrInitialization);
                     }
                 }
-                None => return Err(PE(ExpectedStatement)),
+                None => return Err(ExpectedStatement),
             };
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
@@ -321,10 +321,10 @@ fn parse_statement(
                     if is_assignment(&statement) {
                         statement
                     } else {
-                        return Err(PE(ExpectedAssignment));
+                        return Err(ExpectedAssignment);
                     }
                 }
-                None => return Err(PE(ExpectedStatement)),
+                None => return Err(ExpectedStatement),
             };
             let tokens = consume_token(RPAREN, tokens)?;
 
@@ -332,9 +332,9 @@ fn parse_statement(
             let for_block_statements = match for_block_option {
                 Some(statement) => match statement {
                     SugaredStatement::Block(statements) => statements,
-                    _ => return Err(PE(ExpectedBlock)),
+                    _ => return Err(ExpectedBlock),
                 },
-                None => return Err(PE(ExpectedBlock)),
+                None => return Err(ExpectedBlock),
             };
 
             return Ok((
@@ -376,35 +376,35 @@ fn parse_statement(
     }
 }
 
-fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     parse_logical_or_expr(tokens)
 }
 
-fn parse_logical_or_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_logical_or_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_logical_and_expr, vec![LogicOr], tokens);
 }
 
-fn parse_logical_and_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_logical_and_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_equality_expr, vec![LogicAnd], tokens);
 }
 
-fn parse_equality_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_equality_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_relational_expr, vec![Eq, Ne], tokens);
 }
 
-fn parse_relational_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_relational_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_additive_expr, vec![LT, GT, LTE, GTE], tokens);
 }
 
-fn parse_additive_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_additive_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_multiplicative_expr, vec![Plus, Minus], tokens);
 }
 
-fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_unary_expr, vec![Times, Mod, Div], tokens);
 }
 
-fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match match_operator(vec![Minus, LogicNot].as_slice(), tokens) {
         Some((operator, tokens)) => {
             let (right, tokens) = parse_unary_expr(tokens)?;
@@ -439,7 +439,7 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
     }
 }
 
-fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError> {
+fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match tokens {
         [T(KW(Lam), ..), T(LPAREN, ..), tokens @ ..] => {
             let (params, tokens) = parse_params(tokens)?;
@@ -472,7 +472,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
-        [T(KW(kw), ..), ..] => Err(PE(KeywordAsVar(kw.to_string()))),
+        [T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
         [T(LPAREN, ..), tokens @ ..] => {
             let (expr, tokens) = parse_expr(tokens)?;
@@ -504,7 +504,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), LingerError>
     }
 }
 
-fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError> {
+fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         tokens => {
@@ -518,7 +518,7 @@ fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError> {
     }
 }
 
-fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError> {
+fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
@@ -534,10 +534,10 @@ fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), LingerError
 /// A helper function to handle unexpected token patterns. This function returns an
 /// [UnexpectedToken Error](UnexpectedToken), or an [Unexpected End-of-File](UnexpectedEOF) if
 /// `tokens` is empty.
-fn unexpected_token(tokens: &[T]) -> LingerError {
+fn unexpected_token(tokens: &[T]) -> ParseError {
     match tokens {
-        [unexpected_token, ..] => PE(UnexpectedToken(unexpected_token.to_owned())),
-        [] => PE(UnexpectedEOF),
+        [unexpected_token, ..] => UnexpectedToken(unexpected_token.to_owned()),
+        [] => UnexpectedEOF,
     }
 }
 
@@ -552,11 +552,11 @@ pub fn check_builtin(s: &str) -> Option<Builtin> {
 /// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
 /// this function returns `tokens` with the first element removed. On failure, this function returns
 /// an [Expected] error.
-fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], LingerError> {
+fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], ParseError> {
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
-        [token, ..] => Err(PE(Expected(target, token.clone()))),
-        [] => Err(PE(UnexpectedEOF)),
+        [token, ..] => Err(Expected(target, token.clone())),
+        [] => Err(UnexpectedEOF),
     }
 }
 
@@ -567,7 +567,7 @@ fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], LingerError> 
 fn conditionally_consume_semicolon(
     tokens: &[T],
     should_consume: bool,
-) -> Result<&[T], LingerError> {
+) -> Result<&[T], ParseError> {
     if should_consume {
         return consume_token(SEMICOLON, tokens);
     } else {
@@ -596,14 +596,14 @@ fn match_operator<'a>(operators: &[Operator], tokens: &'a [T]) -> Option<(Operat
 }
 
 /// Type alias for the return value of a binary expression parsing function.
-type BinaryExpressionParser = fn(&[T]) -> Result<(SugaredExpr, &[T]), LingerError>;
+type BinaryExpressionParser = fn(&[T]) -> Result<(SugaredExpr, &[T]), ParseError>;
 
 /// A helper function for parsing binary expressions.
 fn parse_binary_expr(
     parse_expr: BinaryExpressionParser,
     operators: Vec<Operator>,
     tokens: &[T],
-) -> Result<(SugaredExpr, &[T]), LingerError> {
+) -> Result<(SugaredExpr, &[T]), ParseError> {
     let (mut expr, mut tokens) = parse_expr(tokens)?;
     loop {
         match match_operator(operators.as_slice(), tokens) {
@@ -627,13 +627,13 @@ fn binary_expression(op: Operator, first_arg: SugaredExpr, second_arg: SugaredEx
 /// an [ExpectedBlock] parse error.
 fn ensure_block(
     statement_option: Option<SugaredStatement>,
-) -> Result<SugaredStatement, LingerError> {
+) -> Result<SugaredStatement, ParseError> {
     match statement_option {
         Some(statement) => match statement {
             SugaredStatement::Block(_) => Ok(statement),
-            _ => Err(PE(ExpectedBlock)),
+            _ => Err(ExpectedBlock),
         },
-        None => Err(PE(ExpectedBlock)),
+        None => Err(ExpectedBlock),
     }
 }
 

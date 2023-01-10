@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    error::{
-        LingerError::{self, RE},
-        RuntimeError::*,
-    },
+    error::RuntimeError::{self, *},
     interpreter::Value,
 };
 
@@ -29,10 +26,10 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, key: String) -> Result<Entry, LingerError> {
+    pub fn get(&self, key: String) -> Result<Entry, RuntimeError> {
         match self.values.get(&key) {
             Some(value) => Ok(value.clone()),
-            None => Err(RE(UnknownVariable(key))),
+            None => Err(UnknownVariable(key)),
         }
     }
 
@@ -57,9 +54,9 @@ impl Environment {
             .insert(key, (value, AssignmentType::Initialized));
     }
 
-    pub fn reassign(&mut self, key: String, value: Value) -> Result<(), LingerError> {
+    pub fn reassign(&mut self, key: String, value: Value) -> Result<(), RuntimeError> {
         if !self.values.contains_key(&key) {
-            return Err(RE(UnknownVariable(key)));
+            return Err(UnknownVariable(key));
         }
 
         self.values.insert(key, (value, AssignmentType::Reassigned));
@@ -75,7 +72,7 @@ impl Environment {
         return self.values.contains_key(key);
     }
 
-    pub fn update_reassigned_entries(&mut self, other_env: &Self) -> Result<(), LingerError> {
+    pub fn update_reassigned_entries(&mut self, other_env: &Self) -> Result<(), RuntimeError> {
         for (id, (value, assignment_type)) in other_env.bindings() {
             if self.contains_key(&id) && assignment_type == AssignmentType::Reassigned {
                 self.reassign(id, value)?;

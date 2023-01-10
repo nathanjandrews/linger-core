@@ -75,28 +75,6 @@ pub enum RuntimeError {
     InvalidAssignmentTarget,
 }
 
-/// A LingerError. This is a wrapper enum around all of [TokenizerError], [ParseError], and
-/// [RuntimeError].
-#[derive(Debug, Clone)]
-pub enum LingerError {
-    /// A [ParseError]
-    PE(ParseError),
-    /// A [TokenizerError]
-    TE(TokenizerError),
-    /// A [RuntimeError]
-    RE(RuntimeError),
-}
-
-impl fmt::Display for LingerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LingerError::PE(err) => write!(f, "{err}"),
-            LingerError::TE(err) => write!(f, "{err}"),
-            LingerError::RE(err) => write!(f, "{err}"),
-        }
-    }
-}
-
 impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

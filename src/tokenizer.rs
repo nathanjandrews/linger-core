@@ -3,8 +3,8 @@ use std::fmt;
 use regex::{Match, Regex};
 
 use crate::error::{
-    LingerError::{self, *},
-    TokenizerError::*,
+    // LingerError::{self, *},
+    TokenizerError::{self, *},
 };
 
 /// A Linger token.
@@ -116,7 +116,7 @@ const ASSIGNMENT_PLUS_REGEX: &str = r"\+=";
 const ASSIGNMENT_MINUS_REGEX: &str = r"\-=";
 
 /// Returns the [Tokens](Token) which make up the program `s`.
-pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
+pub fn tokenize(s: &str) -> Result<Vec<Token>, TokenizerError> {
     let enumerated_lines = s.split("\n").enumerate();
     let mut tokens: Vec<Token> = vec![];
     for (line_num, line) in enumerated_lines {
@@ -129,7 +129,7 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, LingerError> {
 /// Returns the [Tokens](Token) which make up the program `s`. This is a helper function which is
 /// wrapped by [tokenize]. This function also takes a line and column number which are passed to
 /// created token structures.
-fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, LingerError> {
+fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token>, TokenizerError> {
     if s.len() == 0 {
         return Ok(vec![]);
     }
@@ -171,14 +171,14 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
                             '0' => string_token_content.push('\0'),
                             '"' => string_token_content.push('"'),
                             '\'' => string_token_content.push('\''),
-                            c => return Err(TE(InvalidEscapeSequence(c))),
+                            c => return Err(InvalidEscapeSequence(c)),
                         },
-                        None => return Err(TE(UnterminatedStringLiteral)),
+                        None => return Err(UnterminatedStringLiteral),
                     },
                     _ => string_token_content.push(char),
                 }
             }
-            return Err(TE(UnterminatedStringLiteral));
+            return Err(UnterminatedStringLiteral);
         }
         TokenValue::DOUBLE_SLASH => return Ok(vec![]),
         token_value => {
@@ -194,7 +194,7 @@ fn tokenize_helper(s: &str, line_num: usize, col_num: usize) -> Result<Vec<Token
 /// Tries to get a token beginning at the start of `s`. On success, this function returns an option
 /// of a [Token] that is None in the case of whitespace, or Some(Token) in all other cases. If the
 /// beginning of `s` is not a known token, this function returns a [TokenizerError].
-fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> {
+fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerError> {
     // WHITESPACE TOKEN
     if let Some(mat) = find(WHITESPACE_REGEX, s) {
         Ok((None, mat.end()))
@@ -296,12 +296,12 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), LingerError> 
 
     // THE ERROR CASE
     } else {
-        Err(TE(UnknownToken({
+        Err(UnknownToken({
             let mut split =
                 s.split(|c: char| str_to_regex(WHITESPACE_REGEX).is_match(c.to_string().as_str()));
             let unknown_token = split.nth(0).expect("some non-whitespace text since whitespace would have been matched on the first branch of the if statement");
             format!("{}", unknown_token).to_string()
-        })))
+        }))
     }
 }
 
