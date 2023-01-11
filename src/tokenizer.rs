@@ -31,6 +31,7 @@ pub enum TokenValue {
     DOUBLE_SLASH,
     DOUBLE_PLUS,
     DOUBLE_MINUS,
+    Dot,
 }
 
 /// An operator. This enum represents all of the valid operators in the Linger
@@ -111,6 +112,7 @@ const LOGIC_AND_REGEX: &str = "&&";
 const LOGIC_NOT_REGEX: &str = "!";
 const ASSIGNMENT_PLUS_REGEX: &str = r"\+=";
 const ASSIGNMENT_MINUS_REGEX: &str = r"\-=";
+const DOT_REGEX: &str = r"\.";
 
 /// Returns the [Tokens](Token) which make up the program `s`.
 pub fn tokenize(s: &str) -> Result<Vec<Token>, TokenizerError> {
@@ -290,6 +292,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
             Some(TokenValue::NUM(mat.as_str().parse::<f64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
             mat.end(),
         ))
+    } else if let Some(mat) = find(DOT_REGEX, s) {
+        Ok((Some(TokenValue::Dot), mat.end()))
 
     // THE ERROR CASE
     } else {
@@ -387,6 +391,7 @@ impl fmt::Display for TokenValue {
             TokenValue::DOUBLE_PLUS => write!(f, "++"),
             TokenValue::DOUBLE_MINUS => write!(f, "--"),
             TokenValue::ASSIGN_OP(op) => write!(f, "{op}"),
+            TokenValue::Dot => write!(f, "."),
         }
     }
 }
