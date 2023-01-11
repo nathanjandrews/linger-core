@@ -311,9 +311,8 @@ fn parse_statement(
                 None => return Err(ExpectedStatement),
             };
 
-            // TODO: come back to this later
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
-            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
+            let tokens = consume_token(SEMICOLON, tokens)?;
 
             let (reassign_statement_option, tokens) = parse_statement(tokens, false)?;
             let reassign_statement = match reassign_statement_option {
@@ -352,19 +351,15 @@ fn parse_statement(
         }
         [T(KW(Return), ..), tokens @ ..] => {
             let (return_expr, tokens) = parse_expr(tokens)?;
-            // TODO: come back to this later
-
-            let tokens = conditionally_consume_semicolon(tokens, true)?;
+            let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(SugaredStatement::Return(Some(return_expr))), tokens))
         }
         [T(KW(Break), ..), tokens @ ..] => {
-            // TODO: come back to this later
-            let tokens = conditionally_consume_semicolon(tokens, true)?;
+            let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(SugaredStatement::Break), tokens))
         }
         [T(KW(Continue), ..), tokens @ ..] => {
-            // TODO: come back to this later
-            let tokens = conditionally_consume_semicolon(tokens, true)?;
+            let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(SugaredStatement::Continue), tokens))
         }
         [T(LBRACKET, ..), tokens @ ..] => {
