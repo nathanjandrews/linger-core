@@ -464,18 +464,19 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
         [T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
-        [T(LPAREN, ..), tokens @ ..] => {
-            let params_res = parse_params(tokens);
-            if let Err(KeywordAsParam(kw)) = params_res {
-                return Err(KeywordAsParam(kw));
-            } else if let Ok((params, tokens)) = params_res {
+        [T(LPAREN, ..), tokens @ ..] => match parse_params(tokens) {
+            // if the next sequence of tokens is a params list, then parse a lambda expression
+            Ok((params, tokens)) => {
                 let tokens = consume_token(THIN_ARROW, tokens)?;
                 let (lambda_body, tokens) = match parse_statement(tokens, false)? {
                     (Some(statement), tokens) => (statement, tokens),
                     _ => return Err(ExpectedStatement),
                 };
                 return Ok((SugaredExpr::Lambda(params, Box::new(lambda_body)), tokens));
-            } else {
+            }
+            // if the next sequence of tokens is a valid sequence of tokens, but not a params list,
+            // then parse a parenthesized expression
+            Err(UnexpectedToken(_)) => {
                 let (expr, tokens) = parse_expr(tokens)?;
                 let tokens = consume_token(RPAREN, tokens)?;
                 match expr {
@@ -497,10 +498,13 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
                             }
                         }
                     }
-                    expr => Ok((expr, tokens)),
+                    expr => return Ok((expr, tokens)),
                 }
             }
-        }
+            // if the next sequence of tokens is not a valid sequence of tokens, return the error
+            Err(e) => return Err(e),
+        },
+
         [T(NUM(n), ..), tokens @ ..] => Ok((SugaredExpr::Num(*n), tokens)),
         tokens => Err(unexpected_token(tokens)),
     }
