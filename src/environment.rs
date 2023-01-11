@@ -90,7 +90,10 @@ impl Environment {
                 return Ok(());
             }
             Some((_, _, Mutability::Constant)) => return Err(ReassignConstant(key)),
-            None => return Err(UnknownVariable(key)),
+            None => match self.top_level_procedures.get(&key) {
+                Some(_) => return Err(ReassignTopLevelProc(key)),
+                None => return Err(UnknownVariable(key)),
+            },
         }
     }
 

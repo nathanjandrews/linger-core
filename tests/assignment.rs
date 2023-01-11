@@ -75,3 +75,15 @@ fn err_const_reassignment() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn err_reassign_top_level_proc() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-reassign_top_level_proc"));
+    cmd.assert()
+        .failure()
+        .stderr(contains(RuntimeError::ReassignTopLevelProc("foo".to_string()).to_string()));
+
+    Ok(())
+}

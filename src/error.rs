@@ -75,6 +75,8 @@ pub enum RuntimeError {
     InvalidAssignmentTarget,
     /// This error occurs when attempting to reassign a constant value
     ReassignConstant(String),
+    /// This error occurs when attempting to reassign a top-level procedure
+    ReassignTopLevelProc(String),
 }
 
 impl Display for ParseError {
@@ -157,7 +159,12 @@ impl Display for RuntimeError {
                 write!(f, "continue statement found outside of a loop")
             }
             RuntimeError::InvalidAssignmentTarget => write!(f, "invalid assignment target"),
-            RuntimeError::ReassignConstant(var) => write!(f, "cannot assign to \"{var}\" because it is a constant"),
+            RuntimeError::ReassignConstant(var) => {
+                write!(f, "cannot assign to \"{var}\" because it is a constant")
+            }
+            RuntimeError::ReassignTopLevelProc(proc_name) => {
+                write!(f, "cannot assign to top-level procedure \"{proc_name}\"")
+            }
         }
     }
 }
