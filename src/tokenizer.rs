@@ -5,17 +5,17 @@ use regex::{Match, Regex};
 use crate::error::TokenizerError::{self, *};
 
 /// A Linger token.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Token(pub TokenValue, pub usize, pub usize);
 
 /// A Linger token value. This is an enum which represents the type of the
 /// token along with any associated data with that type.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 #[allow(non_camel_case_types)]
 pub enum TokenValue {
     ID(String),
     STR(String),
-    NUM(i64),
+    NUM(f64),
     ASSIGN,
     OP(Operator),
     KW(Keyword),
@@ -90,7 +90,7 @@ const GT_REGEX: &str = r">";
 const LTE_REGEX: &str = r"<=";
 const GTE_REGEX: &str = r">=";
 const ID_REGEX: &str = r"([a-zA-Z][a-zA-Z0-9_]*)\b";
-const NUM_REGEX: &str = r"(\d+)\b";
+const NUM_REGEX: &str = r"\d*\.?\d+";
 const PLUS_REGEX: &str = r"\+";
 const MINUS_REGEX: &str = r"\-";
 const STAR_REGEX: &str = r"\*";
@@ -287,7 +287,7 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
         Ok((Some(TokenValue::ID(mat.as_str().to_string())), mat.end()))
     } else if let Some(mat) = find(NUM_REGEX, s) {
         Ok((
-            Some(TokenValue::NUM(mat.as_str().parse::<i64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
+            Some(TokenValue::NUM(mat.as_str().parse::<f64>().expect("a match with the NUM_REGEX should imply that the string slice can be parsed into am i64"))),
             mat.end(),
         ))
 

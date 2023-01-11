@@ -4,14 +4,14 @@ use crate::{
     tokenizer::Operator,
 };
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Procedure {
     pub name: String,
     pub params: Vec<String>,
     pub body: Statement,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
     Expr(Expr),
     Let(String, Expr),
@@ -25,9 +25,9 @@ pub enum Statement {
     Continue,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
-    Num(i64),
+    Num(f64),
     Bool(bool),
     Str(String),
     Var(String),

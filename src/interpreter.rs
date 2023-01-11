@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub enum Value {
-    Num(i64),
+    Num(f64),
     Bool(bool),
     Str(String),
     Proc(Vec<String>, Statement, Environment),
@@ -295,9 +295,9 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                     v => return Err(BadArg(v)),
                 };
 
-                env.reassign(var_name, Value::Num(num_value + 1))?;
+                env.reassign(var_name, Value::Num(num_value + 1.0))?;
 
-                return Ok(Value::Num(num_value + 1));
+                return Ok(Value::Num(num_value + 1.0));
             }
             Operator::PostIncrement => {
                 let var_name = match *operand {
@@ -310,7 +310,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                     v => return Err(BadArg(v)),
                 };
 
-                env.reassign(var_name, Value::Num(original_num_value + 1))?;
+                env.reassign(var_name, Value::Num(original_num_value + 1.0))?;
 
                 return Ok(Value::Num(original_num_value));
             }
@@ -325,9 +325,9 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                     v => return Err(BadArg(v)),
                 };
 
-                env.reassign(var_name, Value::Num(num_value - 1))?;
+                env.reassign(var_name, Value::Num(num_value - 1.0))?;
 
-                return Ok(Value::Num(num_value - 1));
+                return Ok(Value::Num(num_value - 1.0));
             }
             Operator::PostDecrement => {
                 let var_name = match *operand {
@@ -340,7 +340,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                     v => return Err(BadArg(v)),
                 };
 
-                env.reassign(var_name, Value::Num(original_num_value - 1))?;
+                env.reassign(var_name, Value::Num(original_num_value - 1.0))?;
 
                 return Ok(Value::Num(original_num_value));
             }

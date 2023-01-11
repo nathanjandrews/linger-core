@@ -20,7 +20,7 @@ fn binary_operators() -> TestResult {
 
     cmd.arg(file_name_to_path("binary_operators"));
     cmd.assert().success().stdout(contains(
-        "12 \"hello world\" -2 true false true false true false false true false true true 5 0 35",
+        "12 \"hello world\" -2 true false true false true false false true false true true 5 0.5 35",
     ));
 
     Ok(())
@@ -67,7 +67,7 @@ fn operator_precedence() -> TestResult {
     cmd.arg(file_name_to_path("operator_precedence"));
     cmd.assert()
         .success()
-        .stdout(contains("23 1 false true true true"));
+        .stdout(contains("23 1.5 false true true true"));
 
     Ok(())
 }

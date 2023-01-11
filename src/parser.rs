@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// A representation of a Linger program.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Program {
     /// The top-level procedures of the program, excluding the main procedure.
     pub procedures: Vec<Procedure>,
@@ -27,7 +27,7 @@ pub struct Program {
 /// the user-facing syntax of the language. These statements are later
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 struct SugaredProcedure {
     pub name: String,
     pub params: Vec<String>,
@@ -40,7 +40,7 @@ struct SugaredProcedure {
 /// the user-facing syntax of the language. These statements are later
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SugaredStatement {
     Expr(SugaredExpr),
     Let(String, SugaredExpr),
@@ -72,9 +72,9 @@ pub enum SugaredStatement {
 /// the user-facing syntax of the language. These statements are later
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SugaredExpr {
-    Num(i64),
+    Num(f64),
     Bool(bool),
     Str(String),
     Var(String),
