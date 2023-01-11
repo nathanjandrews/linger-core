@@ -1,3 +1,3 @@
 proc main() {
-  let foo = lam (if, let, while) {};
+  let foo = (if, let, while) {};
 }

@@ -76,7 +76,6 @@ pub enum Keyword {
     True,
     False,
     Return,
-    Lam,
     While,
     Break,
     Continue,
@@ -214,8 +213,6 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
         Ok((Some(TokenValue::KW(Keyword::False)), mat.end()))
     } else if let Some(mat) = find("return", s) {
         Ok((Some(TokenValue::KW(Keyword::Return)), mat.end()))
-    } else if let Some(mat) = find("lam", s) {
-        Ok((Some(TokenValue::KW(Keyword::Lam)), mat.end()))
     } else if let Some(mat) = find("while", s) {
         Ok((Some(TokenValue::KW(Keyword::While)), mat.end()))
     } else if let Some(mat) = find("break", s) {
@@ -360,7 +357,6 @@ impl fmt::Display for Keyword {
             Keyword::True => write!(f, "true"),
             Keyword::False => write!(f, "false"),
             Keyword::Return => write!(f, "return"),
-            Keyword::Lam => write!(f, "lam"),
             Keyword::While => write!(f, "while"),
             Keyword::Break => write!(f, "break"),
             Keyword::Continue => write!(f, "continue"),

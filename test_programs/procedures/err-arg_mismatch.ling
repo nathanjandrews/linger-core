@@ -1,4 +1,4 @@
 proc main() {
-  let foo = lam (bar, baz) -> {};
+  let foo = (bar, baz) -> {};
   foo();
 }

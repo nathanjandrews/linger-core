@@ -1,5 +1,5 @@
 proc main() {
-  let getNum = lam () -> {
+  let getNum = () -> {
     return "success";
   };
   print(getNum());

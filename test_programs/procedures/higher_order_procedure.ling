@@ -1,6 +1,6 @@
 proc main() {
-  let sum = lam (x) -> {
-    return lam (y) -> {
+  let sum = (x) -> {
+    return (y) -> {
       return x + y;
     };
   };

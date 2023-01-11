@@ -43,6 +43,16 @@ fn higher_order_procedure() -> TestResult {
 }
 
 #[test]
+fn single_line_closure_no_brackets() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("single_line_closure_no_brackets"));
+    cmd.assert().success().stdout(contains("25"));
+
+    Ok(())
+}
+
+#[test]
 fn err_keyword_as_proc() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 

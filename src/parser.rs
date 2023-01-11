@@ -145,9 +145,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), ParseError
 
 fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), ParseError> {
     match tokens {
-        [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => {
-            Err(KeywordAsProc(kw.to_string()))
-        }
+        [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => Err(KeywordAsProc(kw.to_string())),
         [T(KW(Proc), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
             let (params, tokens) = parse_params(rest)?;
 
@@ -312,6 +310,8 @@ fn parse_statement(
                 }
                 None => return Err(ExpectedStatement),
             };
+
+            // TODO: come back to this later
             let (stop_cond_expr, tokens) = parse_expr(tokens)?;
             let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
 
@@ -352,14 +352,18 @@ fn parse_statement(
         }
         [T(KW(Return), ..), tokens @ ..] => {
             let (return_expr, tokens) = parse_expr(tokens)?;
+            // TODO: come back to this later
+
             let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Return(Some(return_expr))), tokens))
         }
         [T(KW(Break), ..), tokens @ ..] => {
+            // TODO: come back to this later
             let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Break), tokens))
         }
         [T(KW(Continue), ..), tokens @ ..] => {
+            // TODO: come back to this later
             let tokens = conditionally_consume_semicolon(tokens, true)?;
             Ok((Some(SugaredStatement::Continue), tokens))
         }
@@ -441,15 +445,6 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
 
 fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match tokens {
-        [T(KW(Lam), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (params, tokens) = parse_params(tokens)?;
-            let tokens = consume_token(THIN_ARROW, tokens)?;
-
-            let (lambda_body_option, tokens) = parse_statement(tokens, true)?;
-            let lambda_body = ensure_block(lambda_body_option)?;
-
-            return Ok((SugaredExpr::Lambda(params, Box::new(lambda_body)), tokens));
-        }
         [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
             let (args, mut rest) = parse_args(tokens)?;
 
@@ -475,28 +470,40 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
         [T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
         [T(LPAREN, ..), tokens @ ..] => {
-            let (expr, tokens) = parse_expr(tokens)?;
-            let tokens = consume_token(RPAREN, tokens)?;
-            match expr {
-                SugaredExpr::Lambda(params, body) => {
-                    // expect an immediately invoked function, parse the arguments and return the call
-                    let tokens = consume_token(LPAREN, tokens)?;
-                    let (args, mut rest) = parse_args(tokens)?;
-                    let mut expr =
-                        SugaredExpr::Call(Box::new(SugaredExpr::Lambda(params, body)), args);
+            let params_res = parse_params(tokens);
+            if let Err(KeywordAsParam(kw)) = params_res {
+                return Err(KeywordAsParam(kw));
+            } else if let Ok((params, tokens)) = params_res {
+                let tokens = consume_token(THIN_ARROW, tokens)?;
+                let (lambda_body, tokens) = match parse_statement(tokens, false)? {
+                    (Some(statement), tokens) => (statement, tokens),
+                    _ => return Err(ExpectedStatement),
+                };
+                return Ok((SugaredExpr::Lambda(params, Box::new(lambda_body)), tokens));
+            } else {
+                let (expr, tokens) = parse_expr(tokens)?;
+                let tokens = consume_token(RPAREN, tokens)?;
+                match expr {
+                    SugaredExpr::Lambda(params, body) => {
+                        // expect an immediately invoked function, parse the arguments and return the call
+                        let tokens = consume_token(LPAREN, tokens)?;
+                        let (args, mut rest) = parse_args(tokens)?;
+                        let mut expr =
+                            SugaredExpr::Call(Box::new(SugaredExpr::Lambda(params, body)), args);
 
-                    loop {
-                        match rest {
-                            [T(LPAREN, ..), tokens @ ..] => {
-                                let (args, tokens) = parse_args(tokens)?;
-                                expr = SugaredExpr::Call(Box::new(expr), args);
-                                rest = tokens;
+                        loop {
+                            match rest {
+                                [T(LPAREN, ..), tokens @ ..] => {
+                                    let (args, tokens) = parse_args(tokens)?;
+                                    expr = SugaredExpr::Call(Box::new(expr), args);
+                                    rest = tokens;
+                                }
+                                tokens => return Ok((expr, tokens)),
                             }
-                            tokens => return Ok((expr, tokens)),
                         }
                     }
+                    expr => Ok((expr, tokens)),
                 }
-                expr => Ok((expr, tokens)),
             }
         }
         [T(NUM(n), ..), tokens @ ..] => Ok((SugaredExpr::Num(*n), tokens)),
@@ -564,10 +571,7 @@ fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], ParseError> {
 /// If `should_consume` is true, then this function returns the result of [consume_token] with a
 /// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
 /// list unmodified.
-fn conditionally_consume_semicolon(
-    tokens: &[T],
-    should_consume: bool,
-) -> Result<&[T], ParseError> {
+fn conditionally_consume_semicolon(tokens: &[T], should_consume: bool) -> Result<&[T], ParseError> {
     if should_consume {
         return consume_token(SEMICOLON, tokens);
     } else {
