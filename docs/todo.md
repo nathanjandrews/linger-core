@@ -37,6 +37,7 @@ Nothing so far, let's keep it that way.
 - [x] assignment operators (+=, -=, etc.)
 - [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum"
       returns a function)
+- [ ] const values
 
 ## Bugs
 
