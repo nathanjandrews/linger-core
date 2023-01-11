@@ -55,12 +55,12 @@ pub fn interp_statement(
         },
         Statement::Let(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
-            env.insert_new(id, new_value, Mutability::Mutable);
+            env.insert_new_mutable_value(id, new_value);
             Ok((Value::Void, ControlFlow::Normal))
         }
         Statement::Const(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
-            env.insert_new(id, new_value, Mutability::Constant);
+            env.insert_new_constant_value(id, new_value);
             Ok((Value::Void, ControlFlow::Normal))
         }
         Statement::Assign(id, expr) => {

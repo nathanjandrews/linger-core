@@ -18,6 +18,12 @@ pub enum Mutability {
     Mutable,
 }
 
+#[derive(Debug, Clone)]
+struct TopLevelProcedure {
+    params: Vec<String>,
+    body: Statement,
+}
+
 pub type Entry = (Value, AssignmentType, Mutability);
 pub type Binding = (String, Entry);
 
@@ -25,12 +31,6 @@ pub type Binding = (String, Entry);
 pub struct Environment {
     top_level_procedures: HashMap<String, TopLevelProcedure>,
     values: HashMap<String, Entry>,
-}
-
-#[derive(Debug, Clone)]
-struct TopLevelProcedure {
-    params: Vec<String>,
-    body: Statement,
 }
 
 impl Environment {
@@ -66,9 +66,18 @@ impl Environment {
         return self;
     }
 
-    pub fn insert_new(&mut self, key: String, value: Value, mutability: Mutability) {
-        self.values
-            .insert(key, (value, AssignmentType::Initialized, mutability));
+    pub fn insert_new_mutable_value(&mut self, key: String, value: Value) {
+        self.values.insert(
+            key,
+            (value, AssignmentType::Initialized, Mutability::Mutable),
+        );
+    }
+
+    pub fn insert_new_constant_value(&mut self, key: String, value: Value) {
+        self.values.insert(
+            key,
+            (value, AssignmentType::Initialized, Mutability::Constant),
+        );
     }
 
     pub fn reassign(&mut self, key: String, value: Value) -> Result<(), RuntimeError> {
