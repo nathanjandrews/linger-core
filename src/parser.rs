@@ -44,6 +44,7 @@ struct SugaredProcedure {
 pub enum SugaredStatement {
     Expr(SugaredExpr),
     Let(String, SugaredExpr),
+    Const(String, SugaredExpr),
     Assign(String, SugaredExpr),
     OperatorAssignment(AssignOp, String, SugaredExpr),
     Block(Vec<SugaredStatement>),
@@ -209,6 +210,7 @@ fn parse_statement(
     match tokens {
         [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
         [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
+        [T(KW(Const), ..), T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(KW(Let), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
             let (var_expr, tokens) = parse_expr(tokens)?;
 
@@ -216,6 +218,16 @@ fn parse_statement(
 
             Ok((
                 Some(SugaredStatement::Let(var_name.to_string(), var_expr)),
+                tokens,
+            ))
+        }
+        [T(KW(Const), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
+            let (var_expr, tokens) = parse_expr(tokens)?;
+
+            let tokens = conditionally_consume_semicolon(tokens, parse_semicolon)?;
+
+            Ok((
+                Some(SugaredStatement::Const(var_name.to_string(), var_expr)),
                 tokens,
             ))
         }

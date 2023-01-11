@@ -15,6 +15,7 @@ pub struct Procedure {
 pub enum Statement {
     Expr(Expr),
     Let(String, Expr),
+    Const(String, Expr),
     Assign(String, Expr),
     If(Expr, Box<Statement>, Option<Box<Statement>>),
     While(Expr, Box<Statement>),
@@ -49,6 +50,9 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
         SugaredStatement::Expr(sugared_expr) => Statement::Expr(desugar_expression(sugared_expr)),
         SugaredStatement::Let(name, sugared_expr) => {
             Statement::Let(name, desugar_expression(sugared_expr))
+        }
+        SugaredStatement::Const(name, sugared_expr) => {
+            Statement::Const(name, desugar_expression(sugared_expr))
         }
         SugaredStatement::Assign(name, sugared_expr) => {
             Statement::Assign(name, desugar_expression(sugared_expr))

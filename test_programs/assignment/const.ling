@@ -1,0 +1,4 @@
+proc main() {
+  const message = "success";
+  print(message);
+}

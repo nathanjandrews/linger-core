@@ -1,0 +1,4 @@
+proc main() {
+  const num = 3;
+  num = 5;
+}

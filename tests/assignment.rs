@@ -2,7 +2,7 @@ use std::process::Command;
 
 use assert_cmd::prelude::*;
 use linger::error::{ParseError, RuntimeError};
-use predicates::prelude::predicate::str::contains;
+use predicates::prelude::predicate::str::{contains, starts_with};
 
 fn file_name_to_path(s: &str) -> String {
     return format!("test_programs/assignment/{}.ling", s);
@@ -31,6 +31,16 @@ fn reassignment() -> TestResult {
 }
 
 #[test]
+fn const_() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("const"));
+    cmd.assert().success().stdout(starts_with("success"));
+
+    Ok(())
+}
+
+#[test]
 fn err_keyword_as_var() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
@@ -47,9 +57,21 @@ fn err_invalid_assignment_target() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("err-invalid_assignment_target"));
-    cmd.assert().failure().stderr(contains(
-        RuntimeError::InvalidAssignmentTarget.to_string(),
-    ));
+    cmd.assert()
+        .failure()
+        .stderr(contains(RuntimeError::InvalidAssignmentTarget.to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn err_const_reassignment() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-const_reassignment"));
+    cmd.assert()
+        .failure()
+        .stderr(contains(RuntimeError::ReassignConstant("num".to_string()).to_string()));
 
     Ok(())
 }
