@@ -11,7 +11,13 @@ pub enum AssignmentType {
     Reassigned,
 }
 
-pub type Entry = (Value, AssignmentType);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Mutability {
+    Constant,
+    Mutable,
+}
+
+pub type Entry = (Value, AssignmentType, Mutability);
 pub type Binding = (String, Entry);
 
 #[derive(Debug, Clone)]
@@ -49,19 +55,23 @@ impl Environment {
         return self;
     }
 
-    pub fn insert_new(&mut self, key: String, value: Value) {
+    pub fn insert_new(&mut self, key: String, value: Value, mutability: Mutability) {
         self.values
-            .insert(key, (value, AssignmentType::Initialized));
+            .insert(key, (value, AssignmentType::Initialized, mutability));
     }
 
     pub fn reassign(&mut self, key: String, value: Value) -> Result<(), RuntimeError> {
-        if !self.values.contains_key(&key) {
-            return Err(UnknownVariable(key));
+        match self.values.get(&key) {
+            Some((_, _, Mutability::Mutable)) => {
+                self.values.insert(
+                    key,
+                    (value, AssignmentType::Reassigned, Mutability::Mutable),
+                );
+                return Ok(());
+            }
+            Some((_, _, Mutability::Constant)) => return Err(ReassignConstant(key)),
+            None => return Err(UnknownVariable(key)),
         }
-
-        self.values.insert(key, (value, AssignmentType::Reassigned));
-
-        return Ok(());
     }
 
     pub fn bindings(&self) -> Vec<Binding> {
@@ -73,7 +83,7 @@ impl Environment {
     }
 
     pub fn update_reassigned_entries(&mut self, other_env: &Self) -> Result<(), RuntimeError> {
-        for (id, (value, assignment_type)) in other_env.bindings() {
+        for (id, (value, assignment_type, _)) in other_env.bindings() {
             if self.contains_key(&id) && assignment_type == AssignmentType::Reassigned {
                 self.reassign(id, value)?;
             }

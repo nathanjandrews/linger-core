@@ -96,3 +96,18 @@ fn err_bad_arg_plus_bool() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+fn err_assignment_operator_on_const() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-assignment_operator_on_const"));
+    cmd.assert()
+        .failure()
+        .stderr(starts_with(
+            RuntimeError::ReassignConstant("num".to_string()).to_string(),
+        ))
+        .stdout("");
+
+    Ok(())
+}

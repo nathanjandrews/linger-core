@@ -73,6 +73,8 @@ pub enum RuntimeError {
     ContinueNotInLoop,
     /// This error occurs when an expression is not a variable expression
     InvalidAssignmentTarget,
+    /// This error occurs when attempting to reassign a constant value
+    ReassignConstant(String),
 }
 
 impl Display for ParseError {
@@ -155,6 +157,7 @@ impl Display for RuntimeError {
                 write!(f, "continue statement found outside of a loop")
             }
             RuntimeError::InvalidAssignmentTarget => write!(f, "invalid assignment target"),
+            RuntimeError::ReassignConstant(var) => write!(f, "cannot assign to \"{var}\" because it is a constant"),
         }
     }
 }

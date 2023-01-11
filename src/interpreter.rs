@@ -2,10 +2,8 @@ use std::fmt;
 
 use crate::{
     desugar::{Expr, Procedure, Statement},
-    environment::{AssignmentType, Binding, Entry, Environment},
-    error::{
-        RuntimeError::{self, *},
-    },
+    environment::{AssignmentType, Binding, Entry, Environment, Mutability},
+    error::RuntimeError::{self, *},
     parser::Program,
     tokenizer::Operator,
 };
@@ -46,6 +44,7 @@ pub fn interp_program<'a>(p: Program) -> Result<Value, RuntimeError> {
         tmp_initial_env.insert_new(
             name.to_string(),
             Value::Proc(params, body, Environment::new()),
+            Mutability::Constant,
         )
     }
 
@@ -65,7 +64,12 @@ pub fn interp_statement(
         },
         Statement::Let(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
-            env.insert_new(id, new_value);
+            env.insert_new(id, new_value, Mutability::Mutable);
+            Ok((Value::Void, ControlFlow::Normal))
+        }
+        Statement::Const(id, new_expr) => {
+            let new_value = interp_expression(env, new_expr)?;
+            env.insert_new(id, new_value, Mutability::Constant);
             Ok((Value::Void, ControlFlow::Normal))
         }
         Statement::Assign(id, expr) => {
@@ -151,7 +155,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
         Expr::Str(s) => Ok(Value::Str(s)),
         Expr::Proc(params, body) => Ok(Value::Proc(params, *body, env.clone())),
         Expr::Var(id) => match env.get(id.to_string())? {
-            (v, _) => Ok(v),
+            (v, ..) => Ok(v),
         },
         Expr::Binary(op, left, right) => match op {
             Operator::Plus => {
@@ -389,7 +393,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
 
             let entries: Vec<Entry> = arg_values
                 .into_iter()
-                .map(|v| (v, AssignmentType::Initialized))
+                .map(|v| (v, AssignmentType::Initialized, Mutability::Constant))
                 .collect();
 
             let bindings: Vec<Binding> = f_params

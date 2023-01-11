@@ -1,0 +1,7 @@
+proc main() {
+  const num = 3;
+  print(num);
+  print(" ");
+  const num = 4;
+  print(num);
+}

@@ -21,6 +21,16 @@ fn shadowing() -> TestResult {
 }
 
 #[test]
+fn const_shadowing() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("const_shadowing"));
+    cmd.assert().success().stdout(contains("3 4"));
+
+    Ok(())
+}
+
+#[test]
 fn reassignment_in_block() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 

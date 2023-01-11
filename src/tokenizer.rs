@@ -2,10 +2,7 @@ use std::fmt;
 
 use regex::{Match, Regex};
 
-use crate::error::{
-    // LingerError::{self, *},
-    TokenizerError::{self, *},
-};
+use crate::error::TokenizerError::{self, *};
 
 /// A Linger token.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -73,6 +70,7 @@ pub enum Keyword {
     Else,
     Proc,
     Let,
+    Const,
     True,
     False,
     Return,
@@ -221,6 +219,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
         Ok((Some(TokenValue::KW(Keyword::Continue)), mat.end()))
     } else if let Some(mat) = find("for", s) {
         Ok((Some(TokenValue::KW(Keyword::For)), mat.end()))
+    } else if let Some(mat) = find("const", s) {
+        Ok((Some(TokenValue::KW(Keyword::Const)), mat.end()))
 
     // TWO-CHARACTER TOKENS
     } else if let Some(mat) = find(NE_REGEX, s) {
@@ -361,6 +361,7 @@ impl fmt::Display for Keyword {
             Keyword::Break => write!(f, "break"),
             Keyword::Continue => write!(f, "continue"),
             Keyword::For => write!(f, "for"),
+            Keyword::Const => write!(f, "const"),
         }
     }
 }
