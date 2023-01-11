@@ -1,11 +1,9 @@
 use std::fmt;
 
 use crate::{
-    desugar::{Expr, Procedure, Statement},
+    desugar::{Expr, Statement},
     environment::{AssignmentType, Binding, Entry, Environment},
-    error::{
-        RuntimeError::{self, *},
-    },
+    error::RuntimeError::{self, *},
     parser::Program,
     tokenizer::Operator,
 };
@@ -41,15 +39,7 @@ impl fmt::Display for Value {
 }
 
 pub fn interp_program<'a>(p: Program) -> Result<Value, RuntimeError> {
-    let mut tmp_initial_env = Environment::new();
-    for Procedure { name, params, body } in p.procedures {
-        tmp_initial_env.insert_new(
-            name.to_string(),
-            Value::Proc(params, body, Environment::new()),
-        )
-    }
-
-    return match interp_statement(&mut tmp_initial_env, p.main, false)? {
+    return match interp_statement(&mut Environment::new(p.procedures), p.main, false)? {
         (value, _) => Ok(value),
     };
 }
@@ -149,9 +139,9 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),
-        Expr::Proc(params, body) => Ok(Value::Proc(params, *body, env.clone())),
+        Expr::Lambda(params, body) => Ok(Value::Proc(params, *body, env.clone())),
         Expr::Var(id) => match env.get(id.to_string())? {
-            (v, _) => Ok(v),
+            v => Ok(v),
         },
         Expr::Binary(op, left, right) => match op {
             Operator::Plus => {
@@ -392,14 +382,14 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 .map(|v| (v, AssignmentType::Initialized))
                 .collect();
 
-            let bindings: Vec<Binding> = f_params
+            let param_bindings: Vec<Binding> = f_params
                 .iter()
                 .map(|param| param.to_string())
                 .zip(entries)
                 .collect();
 
             return match interp_statement(
-                &mut f_env.extend_new_bindings(env.bindings()).extend(bindings),
+                &mut f_env.extend(param_bindings),
                 f_body,
                 false,
             )? {
