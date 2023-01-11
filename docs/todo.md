@@ -37,7 +37,7 @@ Nothing so far, let's keep it that way.
 - [x] assignment operators (+=, -=, etc.)
 - [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum"
       returns a function)
-- [ ] const values
+- [x] const values
 
 ## Bugs
 
@@ -52,6 +52,8 @@ Nothing so far, let's keep it that way.
 ## Potential Code Improvements
 
 - [x] make keywords and enum
+- [ ] have a "top level procedures" field in the environment
+  - this could provide better error handling when trying to rename top level procedures
 - [ ] make binary operators and unary operators separate enums
 - [ ] use Option<Value> in place of an explicit Void type
 - [ ] better error messages
