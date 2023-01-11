@@ -35,7 +35,7 @@ pub enum Expr {
     Unary(Operator, Box<Expr>),
     PrimitiveCall(Builtin, Vec<Expr>),
     Call(Box<Expr>, Vec<Expr>),
-    Proc(Vec<String>, Box<Statement>),
+    Lambda(Vec<String>, Box<Statement>),
 }
 
 fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
@@ -172,7 +172,7 @@ fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
                 .collect(),
         ),
         SugaredExpr::Lambda(params, sugared_body) => {
-            Expr::Proc(params, Box::new(desugar_statement(*sugared_body)))
+            Expr::Lambda(params, Box::new(desugar_statement(*sugared_body)))
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    desugar::{Procedure, Statement},
     error::RuntimeError::{self, *},
     interpreter::Value,
 };
@@ -22,35 +23,45 @@ pub type Binding = (String, Entry);
 
 #[derive(Debug, Clone)]
 pub struct Environment {
+    top_level_procedures: HashMap<String, TopLevelProcedure>,
     values: HashMap<String, Entry>,
 }
 
+#[derive(Debug, Clone)]
+struct TopLevelProcedure {
+    params: Vec<String>,
+    body: Statement,
+}
+
 impl Environment {
-    pub fn new() -> Self {
+    pub fn new(procedures: Vec<Procedure>) -> Self {
+        let mut top_level_procedures = HashMap::new();
+        for Procedure { name, params, body } in procedures {
+            top_level_procedures.insert(name, TopLevelProcedure { params, body });
+        }
         Self {
             values: HashMap::new(),
+            top_level_procedures,
         }
     }
 
-    pub fn get(&self, key: String) -> Result<Entry, RuntimeError> {
+    pub fn get(&self, key: String) -> Result<Value, RuntimeError> {
         match self.values.get(&key) {
-            Some(value) => Ok(value.clone()),
-            None => Err(UnknownVariable(key)),
+            Some((value, ..)) => Ok(value.clone()),
+            None => match self.top_level_procedures.get(&key) {
+                Some(proc) => Ok(Value::Proc(
+                    proc.params.clone(),
+                    proc.body.clone(),
+                    self.clone(),
+                )),
+                None => Err(UnknownVariable(key)),
+            },
         }
     }
 
     pub fn extend(mut self, bindings: Vec<Binding>) -> Self {
         for (var, value) in bindings {
             self.values.insert(var, value);
-        }
-        return self;
-    }
-
-    pub fn extend_new_bindings(mut self, bindings: Vec<Binding>) -> Self {
-        for (var, value) in bindings {
-            if !self.contains_key(&var) {
-                self.values.insert(var, value);
-            }
         }
         return self;
     }
