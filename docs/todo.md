@@ -30,7 +30,7 @@ Nothing so far, let's keep it that way.
 - [ ] bitwise operations
 - [ ] more robust builtin print function with formatting
 - [x] escape sequences
-- [ ] decimal numbers
+- [x] decimal numbers
 - [x] closures (static-scope)
 - [x] comments
 - [x] increment/decrement unary operators
@@ -38,6 +38,7 @@ Nothing so far, let's keep it that way.
 - [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum"
       returns a function)
 - [x] const values
+- [ ] lists
 
 ## Bugs
 
