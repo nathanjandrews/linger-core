@@ -1,0 +1,6 @@
+proc main() {
+  const list = list(1);
+  let head = head(list);
+  let head_of_empty = head(list());
+  print(head, head_of_empty);
+}

@@ -1,0 +1,6 @@
+proc main() {
+  const list = list(1, 2, 3);
+  let rest = rest(list);
+  let rest_of_empty = rest(list());
+  print(rest, rest_of_empty);
+}

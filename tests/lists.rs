@@ -41,6 +41,50 @@ fn list_concatenation() -> TestResult {
 }
 
 #[test]
+fn head() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("head"));
+    cmd.assert().success().stdout(starts_with("1 nil"));
+
+    Ok(())
+}
+
+#[test]
+fn rest() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("rest"));
+    cmd.assert().success().stdout(starts_with("[2, 3] nil"));
+
+    Ok(())
+}
+
+#[test]
+fn err_head_non_list() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-head_non_list"));
+    cmd.assert().failure().stdout("").stderr(starts_with(
+        RuntimeError::ExpectedList("4".to_string()).to_string(),
+    ));
+
+    Ok(())
+}
+
+#[test]
+fn err_rest_non_list() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("err-rest_non_list"));
+    cmd.assert().failure().stdout("").stderr(starts_with(
+        RuntimeError::ExpectedList("nil".to_string()).to_string(),
+    ));
+
+    Ok(())
+}
+
+#[test]
 fn err_indexing_non_list() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
