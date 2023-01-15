@@ -77,6 +77,8 @@ pub enum RuntimeError {
     ReassignConstant(String),
     /// This error occurs when attempting to reassign a top-level procedure
     ReassignTopLevelProc(String),
+    /// This error occurs when attempting to index a non-indexable value
+    NotIndexable(Value),
 }
 
 impl Display for ParseError {
@@ -165,6 +167,7 @@ impl Display for RuntimeError {
             RuntimeError::ReassignTopLevelProc(proc_name) => {
                 write!(f, "cannot assign to top-level procedure \"{proc_name}\"")
             }
+            RuntimeError::NotIndexable(value) => write!(f, "\"${value}\" is not indexable"),
         }
     }
 }
