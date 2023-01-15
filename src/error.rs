@@ -172,12 +172,12 @@ impl Display for RuntimeError {
             RuntimeError::ReassignTopLevelProc(proc_name) => {
                 write!(f, "cannot assign to top-level procedure \"{proc_name}\"")
             }
-            RuntimeError::NotIndexable(value) => write!(f, "\"${value}\" is not indexable"),
+            RuntimeError::NotIndexable(value) => write!(f, "\"{value}\" is not indexable"),
             RuntimeError::ExpectedInteger(value) => write!(
                 f,
                 "expected an integer but got \"{value}\", which is not an integer"
             ),
-            RuntimeError::IndexOutOfBounds(index) => write!(f, "index ${index} is out of bounds"),
+            RuntimeError::IndexOutOfBounds(index) => write!(f, "index {index} is out of bounds"),
         }
     }
 }
