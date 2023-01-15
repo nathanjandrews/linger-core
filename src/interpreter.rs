@@ -8,6 +8,8 @@ use crate::{
     tokenizer::Operator,
 };
 
+use self::utils::ensure_single_arg;
+
 #[derive(Clone, Debug)]
 pub enum Value {
     Num(f64),
@@ -43,6 +45,8 @@ impl fmt::Display for Value {
         }
     }
 }
+
+mod utils;
 
 pub fn interp_program<'a>(p: Program) -> Result<Value, RuntimeError> {
     return match interp_statement(&mut Environment::new(p.procedures), p.main, false)? {
@@ -427,30 +431,14 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 Ok(Value::List(values))
             }
             crate::parser::Builtin::IsEmpty => {
-                if args.len() > 1 {
-                    return Err(ArgMismatch("is_empty".to_string(), args.len(), 1));
-                }
-
-                let arg = match args.first() {
-                    Some(arg) => arg.clone(),
-                    None => return Err(ArgMismatch("is_empty".to_string(), 0, 1)),
-                };
-
+                let arg = ensure_single_arg(args)?;
                 match interp_expression(env, arg)? {
                     Value::List(list) => Ok(Value::Bool(list.is_empty())),
                     bad_arg => return Err(ExpectedList(bad_arg.to_string())),
                 }
             }
             crate::parser::Builtin::IsNil => {
-                if args.len() > 1 {
-                    return Err(ArgMismatch("is_nil".to_string(), args.len(), 1));
-                }
-
-                let arg = match args.first() {
-                    Some(arg) => arg.clone(),
-                    None => return Err(ArgMismatch("is_nil".to_string(), 0, 1)),
-                };
-
+                let arg = ensure_single_arg(args)?;
                 match interp_expression(env, arg)? {
                     Value::Nil => Ok(Value::Bool(true)),
                     _ => Ok(Value::Bool(false)),
