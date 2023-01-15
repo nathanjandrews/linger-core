@@ -166,6 +166,10 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                     (Value::Str(num_left), Value::Str(num_right)) => {
                         Ok(Value::Str(num_left + num_right.as_str()))
                     }
+                    (Value::List(mut list_left), Value::List(mut list_right)) => {
+                        list_left.append(&mut list_right);
+                        Ok(Value::List(list_left))
+                    }
                     (Value::Num(_), v) => Err(BadArg(v)),
                     (v, _) => Err(BadArg(v)),
                 }

@@ -31,6 +31,16 @@ fn list_indexing() -> TestResult {
 }
 
 #[test]
+fn list_concatenation() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("list_concatenation"));
+    cmd.assert().success().stdout(starts_with("[[1, 2, 3], [4, 5, 6], [1, 2, 3, 4, 5, 6]]"));
+
+    Ok(())
+}
+
+#[test]
 fn err_indexing_non_list() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
