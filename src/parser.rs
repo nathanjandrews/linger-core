@@ -85,6 +85,7 @@ pub enum SugaredExpr {
     PrimitiveCall(Builtin, Vec<SugaredExpr>),
     Call(Box<SugaredExpr>, Vec<SugaredExpr>),
     Lambda(Vec<String>, Box<SugaredStatement>),
+    Index(Box<SugaredExpr>, Box<SugaredExpr>)
 }
 
 /// A built in procedure in the Linger programming language.

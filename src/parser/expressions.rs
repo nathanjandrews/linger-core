@@ -4,11 +4,11 @@ use crate::{
     tokenizer::{Keyword::*, Token as T, TokenValue::*},
 };
 
+use super::procedures::parse_params;
+use super::statements::parse_statement;
 use super::utils::{
     check_builtin, consume_token, match_operator, parse_binary_expr, unexpected_token,
 };
-use super::procedures::parse_params;
-use super::statements::parse_statement;
 use super::SugaredExpr;
 
 pub fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
@@ -51,7 +51,7 @@ pub fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError>
                 [T(DOUBLE_MINUS, ..), tokens @ ..] => (Some(PreDecrement), tokens),
                 tokens => (None, tokens),
             };
-            let (terminal_expr, tokens) = parse_call_expr(tokens)?;
+            let (terminal_expr, tokens) = parse_call_or_index_expr(tokens)?;
             match increment_op_option {
                 Some(op) => return Ok((SugaredExpr::Unary(op, Box::new(terminal_expr)), tokens)),
                 None => match tokens {
@@ -74,7 +74,7 @@ pub fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError>
     }
 }
 
-pub fn parse_call_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_call_or_index_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     let (mut expr, mut tokens) = parse_terminal_expr(tokens)?;
     loop {
         (expr, tokens) = match tokens {
@@ -85,6 +85,12 @@ pub fn parse_call_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
                     None => SugaredExpr::Call(Box::new(expr), args),
                 };
                 (call_expr, rest)
+            }
+            [T(L_SQUARE_BRACKET, ..), rest @ ..] => {
+                let (index_value_expr, rest) = parse_expr(rest)?;
+                let rest = consume_token(R_SQUARE_BRACKET, rest)?;
+                let index_expr = SugaredExpr::Index(Box::new(expr), Box::new(index_value_expr));
+                (index_expr, rest)
             }
             _ => break,
         }

@@ -36,6 +36,7 @@ pub enum Expr {
     PrimitiveCall(Builtin, Vec<Expr>),
     Call(Box<Expr>, Vec<Expr>),
     Lambda(Vec<String>, Box<Statement>),
+    Index(Box<Expr>, Box<Expr>),
 }
 
 fn desugar_statements(sugared_statements: Vec<SugaredStatement>) -> Vec<Statement> {
@@ -174,5 +175,9 @@ fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
         SugaredExpr::Lambda(params, sugared_body) => {
             Expr::Lambda(params, Box::new(desugar_statement(*sugared_body)))
         }
+        SugaredExpr::Index(sugared_indexable_expr, sugared_index_expr) => Expr::Index(
+            Box::new(desugar_expression(*sugared_indexable_expr)),
+            Box::new(desugar_expression(*sugared_index_expr)),
+        ),
     }
 }
