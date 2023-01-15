@@ -28,7 +28,7 @@ pub struct Program {
 /// ["desugared"](https://en.wikipedia.org/wiki/Syntactic_sugar) (converted) to
 /// a subset of the language which is then executed.
 #[derive(Debug, PartialEq, Clone)]
-struct SugaredProcedure {
+pub struct SugaredProcedure {
     pub name: String,
     pub params: Vec<String>,
     pub body: SugaredStatement,
@@ -120,7 +120,7 @@ pub fn parse_program(tokens: &[T]) -> Result<Program, ParseError> {
     });
 }
 
-fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), ParseError> {
+pub fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), ParseError> {
     let (proc_option, tokens) = parse_proc(tokens)?;
 
     match proc_option {
@@ -144,7 +144,7 @@ fn parse_procs(tokens: &[T]) -> Result<(Vec<SugaredProcedure>, &[T]), ParseError
     }
 }
 
-fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), ParseError> {
+pub fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), ParseError> {
     match tokens {
         [T(KW(Proc), ..), T(KW(kw), ..), T(LPAREN, ..), ..] => Err(KeywordAsProc(kw.to_string())),
         [T(KW(Proc), ..), T(ID(name), ..), T(LPAREN, ..), rest @ ..] => {
@@ -166,7 +166,7 @@ fn parse_proc(tokens: &[T]) -> Result<(Option<SugaredProcedure>, &[T]), ParseErr
     }
 }
 
-fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
+pub fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), rest @ ..] => Ok((vec![], rest)),
         [T(KW(kw), ..), ..] => Err(KeywordAsParam(kw.to_string())),
@@ -180,7 +180,7 @@ fn parse_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     }
 }
 
-fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
+pub fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
@@ -189,7 +189,7 @@ fn parse_rest_params(tokens: &[T]) -> Result<(Vec<String>, &[T]), ParseError> {
     }
 }
 
-fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), ParseError> {
+pub fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), ParseError> {
     let (statement_option, tokens) = parse_statement(tokens, true)?;
 
     let statement = match statement_option {
@@ -203,7 +203,7 @@ fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), Parse
     Ok((vec, tokens))
 }
 
-fn parse_statement(
+pub fn parse_statement(
     tokens: &[T],
     parse_semicolon: bool,
 ) -> Result<(Option<SugaredStatement>, &[T]), ParseError> {
@@ -387,35 +387,35 @@ fn parse_statement(
     }
 }
 
-fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     parse_logical_or_expr(tokens)
 }
 
-fn parse_logical_or_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_logical_or_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_logical_and_expr, vec![LogicOr], tokens);
 }
 
-fn parse_logical_and_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_logical_and_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_equality_expr, vec![LogicAnd], tokens);
 }
 
-fn parse_equality_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_equality_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_relational_expr, vec![Eq, Ne], tokens);
 }
 
-fn parse_relational_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_relational_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_additive_expr, vec![LT, GT, LTE, GTE], tokens);
 }
 
-fn parse_additive_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_additive_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_multiplicative_expr, vec![Plus, Minus], tokens);
 }
 
-fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_multiplicative_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     return parse_binary_expr(parse_unary_expr, vec![Times, Mod, Div], tokens);
 }
 
-fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match match_operator(vec![Minus, LogicNot].as_slice(), tokens) {
         Some((operator, tokens)) => {
             let (right, tokens) = parse_unary_expr(tokens)?;
@@ -468,7 +468,7 @@ pub fn parse_call_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
     return Ok((expr, tokens));
 }
 
-fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+pub fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match tokens {
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
@@ -501,7 +501,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
     }
 }
 
-fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
+pub fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         tokens => {
@@ -515,7 +515,7 @@ fn parse_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
     }
 }
 
-fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
+pub fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError> {
     match tokens {
         [T(RPAREN, ..), tokens @ ..] => Ok((vec![], tokens)),
         [T(COMMA, ..), T(RPAREN, ..), ..] => Err(unexpected_token(tokens)),
@@ -531,7 +531,7 @@ fn parse_rest_args(tokens: &[T]) -> Result<(Vec<SugaredExpr>, &[T]), ParseError>
 /// A helper function to handle unexpected token patterns. This function returns an
 /// [UnexpectedToken Error](UnexpectedToken), or an [Unexpected End-of-File](UnexpectedEOF) if
 /// `tokens` is empty.
-fn unexpected_token(tokens: &[T]) -> ParseError {
+pub fn unexpected_token(tokens: &[T]) -> ParseError {
     match tokens {
         [unexpected_token, ..] => UnexpectedToken(unexpected_token.to_owned()),
         [] => UnexpectedEOF,
@@ -552,7 +552,7 @@ pub fn check_builtin(expr: &SugaredExpr) -> Option<Builtin> {
 /// Tries to consume a token with a [TokenValue] of `target` from the front of `tokens`. On success,
 /// this function returns `tokens` with the first element removed. On failure, this function returns
 /// an [Expected] error.
-fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], ParseError> {
+pub fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], ParseError> {
     match tokens {
         [token, rest @ ..] if token.0.eq(&target) => Ok(rest),
         [token, ..] => Err(Expected(target, token.clone())),
@@ -564,7 +564,7 @@ fn consume_token(target: TokenValue, tokens: &[T]) -> Result<&[T], ParseError> {
 /// If `should_consume` is true, then this function returns the result of [consume_token] with a
 /// `target` of [SEMICOLON]. If `should_consume` is false, then this function returns the `tokens`
 /// list unmodified.
-fn conditionally_consume_semicolon(tokens: &[T], should_consume: bool) -> Result<&[T], ParseError> {
+pub fn conditionally_consume_semicolon(tokens: &[T], should_consume: bool) -> Result<&[T], ParseError> {
     if should_consume {
         return consume_token(SEMICOLON, tokens);
     } else {
@@ -576,7 +576,7 @@ fn conditionally_consume_semicolon(tokens: &[T], should_consume: bool) -> Result
 /// If such a token is successfully consumed, this function returns the token's operator and the
 /// list of tokens that comes after as a pair. If `tokens` does not start with such an operator,
 /// then this function returns `None`.
-fn match_operator<'a>(operators: &[Operator], tokens: &'a [T]) -> Option<(Operator, &'a [T])> {
+pub fn match_operator<'a>(operators: &[Operator], tokens: &'a [T]) -> Option<(Operator, &'a [T])> {
     match tokens {
         [T(value, ..), rest @ ..] => match value {
             OP(b) => {
@@ -596,7 +596,7 @@ fn match_operator<'a>(operators: &[Operator], tokens: &'a [T]) -> Option<(Operat
 type BinaryExpressionParser = fn(&[T]) -> Result<(SugaredExpr, &[T]), ParseError>;
 
 /// A helper function for parsing binary expressions.
-fn parse_binary_expr(
+pub fn parse_binary_expr(
     parse_expr: BinaryExpressionParser,
     operators: Vec<Operator>,
     tokens: &[T],
@@ -615,14 +615,14 @@ fn parse_binary_expr(
 }
 
 /// A helper function for creating a [Binary Expression](SugaredExpr::Binary)
-fn binary_expression(op: Operator, first_arg: SugaredExpr, second_arg: SugaredExpr) -> SugaredExpr {
+pub fn binary_expression(op: Operator, first_arg: SugaredExpr, second_arg: SugaredExpr) -> SugaredExpr {
     SugaredExpr::Binary(op, Box::new(first_arg), Box::new(second_arg))
 }
 
 /// Ensures that `statement_option` is a Some variant which contains a
 /// [Block Statement](SugaredStatement::Block). Otherwise, this function returns
 /// an [ExpectedBlock] parse error.
-fn ensure_block(
+pub fn ensure_block(
     statement_option: Option<SugaredStatement>,
 ) -> Result<SugaredStatement, ParseError> {
     match statement_option {
@@ -634,7 +634,7 @@ fn ensure_block(
     }
 }
 
-fn is_assignment(statement: &SugaredStatement) -> bool {
+pub fn is_assignment(statement: &SugaredStatement) -> bool {
     match statement {
         SugaredStatement::Assign(_, _) => true,
         SugaredStatement::OperatorAssignment(_, _, _) => true,
@@ -649,7 +649,7 @@ fn is_assignment(statement: &SugaredStatement) -> bool {
     }
 }
 
-fn is_assignment_or_initialization(statement: &SugaredStatement) -> bool {
+pub fn is_assignment_or_initialization(statement: &SugaredStatement) -> bool {
     match statement {
         SugaredStatement::Let(_, _) => true,
         statement => is_assignment(statement),
