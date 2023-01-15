@@ -1,0 +1,16 @@
+proc main() {
+  let data = list(1, 2, 3, 4);
+  let square = (x) -> x * x;
+  let data_squared = map(square, data);
+  
+  print(data_squared);
+}
+
+proc map(f, data) {
+  if (is_empty(data)) {
+    return data;
+  }
+
+  let head = head(data);
+  return list(f(head)) + map(f, rest(data));
+}
