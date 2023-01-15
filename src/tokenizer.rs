@@ -81,6 +81,7 @@ pub enum Keyword {
     Break,
     Continue,
     For,
+    Nil,
 }
 
 const WHITESPACE_REGEX: &str = r"[[:space:]]+";
@@ -227,6 +228,8 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
         Ok((Some(TokenValue::KW(Keyword::For)), mat.end()))
     } else if let Some(mat) = find("const", s) {
         Ok((Some(TokenValue::KW(Keyword::Const)), mat.end()))
+    } else if let Some(mat) = find("nil", s) {
+        Ok((Some(TokenValue::KW(Keyword::Nil)), mat.end()))
 
     // TWO-CHARACTER TOKENS
     } else if let Some(mat) = find(NE_REGEX, s) {
@@ -374,6 +377,7 @@ impl fmt::Display for Keyword {
             Keyword::Continue => write!(f, "continue"),
             Keyword::For => write!(f, "for"),
             Keyword::Const => write!(f, "const"),
+            Keyword::Nil => write!(f, "nil"),
         }
     }
 }

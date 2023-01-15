@@ -147,6 +147,7 @@ pub fn interp_statement(
 
 fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, RuntimeError> {
     match expr {
+        Expr::Nil => Ok(Value::Nil),
         Expr::Num(n) => Ok(Value::Num(n)),
         Expr::Bool(b) => Ok(Value::Bool(b)),
         Expr::Str(s) => Ok(Value::Str(s)),

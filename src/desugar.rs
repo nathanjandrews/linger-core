@@ -27,6 +27,7 @@ pub enum Statement {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
+    Nil,
     Num(f64),
     Bool(bool),
     Str(String),
@@ -148,6 +149,7 @@ pub fn desugar_statement(sugared_statement: SugaredStatement) -> Statement {
 
 fn desugar_expression(sugared_expr: SugaredExpr) -> Expr {
     match sugared_expr {
+        SugaredExpr::Nil => Expr::Nil,
         SugaredExpr::Num(n) => Expr::Num(n),
         SugaredExpr::Bool(b) => Expr::Bool(b),
         SugaredExpr::Str(s) => Expr::Str(s),

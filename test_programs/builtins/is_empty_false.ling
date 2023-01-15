@@ -1,0 +1,3 @@
+proc main() {
+  print(is_empty(list(1)));
+}

@@ -26,7 +26,7 @@ fn basic_values() -> TestResult {
     cmd.arg(file_name_to_path("basic_values"));
     cmd.assert()
         .success()
-        .stdout(contains("10 -1 3.14 -10.24 true false hello world"));
+        .stdout(contains("nil 10 -1 3.14 -10.24 true false hello world"));
 
     Ok(())
 }

@@ -1,0 +1,3 @@
+proc main() {
+  print(is_nil(1), is_nil("hello"), is_nil(list()), is_nil(true));
+}

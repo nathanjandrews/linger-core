@@ -103,6 +103,7 @@ pub fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseErr
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
+        [T(KW(Nil), ..), tokens @ ..] => Ok((SugaredExpr::Nil, tokens)),
         [T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(ID(id), ..), tokens @ ..] => Ok((SugaredExpr::Var(id.to_string()), tokens)),
         [T(LPAREN, ..), tokens @ ..] => match parse_params(tokens) {

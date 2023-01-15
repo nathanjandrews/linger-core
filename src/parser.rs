@@ -76,6 +76,7 @@ pub enum SugaredStatement {
 /// a subset of the language which is then executed.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SugaredExpr {
+    Nil,
     Num(f64),
     Bool(bool),
     Str(String),
