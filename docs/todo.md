@@ -56,7 +56,7 @@ Nothing so far, let's keep it that way.
 - [x] have a separate "top-level procedures" field in the environment
   - this could provide better error handling when trying to reassign top-level procedures
 - [ ] make binary operators and unary operators separate enums
-- [ ] use Option<Value> in place of an explicit Void type
+- [ ] use Option<Value> in place of an explicit Nil type
 - [ ] better error messages
   - currently some errors cannot be reached due to the nature of the
       the parser. For example, the expression "*10" will result in an

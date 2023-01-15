@@ -15,8 +15,8 @@ pub enum Value {
     Str(String),
     Proc(Vec<String>, Statement, Environment),
     List(Vec<Value>),
-    // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
-    Void,
+    // ! consider if Nil should be an explicit value or just return an Option<Value> instead where None represents Nil
+    Nil,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -32,7 +32,7 @@ impl fmt::Display for Value {
         match self {
             Value::Num(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
-            Value::Void => write!(f, "<void>"),
+            Value::Nil => write!(f, "nil"),
             Value::Str(s) => write!(f, "{}", s),
             Value::Proc(..) => write!(f, "<lambda>"),
             Value::List(list) => {
@@ -62,17 +62,17 @@ pub fn interp_statement(
         Statement::Let(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
             env.insert_new_mutable_value(id, new_value);
-            Ok((Value::Void, ControlFlow::Normal))
+            Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::Const(id, new_expr) => {
             let new_value = interp_expression(env, new_expr)?;
             env.insert_new_constant_value(id, new_value);
-            Ok((Value::Void, ControlFlow::Normal))
+            Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::Assign(id, expr) => {
             let value = interp_expression(env, expr)?;
             env.reassign(id, value)?;
-            Ok((Value::Void, ControlFlow::Normal))
+            Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::If(cond_expr, then_statement, else_statement_option) => {
             let cond_bool = match interp_expression(env, cond_expr)? {
@@ -84,7 +84,7 @@ pub fn interp_statement(
             } else {
                 match else_statement_option {
                     Some(else_statement) => interp_statement(env, *else_statement, in_loop),
-                    None => Ok((Value::Void, ControlFlow::Normal)),
+                    None => Ok((Value::Nil, ControlFlow::Normal)),
                 }
             }
         }
@@ -96,22 +96,22 @@ pub fn interp_statement(
             if cond_bool {
                 match interp_statement(env, *while_block.clone(), true)? {
                     (value, ControlFlow::Return) => break (value, ControlFlow::Return),
-                    (_, ControlFlow::Break) => break (Value::Void, ControlFlow::Normal),
+                    (_, ControlFlow::Break) => break (Value::Nil, ControlFlow::Normal),
                     (_, ControlFlow::Normal) => (),
                     (_, ControlFlow::Continue) => (),
                 };
             } else {
-                break (Value::Void, ControlFlow::Normal);
+                break (Value::Nil, ControlFlow::Normal);
             }
         }),
         Statement::Return(expr_option) => match expr_option {
             Some(expr) => Ok((interp_expression(env, expr)?, ControlFlow::Return)),
-            None => Ok((Value::Void, ControlFlow::Return)),
+            None => Ok((Value::Nil, ControlFlow::Return)),
         },
-        Statement::Break => Ok((Value::Void, ControlFlow::Break)),
-        Statement::Continue => Ok((Value::Void, ControlFlow::Continue)),
+        Statement::Break => Ok((Value::Nil, ControlFlow::Break)),
+        Statement::Continue => Ok((Value::Nil, ControlFlow::Continue)),
         Statement::Block(statements) => {
-            let mut block_value = Value::Void;
+            let mut block_value = Value::Nil;
             let mut block_env = env.clone();
             for statement in statements {
                 let statement_value = match interp_statement(&mut block_env, statement, in_loop)? {
@@ -416,7 +416,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 let values: Vec<String> = values.iter().map(|v| v.to_string()).collect();
                 let values = values.join(" ");
                 print!("{}", values);
-                Ok(Value::Void)
+                Ok(Value::Nil)
             }
             crate::parser::Builtin::List => {
                 let mut values = vec![];
@@ -427,17 +427,32 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
             }
             crate::parser::Builtin::IsEmpty => {
                 if args.len() > 1 {
-                    return Err(ArgMismatch("empty".to_string(), args.len(), 1));
+                    return Err(ArgMismatch("is_empty".to_string(), args.len(), 1));
                 }
 
                 let arg = match args.first() {
                     Some(arg) => arg.clone(),
-                    None => return Err(ArgMismatch("empty".to_string(), 0, 1)),
+                    None => return Err(ArgMismatch("is_empty".to_string(), 0, 1)),
                 };
 
                 match interp_expression(env, arg)? {
                     Value::List(list) => Ok(Value::Bool(list.is_empty())),
                     bad_arg => return Err(ExpectedList(bad_arg.to_string())),
+                }
+            }
+            crate::parser::Builtin::IsNil => {
+                if args.len() > 1 {
+                    return Err(ArgMismatch("is_nil".to_string(), args.len(), 1));
+                }
+
+                let arg = match args.first() {
+                    Some(arg) => arg.clone(),
+                    None => return Err(ArgMismatch("is_nil".to_string(), 0, 1)),
+                };
+
+                match interp_expression(env, arg)? {
+                    Value::Nil => Ok(Value::Bool(true)),
+                    _ => Ok(Value::Bool(false)),
                 }
             }
         },

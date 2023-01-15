@@ -94,6 +94,7 @@ pub enum Builtin {
     Print,
     List,
     IsEmpty,
+    IsNil,
 }
 
 /// Parses a program from a list of tokens.
