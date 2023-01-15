@@ -21,6 +21,16 @@ fn comments() -> TestResult {
 }
 
 #[test]
+fn string_indexing() -> TestResult {
+    let mut cmd = Command::cargo_bin("linger")?;
+
+    cmd.arg(file_name_to_path("string_indexing"));
+    cmd.assert().success().stdout(starts_with("n"));
+
+    Ok(())
+}
+
+#[test]
 fn is_empty() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
     cmd.arg(file_name_to_path("is_empty_true"));

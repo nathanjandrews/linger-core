@@ -1,0 +1,5 @@
+proc main() {
+  let name = "nathan";
+  let first_letter = name[0];
+  print(first_letter);
+}
