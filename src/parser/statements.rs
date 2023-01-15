@@ -3,7 +3,14 @@ use crate::{
     tokenizer::{Keyword::*, Token as T, TokenValue::*},
 };
 
-use super::{SugaredStatement, expressions::parse_expr, utils::{conditionally_consume_semicolon, consume_token, ensure_block, is_assignment_or_initialization, is_assignment}};
+use super::{
+    expressions::parse_expr,
+    utils::{
+        conditionally_consume_semicolon, consume_token, ensure_block, is_assignment,
+        is_assignment_or_initialization,
+    },
+    SugaredStatement,
+};
 
 pub fn parse_statements(tokens: &[T]) -> Result<(Vec<SugaredStatement>, &[T]), ParseError> {
     let (statement_option, tokens) = parse_statement(tokens, true)?;
@@ -24,7 +31,7 @@ pub fn parse_statement(
     parse_semicolon: bool,
 ) -> Result<(Option<SugaredStatement>, &[T]), ParseError> {
     match tokens {
-        [T(RBRACKET, ..), tokens @ ..] => Ok((None, tokens)),
+        [T(R_CURLY_BRACKET, ..), tokens @ ..] => Ok((None, tokens)),
         [T(KW(Let), ..), T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(KW(Const), ..), T(KW(kw), ..), ..] => Err(KeywordAsVar(kw.to_string())),
         [T(KW(Let), ..), T(ID(var_name), ..), T(ASSIGN, ..), tokens @ ..] => {
@@ -190,7 +197,7 @@ pub fn parse_statement(
             let tokens = consume_token(SEMICOLON, tokens)?;
             Ok((Some(SugaredStatement::Continue), tokens))
         }
-        [T(LBRACKET, ..), tokens @ ..] => {
+        [T(L_CURLY_BRACKET, ..), tokens @ ..] => {
             let (statements, tokens) = parse_statements(tokens)?;
             Ok((Some(SugaredStatement::Block(statements)), tokens))
         }

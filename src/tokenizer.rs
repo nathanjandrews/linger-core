@@ -22,8 +22,8 @@ pub enum TokenValue {
     ASSIGN_OP(AssignOp),
     LPAREN,
     RPAREN,
-    LBRACKET,
-    RBRACKET,
+    L_CURLY_BRACKET,
+    R_CURLY_BRACKET,
     SEMICOLON,
     QUOTE,
     COMMA,
@@ -272,9 +272,9 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
     } else if let Some(mat) = find(RPAREN_REGEX, s) {
         Ok((Some(TokenValue::RPAREN), mat.end()))
     } else if let Some(mat) = find(LBRACKET_REGEX, s) {
-        Ok((Some(TokenValue::LBRACKET), mat.end()))
+        Ok((Some(TokenValue::L_CURLY_BRACKET), mat.end()))
     } else if let Some(mat) = find(RBRACKET_REGEX, s) {
-        Ok((Some(TokenValue::RBRACKET), mat.end()))
+        Ok((Some(TokenValue::R_CURLY_BRACKET), mat.end()))
     } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
         Ok((Some(TokenValue::SEMICOLON), mat.end()))
     } else if let Some(mat) = find(COMMA_REGEX, s) {
@@ -378,8 +378,8 @@ impl fmt::Display for TokenValue {
             TokenValue::ASSIGN => write!(f, "="),
             TokenValue::LPAREN => write!(f, "("),
             TokenValue::RPAREN => write!(f, ")"),
-            TokenValue::LBRACKET => write!(f, "{{"),
-            TokenValue::RBRACKET => write!(f, "}}"),
+            TokenValue::L_CURLY_BRACKET => write!(f, "{{"),
+            TokenValue::R_CURLY_BRACKET => write!(f, "}}"),
             TokenValue::SEMICOLON => write!(f, ";"),
             TokenValue::COMMA => write!(f, ","),
             TokenValue::OP(op) => write!(f, "{op}"),
