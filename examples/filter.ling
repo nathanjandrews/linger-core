@@ -1,0 +1,19 @@
+proc main() {
+  let data = list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+  let evens = filter((x) -> (x % 2 == 0), data);
+  print(evens);
+}
+
+proc filter(f, data) {
+  if (is_empty(data)) {
+    return data;
+  }
+
+  let head = head(data);
+  if (f(head)) {
+    return list(head) + filter(f, rest(data));
+  } else {
+    return filter(f, rest(data));
+  }
+}

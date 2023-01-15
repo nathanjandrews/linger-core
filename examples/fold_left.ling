@@ -1,0 +1,15 @@
+proc main() {
+  let data = list(1, 2, 3, 4);
+  let sum = fold_left((acc, cur) -> acc + cur, data)
+
+  print(sum);
+}
+
+proc fold_left(f, data) {
+  if (is_empty(data)) {
+    return data;
+  }
+
+  let head = head(data);
+  return f(head, fold_left(f ,rest(data)))
+}
