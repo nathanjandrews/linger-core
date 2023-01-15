@@ -422,5 +422,26 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 Ok(Value::List(values))
             }
         },
+        Expr::Index(indexable_expr, index_expr) => match interp_expression(env, *indexable_expr)? {
+            Value::List(list) => {
+                match interp_expression(env, *index_expr)? {
+                    Value::Num(num) => {
+                        if num.fract() != 0.0 {
+                            return Err(ExpectedInteger(num.to_string()));
+                        }
+
+                        let index = num as i64;
+                        if index < 0 || index as usize > list.len() - 1 {
+                            return Err(IndexOutOfBounds(index));
+                        }
+
+                        return Ok(list[index as usize].clone());
+                    }
+                    bad_value => return Err(ExpectedInteger(bad_value.to_string())),
+                };
+            }
+            Value::Str(_) => todo!(),
+            value => return Err(NotIndexable(value.to_string())),
+        },
     }
 }

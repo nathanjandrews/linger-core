@@ -1,0 +1,4 @@
+proc main() {
+  let nums = list(1, 2, 3);
+  nums[3];
+}
