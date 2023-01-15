@@ -91,6 +91,7 @@ pub enum SugaredExpr {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Builtin {
     Print,
+    List,
 }
 
 /// Parses a program from a list of tokens.

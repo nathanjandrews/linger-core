@@ -24,6 +24,7 @@ pub fn check_builtin(expr: &SugaredExpr) -> Option<Builtin> {
     match expr {
         SugaredExpr::Var(name) => match name.as_str() {
             "print" => Some(Builtin::Print),
+            "list" => Some(Builtin::List),
             _ => None,
         },
         _ => None,

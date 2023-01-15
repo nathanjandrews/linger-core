@@ -1,0 +1,4 @@
+proc main() {
+  const nums = list(1, 2, list(4, 5));
+  print(nums);
+}

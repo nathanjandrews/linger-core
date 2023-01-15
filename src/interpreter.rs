@@ -14,6 +14,7 @@ pub enum Value {
     Bool(bool),
     Str(String),
     Proc(Vec<String>, Statement, Environment),
+    List(Vec<Value>),
     // ! consider if Void should be an explicit value or just return an Option<Value> instead where None represents Void
     Void,
 }
@@ -34,6 +35,11 @@ impl fmt::Display for Value {
             Value::Void => write!(f, "<void>"),
             Value::Str(s) => write!(f, "{}", s),
             Value::Proc(..) => write!(f, "<lambda>"),
+            Value::List(list) => {
+                let values_as_strings: Vec<String> = list.iter().map(|v| v.to_string()).collect();
+                let list_string = values_as_strings.join(", ");
+                write!(f, "[{list_string}]")
+            }
         }
     }
 }
@@ -393,11 +399,7 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 .zip(entries)
                 .collect();
 
-            return match interp_statement(
-                &mut f_env.extend(param_bindings),
-                f_body,
-                false,
-            )? {
+            return match interp_statement(&mut f_env.extend(param_bindings), f_body, false)? {
                 (value, _) => Ok(value),
             };
         }
@@ -405,15 +407,19 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
             crate::parser::Builtin::Print => {
                 let mut values: Vec<Value> = vec![];
                 for expr in args {
-                    match interp_expression(env, expr) {
-                        Ok(v) => values.push(v),
-                        Err(e) => return Err(e),
-                    }
+                    values.push(interp_expression(env, expr)?);
                 }
                 let values: Vec<String> = values.iter().map(|v| v.to_string()).collect();
                 let values = values.join(" ");
                 print!("{}", values);
                 Ok(Value::Void)
+            }
+            crate::parser::Builtin::List => {
+                let mut values = vec![];
+                for expr in args {
+                    values.push(interp_expression(env, expr)?);
+                }
+                Ok(Value::List(values))
             }
         },
     }
