@@ -63,6 +63,8 @@ pub enum RuntimeError {
     ArgMismatch(String, usize, usize),
     /// This error occurs when a value is expected to be a boolean but is not.
     ExpectedBool(Value),
+    /// This error occurs when a value is expected to be a integer but is not.
+    ExpectedInteger(Value),
     /// This error occurs when a binary operator is used as a unary operator.
     BinaryAsUnary(Operator),
     /// This error occurs when a unary operator is used as a binary operator.
@@ -79,6 +81,9 @@ pub enum RuntimeError {
     ReassignTopLevelProc(String),
     /// This error occurs when attempting to index a non-indexable value
     NotIndexable(Value),
+    /// This error occurs when trying to index a value and the index is out
+    /// of bounds
+    IndexOutOfBounds(i64),
 }
 
 impl Display for ParseError {
@@ -168,6 +173,11 @@ impl Display for RuntimeError {
                 write!(f, "cannot assign to top-level procedure \"{proc_name}\"")
             }
             RuntimeError::NotIndexable(value) => write!(f, "\"${value}\" is not indexable"),
+            RuntimeError::ExpectedInteger(value) => write!(
+                f,
+                "expected an integer but got \"{value}\", which is not an integer"
+            ),
+            RuntimeError::IndexOutOfBounds(index) => write!(f, "index ${index} is out of bounds"),
         }
     }
 }
