@@ -24,6 +24,8 @@ pub enum TokenValue {
     RPAREN,
     L_CURLY_BRACKET,
     R_CURLY_BRACKET,
+    L_SQUARE_BRACKET,
+    R_SQUARE_BRACKET,
     SEMICOLON,
     QUOTE,
     COMMA,
@@ -102,8 +104,10 @@ const DOUBLE_MINUS_REGEX: &str = r"\-\-";
 const MOD_REGEX: &str = "%";
 const LPAREN_REGEX: &str = r"\(";
 const RPAREN_REGEX: &str = r"\)";
-const LBRACKET_REGEX: &str = r"\{";
-const RBRACKET_REGEX: &str = r"\}";
+const L_CURLY_BRACKET_REGEX: &str = r"\{";
+const R_CURLY_BRACKET_REGEX: &str = r"\}";
+const L_SQUARE_BRACKET_REGEX: &str = r"\[";
+const R_SQUARE_BRACKET_REGEX: &str = r"\]";
 const SEMICOLON_REGEX: &str = ";";
 const COMMA_REGEX: &str = ",";
 const QUOTE_REGEX: &str = "\"";
@@ -271,10 +275,14 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
         Ok((Some(TokenValue::LPAREN), mat.end()))
     } else if let Some(mat) = find(RPAREN_REGEX, s) {
         Ok((Some(TokenValue::RPAREN), mat.end()))
-    } else if let Some(mat) = find(LBRACKET_REGEX, s) {
+    } else if let Some(mat) = find(L_CURLY_BRACKET_REGEX, s) {
         Ok((Some(TokenValue::L_CURLY_BRACKET), mat.end()))
-    } else if let Some(mat) = find(RBRACKET_REGEX, s) {
+    } else if let Some(mat) = find(R_CURLY_BRACKET_REGEX, s) {
         Ok((Some(TokenValue::R_CURLY_BRACKET), mat.end()))
+    } else if let Some(mat) = find(L_SQUARE_BRACKET_REGEX, s) {
+        Ok((Some(TokenValue::L_SQUARE_BRACKET), mat.end()))
+    } else if let Some(mat) = find(R_SQUARE_BRACKET_REGEX, s) {
+        Ok((Some(TokenValue::R_SQUARE_BRACKET), mat.end()))
     } else if let Some(mat) = find(SEMICOLON_REGEX, s) {
         Ok((Some(TokenValue::SEMICOLON), mat.end()))
     } else if let Some(mat) = find(COMMA_REGEX, s) {
@@ -392,6 +400,8 @@ impl fmt::Display for TokenValue {
             TokenValue::DOUBLE_MINUS => write!(f, "--"),
             TokenValue::ASSIGN_OP(op) => write!(f, "{op}"),
             TokenValue::Dot => write!(f, "."),
+            TokenValue::L_SQUARE_BRACKET => write!(f, "["),
+            TokenValue::R_SQUARE_BRACKET => write!(f, "]"),
         }
     }
 }
