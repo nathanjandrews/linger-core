@@ -27,6 +27,8 @@ pub fn check_builtin(expr: &SugaredExpr) -> Option<Builtin> {
             "list" => Some(Builtin::List),
             "is_empty" => Some(Builtin::IsEmpty),
             "is_nil" => Some(Builtin::IsNil),
+            "head" => Some(Builtin::Head),
+            "rest" => Some(Builtin::Rest),
             _ => None,
         },
         _ => None,

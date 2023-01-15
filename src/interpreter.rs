@@ -8,7 +8,7 @@ use crate::{
     tokenizer::Operator,
 };
 
-use self::utils::ensure_single_arg;
+use self::utils::{ensure_list, ensure_single_arg};
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -432,16 +432,32 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
             }
             crate::parser::Builtin::IsEmpty => {
                 let arg = ensure_single_arg(args)?;
-                match interp_expression(env, arg)? {
-                    Value::List(list) => Ok(Value::Bool(list.is_empty())),
-                    bad_arg => return Err(ExpectedList(bad_arg.to_string())),
-                }
+                let list = ensure_list(interp_expression(env, arg)?)?;
+                Ok(Value::Bool(list.is_empty()))
             }
             crate::parser::Builtin::IsNil => {
                 let arg = ensure_single_arg(args)?;
                 match interp_expression(env, arg)? {
                     Value::Nil => Ok(Value::Bool(true)),
                     _ => Ok(Value::Bool(false)),
+                }
+            }
+            crate::parser::Builtin::Head => {
+                let arg = ensure_single_arg(args)?;
+                let list = ensure_list(interp_expression(env, arg)?)?;
+
+                match list.as_slice() {
+                    [hd, ..] => Ok(hd.clone()),
+                    [] => Ok(Value::Nil),
+                }
+            }
+            crate::parser::Builtin::Rest => {
+                let arg = ensure_single_arg(args)?;
+                let list = ensure_list(interp_expression(env, arg)?)?;
+
+                match list.as_slice() {
+                    [_, tail @ ..] => Ok(Value::List(tail.to_vec())),
+                    [] => Ok(Value::Nil),
                 }
             }
         },
