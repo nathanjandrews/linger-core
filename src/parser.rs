@@ -427,7 +427,7 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
                 [T(DOUBLE_MINUS, ..), tokens @ ..] => (Some(PreDecrement), tokens),
                 tokens => (None, tokens),
             };
-            let (terminal_expr, tokens) = parse_terminal_expr(tokens)?;
+            let (terminal_expr, tokens) = parse_call_expr(tokens)?;
             match increment_op_option {
                 Some(op) => return Ok((SugaredExpr::Unary(op, Box::new(terminal_expr)), tokens)),
                 None => match tokens {
@@ -450,27 +450,26 @@ fn parse_unary_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     }
 }
 
+pub fn parse_call_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
+    let (mut expr, mut tokens) = parse_terminal_expr(tokens)?;
+    loop {
+        (expr, tokens) = match tokens {
+            [T(LPAREN, ..), rest @ ..] => {
+                let (args, rest) = parse_args(rest)?;
+                let call_expr = match check_builtin(&expr) {
+                    Some(builtin) => SugaredExpr::PrimitiveCall(builtin, args),
+                    None => SugaredExpr::Call(Box::new(expr), args),
+                };
+                (call_expr, rest)
+            }
+            _ => break,
+        }
+    }
+    return Ok((expr, tokens));
+}
+
 fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> {
     match tokens {
-        [T(ID(proc_name), ..), T(LPAREN, ..), tokens @ ..] => {
-            let (args, mut rest) = parse_args(tokens)?;
-
-            let mut expr = match check_builtin(proc_name) {
-                Some(builtin) => SugaredExpr::PrimitiveCall(builtin, args),
-                None => SugaredExpr::Call(Box::new(SugaredExpr::Var(proc_name.to_string())), args),
-            };
-
-            loop {
-                match rest {
-                    [T(LPAREN, ..), tokens @ ..] => {
-                        let (args, tokens) = parse_args(tokens)?;
-                        expr = SugaredExpr::Call(Box::new(expr), args);
-                        rest = tokens;
-                    }
-                    tokens => return Ok((expr, tokens)),
-                }
-            }
-        }
         [T(STR(s), ..), tokens @ ..] => Ok((SugaredExpr::Str(s.to_string()), tokens)),
         [T(KW(True), ..), tokens @ ..] => Ok((SugaredExpr::Bool(true), tokens)),
         [T(KW(False), ..), tokens @ ..] => Ok((SugaredExpr::Bool(false), tokens)),
@@ -491,27 +490,7 @@ fn parse_terminal_expr(tokens: &[T]) -> Result<(SugaredExpr, &[T]), ParseError> 
             Err(UnexpectedToken(_)) => {
                 let (expr, tokens) = parse_expr(tokens)?;
                 let tokens = consume_token(RPAREN, tokens)?;
-                match expr {
-                    SugaredExpr::Lambda(params, body) => {
-                        // expect an immediately invoked function, parse the arguments and return the call
-                        let tokens = consume_token(LPAREN, tokens)?;
-                        let (args, mut rest) = parse_args(tokens)?;
-                        let mut expr =
-                            SugaredExpr::Call(Box::new(SugaredExpr::Lambda(params, body)), args);
-
-                        loop {
-                            match rest {
-                                [T(LPAREN, ..), tokens @ ..] => {
-                                    let (args, tokens) = parse_args(tokens)?;
-                                    expr = SugaredExpr::Call(Box::new(expr), args);
-                                    rest = tokens;
-                                }
-                                tokens => return Ok((expr, tokens)),
-                            }
-                        }
-                    }
-                    expr => return Ok((expr, tokens)),
-                }
+                return Ok((expr, tokens));
             }
             // if the next sequence of tokens is not a valid sequence of tokens, return the error
             Err(e) => return Err(e),
@@ -560,9 +539,12 @@ fn unexpected_token(tokens: &[T]) -> ParseError {
 }
 
 /// A helper function to check if `s` matches one of the [Builtin] procedures.
-pub fn check_builtin(s: &str) -> Option<Builtin> {
-    match s {
-        "print" => Some(Builtin::Print),
+pub fn check_builtin(expr: &SugaredExpr) -> Option<Builtin> {
+    match expr {
+        SugaredExpr::Var(name) => match name.as_str() {
+            "print" => Some(Builtin::Print),
+            _ => None,
+        },
         _ => None,
     }
 }
