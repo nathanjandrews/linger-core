@@ -425,6 +425,21 @@ fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, Run
                 }
                 Ok(Value::List(values))
             }
+            crate::parser::Builtin::IsEmpty => {
+                if args.len() > 1 {
+                    return Err(ArgMismatch("empty".to_string(), args.len(), 1));
+                }
+
+                let arg = match args.first() {
+                    Some(arg) => arg.clone(),
+                    None => return Err(ArgMismatch("empty".to_string(), 0, 1)),
+                };
+
+                match interp_expression(env, arg)? {
+                    Value::List(list) => Ok(Value::Bool(list.is_empty())),
+                    bad_arg => return Err(ExpectedList(bad_arg.to_string())),
+                }
+            }
         },
         Expr::Index(indexable_expr, index_expr) => match interp_expression(env, *indexable_expr)? {
             Value::List(list) => {

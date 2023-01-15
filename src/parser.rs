@@ -6,13 +6,13 @@ use crate::{
     tokenizer::Token as T,
 };
 
-use self::utils::unexpected_token;
 use self::procedures::parse_procs;
+use self::utils::unexpected_token;
 
-mod utils;
 mod expressions;
 mod procedures;
 mod statements;
+mod utils;
 
 /// A representation of a Linger program.
 #[derive(Debug, PartialEq, Clone)]
@@ -85,7 +85,7 @@ pub enum SugaredExpr {
     PrimitiveCall(Builtin, Vec<SugaredExpr>),
     Call(Box<SugaredExpr>, Vec<SugaredExpr>),
     Lambda(Vec<String>, Box<SugaredStatement>),
-    Index(Box<SugaredExpr>, Box<SugaredExpr>)
+    Index(Box<SugaredExpr>, Box<SugaredExpr>),
 }
 
 /// A built in procedure in the Linger programming language.
@@ -93,6 +93,7 @@ pub enum SugaredExpr {
 pub enum Builtin {
     Print,
     List,
+    IsEmpty,
 }
 
 /// Parses a program from a list of tokens.

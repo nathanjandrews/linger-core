@@ -65,6 +65,8 @@ pub enum RuntimeError {
     ExpectedBool(Value),
     /// This error occurs when a value is expected to be a integer but is not.
     ExpectedInteger(String),
+    /// This error occurs when a value is expected to be a list but is not
+    ExpectedList(String),
     /// This error occurs when a binary operator is used as a unary operator.
     BinaryAsUnary(Operator),
     /// This error occurs when a unary operator is used as a binary operator.
@@ -178,6 +180,10 @@ impl Display for RuntimeError {
                 "expected an integer but got \"{value}\", which is not an integer"
             ),
             RuntimeError::IndexOutOfBounds(index) => write!(f, "index {index} is out of bounds"),
+            RuntimeError::ExpectedList(value) => write!(
+                f,
+                "expected a list, instead got {value}, which is not a list"
+            ),
         }
     }
 }
