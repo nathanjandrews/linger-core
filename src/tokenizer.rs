@@ -33,7 +33,7 @@ pub enum TokenValue {
     DOUBLE_SLASH,
     DOUBLE_PLUS,
     DOUBLE_MINUS,
-    Dot,
+    DOT,
 }
 
 /// An operator. This enum represents all of the valid operators in the Linger
@@ -304,7 +304,7 @@ fn get_token_value(s: &str) -> Result<(Option<TokenValue>, usize), TokenizerErro
             mat.end(),
         ))
     } else if let Some(mat) = find(DOT_REGEX, s) {
-        Ok((Some(TokenValue::Dot), mat.end()))
+        Ok((Some(TokenValue::DOT), mat.end()))
 
     // THE ERROR CASE
     } else {
@@ -403,7 +403,7 @@ impl fmt::Display for TokenValue {
             TokenValue::DOUBLE_PLUS => write!(f, "++"),
             TokenValue::DOUBLE_MINUS => write!(f, "--"),
             TokenValue::ASSIGN_OP(op) => write!(f, "{op}"),
-            TokenValue::Dot => write!(f, "."),
+            TokenValue::DOT => write!(f, "."),
             TokenValue::L_SQUARE_BRACKET => write!(f, "["),
             TokenValue::R_SQUARE_BRACKET => write!(f, "]"),
         }
