@@ -64,9 +64,9 @@ pub enum RuntimeError {
     /// This error occurs when a value is expected to be a boolean but is not.
     ExpectedBool(Value),
     /// This error occurs when a value is expected to be a integer but is not.
-    ExpectedInteger(String),
+    ExpectedInteger(Value),
     /// This error occurs when a value is expected to be a list but is not
-    ExpectedList(String),
+    ExpectedList(Value),
     /// This error occurs when a binary operator is used as a unary operator.
     BinaryAsUnary(Operator),
     /// This error occurs when a unary operator is used as a binary operator.
@@ -82,7 +82,7 @@ pub enum RuntimeError {
     /// This error occurs when attempting to reassign a top-level procedure
     ReassignTopLevelProc(String),
     /// This error occurs when attempting to index a non-indexable value
-    NotIndexable(String),
+    NotIndexable(Value),
     /// This error occurs when trying to index a value and the index is out
     /// of bounds
     IndexOutOfBounds(i64),

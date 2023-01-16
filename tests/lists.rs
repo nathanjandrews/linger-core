@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::error::RuntimeError;
+use linger::{error::RuntimeError, interpreter::Value};
 use predicates::prelude::predicate::str::starts_with;
 
 fn file_name_to_path(s: &str) -> String {
@@ -35,7 +35,9 @@ fn list_concatenation() -> TestResult {
     let mut cmd = Command::cargo_bin("linger")?;
 
     cmd.arg(file_name_to_path("list_concatenation"));
-    cmd.assert().success().stdout(starts_with("[[1, 2, 3], [4, 5, 6], [1, 2, 3, 4, 5, 6]]"));
+    cmd.assert()
+        .success()
+        .stdout(starts_with("[[1, 2, 3], [4, 5, 6], [1, 2, 3, 4, 5, 6]]"));
 
     Ok(())
 }
@@ -66,7 +68,7 @@ fn err_head_non_list() -> TestResult {
 
     cmd.arg(file_name_to_path("err-head_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
-        RuntimeError::ExpectedList("4".to_string()).to_string(),
+        RuntimeError::ExpectedList(Value::Num(4.0)).to_string(),
     ));
 
     Ok(())
@@ -78,7 +80,7 @@ fn err_rest_non_list() -> TestResult {
 
     cmd.arg(file_name_to_path("err-rest_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
-        RuntimeError::ExpectedList("nil".to_string()).to_string(),
+        RuntimeError::ExpectedList(Value::Nil).to_string(),
     ));
 
     Ok(())
@@ -90,7 +92,7 @@ fn err_indexing_non_list() -> TestResult {
 
     cmd.arg(file_name_to_path("err-indexing_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
-        RuntimeError::NotIndexable("10".to_string()).to_string(),
+        RuntimeError::NotIndexable(Value::Num(10.0)).to_string(),
     ));
 
     Ok(())
@@ -125,14 +127,14 @@ fn err_index_not_an_integer() -> TestResult {
 
     cmd_string.arg(file_name_to_path("err-index_not_an_integer_string"));
     cmd_string.assert().failure().stdout("").stderr(starts_with(
-        RuntimeError::ExpectedInteger("hello".to_string()).to_string(),
+        RuntimeError::ExpectedInteger(Value::Str("hello".to_string())).to_string(),
     ));
 
     let mut cmd_float = Command::cargo_bin("linger")?;
 
     cmd_float.arg(file_name_to_path("err-index_not_an_integer_float"));
     cmd_float.assert().failure().stdout("").stderr(starts_with(
-        RuntimeError::ExpectedInteger("3.14".to_string()).to_string(),
+        RuntimeError::ExpectedInteger(Value::Num(3.14)).to_string(),
     ));
 
     Ok(())

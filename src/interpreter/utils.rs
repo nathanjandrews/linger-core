@@ -19,6 +19,6 @@ pub fn ensure_single_arg(args: Vec<Expr>) -> Result<Expr, RuntimeError> {
 pub fn ensure_list(value: Value) -> Result<Vec<Value>, RuntimeError> {
     match value {
         Value::List(list) => Ok(list),
-        bad_value => Err(ExpectedList(bad_value.to_string())),
+        bad_value => Err(ExpectedList(bad_value)),
     }
 }

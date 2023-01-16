@@ -327,7 +327,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
             Value::List(list) => match interp_expression(env, *index_expr)? {
                 Value::Num(num) => {
                     if num.fract() != 0.0 {
-                        return Err(ExpectedInteger(num.to_string()));
+                        return Err(ExpectedInteger(Value::Num(num)));
                     }
 
                     let index = num as i64;
@@ -342,12 +342,12 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
 
                     return Ok(value);
                 }
-                bad_value => return Err(ExpectedInteger(bad_value.to_string())),
+                bad_value => return Err(ExpectedInteger(bad_value)),
             },
             Value::Str(str) => match interp_expression(env, *index_expr)? {
                 Value::Num(num) => {
                     if num.fract() != 0.0 {
-                        return Err(ExpectedInteger(num.to_string()));
+                        return Err(ExpectedInteger(Value::Num(num)));
                     }
 
                     let index = num as i64;
@@ -362,9 +362,9 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
 
                     return Ok(Value::Str(character));
                 }
-                bad_value => return Err(ExpectedInteger(bad_value.to_string())),
+                bad_value => return Err(ExpectedInteger(bad_value)),
             },
-            value => return Err(NotIndexable(value.to_string())),
+            value => return Err(NotIndexable(value)),
         },
     }
 }

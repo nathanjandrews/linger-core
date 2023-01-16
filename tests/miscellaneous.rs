@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::error::{ParseError, TokenizerError, RuntimeError};
+use linger::{error::{ParseError, TokenizerError, RuntimeError}, interpreter::Value};
 use predicates::prelude::predicate::str::{contains, starts_with};
 
 fn file_name_to_path(s: &str) -> String {
@@ -64,7 +64,7 @@ fn err_is_empty_non_list() -> TestResult {
     cmd.assert()
         .failure()
         .stderr(starts_with(
-            RuntimeError::ExpectedList("true".to_string()).to_string(),
+            RuntimeError::ExpectedList(Value::Bool(true)).to_string(),
         ))
         .stdout("");
 
