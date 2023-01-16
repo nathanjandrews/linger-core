@@ -38,7 +38,7 @@ Nothing so far, let's keep it that way.
 - [x] consecutive invocation of functions (i.e "sum(x)(y)" should work if "sum"
       returns a function)
 - [x] const values
-- [ ] lists
+- [x] lists
 
 ## Bugs
 
