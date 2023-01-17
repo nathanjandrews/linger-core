@@ -16,7 +16,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn binary_operators() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("binary_operators"));
     cmd.assert().success().stdout(contains(
@@ -28,7 +28,7 @@ fn binary_operators() -> TestResult {
 
 #[test]
 fn unary_operators() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("unary_operators"));
     cmd.assert()
@@ -40,7 +40,7 @@ fn unary_operators() -> TestResult {
 
 #[test]
 fn increment_and_decrement() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("increment_and_decrement"));
     cmd.assert()
@@ -52,7 +52,7 @@ fn increment_and_decrement() -> TestResult {
 
 #[test]
 fn assignment_operators() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("assignment_operators"));
     cmd.assert().success().stdout(contains("15 -5"));
@@ -62,7 +62,7 @@ fn assignment_operators() -> TestResult {
 
 #[test]
 fn operator_precedence() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("operator_precedence"));
     cmd.assert()
@@ -74,7 +74,7 @@ fn operator_precedence() -> TestResult {
 
 #[test]
 fn short_circuiting() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("short_circuiting"));
     cmd.assert().success().stdout(contains("true false"));
@@ -84,7 +84,7 @@ fn short_circuiting() -> TestResult {
 
 #[test]
 fn err_bad_arg_plus_bool() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-bad_arg_plus_bool"));
     cmd.assert()
@@ -99,7 +99,7 @@ fn err_bad_arg_plus_bool() -> TestResult {
 
 #[test]
 fn err_assignment_operator_on_const() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-assignment_operator_on_const"));
     cmd.assert()

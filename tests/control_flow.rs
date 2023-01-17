@@ -11,7 +11,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn if_else_flow() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("if_else"));
     cmd.assert().success().stdout(contains("success success"));
@@ -21,7 +21,7 @@ fn if_else_flow() -> TestResult {
 
 #[test]
 fn if_no_else() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("if_no_else"));
     cmd.assert().success().stdout(contains("success success"));
@@ -31,7 +31,7 @@ fn if_no_else() -> TestResult {
 
 #[test]
 fn multi_branch_conditional() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("multi_branch"));
     cmd.assert().success().stdout(contains("success"));
@@ -41,7 +41,7 @@ fn multi_branch_conditional() -> TestResult {
 
 #[test]
 fn multi_branch_conditional_with_else() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("multi_branch_else"));
     cmd.assert().success().stdout(contains("success"));
@@ -51,7 +51,7 @@ fn multi_branch_conditional_with_else() -> TestResult {
 
 #[test]
 fn early_return() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("early_return"));
     cmd.assert().success().stdout(contains("success"));
@@ -61,7 +61,7 @@ fn early_return() -> TestResult {
 
 #[test]
 fn nested_return() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("nested_return"));
     cmd.assert().success().stdout(contains("success"));

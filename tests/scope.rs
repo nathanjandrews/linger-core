@@ -12,7 +12,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn shadowing() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("shadowing"));
     cmd.assert().success().stdout(contains("5 10 5"));
@@ -22,7 +22,7 @@ fn shadowing() -> TestResult {
 
 #[test]
 fn const_shadowing() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("const_shadowing"));
     cmd.assert().success().stdout(contains("3 4"));
@@ -32,7 +32,7 @@ fn const_shadowing() -> TestResult {
 
 #[test]
 fn reassignment_in_block() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("reassignment_in_block"));
     cmd.assert().success().stdout(contains("5 10 10"));
@@ -42,7 +42,7 @@ fn reassignment_in_block() -> TestResult {
 
 #[test]
 fn procedure_shadowing() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("procedure_shadowing"));
     cmd.assert().success().stdout(contains("success"));
@@ -52,7 +52,7 @@ fn procedure_shadowing() -> TestResult {
 
 #[test]
 fn err_for_loop_var_scope() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-for_loop_var_scope"));
     cmd.assert()
@@ -67,7 +67,7 @@ fn err_for_loop_var_scope() -> TestResult {
 
 #[test]
 fn err_unknown_var() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-unknown_var"));
     cmd.assert()

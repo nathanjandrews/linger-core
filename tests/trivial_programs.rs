@@ -11,7 +11,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn empty_program() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("empty_program"));
     cmd.assert().success();
@@ -21,7 +21,7 @@ fn empty_program() -> TestResult {
 
 #[test]
 fn basic_values() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("basic_values"));
     cmd.assert()
@@ -33,7 +33,7 @@ fn basic_values() -> TestResult {
 
 #[test]
 fn empty_block() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("empty_block"));
     cmd.assert().success();
@@ -43,7 +43,7 @@ fn empty_block() -> TestResult {
 
 #[test]
 fn err_malformed_decimal() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-malformed_decimal"));
     cmd.assert()

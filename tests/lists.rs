@@ -12,7 +12,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn list_initialization() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("list_initialization"));
     cmd.assert().success().stdout(starts_with("[1, 2, [4, 5]]"));
@@ -22,7 +22,7 @@ fn list_initialization() -> TestResult {
 
 #[test]
 fn list_indexing() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("list_indexing"));
     cmd.assert().success().stdout(starts_with("1"));
@@ -32,7 +32,7 @@ fn list_indexing() -> TestResult {
 
 #[test]
 fn list_concatenation() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("list_concatenation"));
     cmd.assert()
@@ -44,7 +44,7 @@ fn list_concatenation() -> TestResult {
 
 #[test]
 fn head() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("head"));
     cmd.assert().success().stdout(starts_with("1 nil"));
@@ -54,7 +54,7 @@ fn head() -> TestResult {
 
 #[test]
 fn rest() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("rest"));
     cmd.assert().success().stdout(starts_with("[2, 3] nil"));
@@ -64,7 +64,7 @@ fn rest() -> TestResult {
 
 #[test]
 fn err_head_non_list() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-head_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
@@ -76,7 +76,7 @@ fn err_head_non_list() -> TestResult {
 
 #[test]
 fn err_rest_non_list() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-rest_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
@@ -88,7 +88,7 @@ fn err_rest_non_list() -> TestResult {
 
 #[test]
 fn err_indexing_non_list() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-indexing_non_list"));
     cmd.assert().failure().stdout("").stderr(starts_with(
@@ -100,7 +100,7 @@ fn err_indexing_non_list() -> TestResult {
 
 #[test]
 fn err_index_out_of_bounds() -> TestResult {
-    let mut cmd_higher = Command::cargo_bin("linger")?;
+    let mut cmd_higher = Command::cargo_bin("linger-core")?;
 
     cmd_higher.arg(file_name_to_path("err-index_out_of_bounds_higher"));
     cmd_higher
@@ -109,7 +109,7 @@ fn err_index_out_of_bounds() -> TestResult {
         .stdout("")
         .stderr(starts_with(RuntimeError::IndexOutOfBounds(3).to_string()));
 
-    let mut cmd_lower = Command::cargo_bin("linger")?;
+    let mut cmd_lower = Command::cargo_bin("linger-core")?;
 
     cmd_lower.arg(file_name_to_path("err-index_out_of_bounds_lower"));
     cmd_lower
@@ -123,14 +123,14 @@ fn err_index_out_of_bounds() -> TestResult {
 
 #[test]
 fn err_index_not_an_integer() -> TestResult {
-    let mut cmd_string = Command::cargo_bin("linger")?;
+    let mut cmd_string = Command::cargo_bin("linger-core")?;
 
     cmd_string.arg(file_name_to_path("err-index_not_an_integer_string"));
     cmd_string.assert().failure().stdout("").stderr(starts_with(
         RuntimeError::ExpectedInteger(Value::Str("hello".to_string())).to_string(),
     ));
 
-    let mut cmd_float = Command::cargo_bin("linger")?;
+    let mut cmd_float = Command::cargo_bin("linger-core")?;
 
     cmd_float.arg(file_name_to_path("err-index_not_an_integer_float"));
     cmd_float.assert().failure().stdout("").stderr(starts_with(

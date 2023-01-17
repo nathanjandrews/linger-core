@@ -12,7 +12,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn while_statement() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("while"));
     cmd.assert().success().stdout(contains("5 4 3 2 1"));
@@ -22,7 +22,7 @@ fn while_statement() -> TestResult {
 
 #[test]
 fn while_with_break() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("while_with_break"));
     cmd.assert().success().stdout(contains("5 4 3"));
@@ -32,7 +32,7 @@ fn while_with_break() -> TestResult {
 
 #[test]
 fn while_with_continue() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("while_with_continue"));
     cmd.assert().success().stdout(contains("10 8 6 4 2"));
@@ -42,7 +42,7 @@ fn while_with_continue() -> TestResult {
 
 #[test]
 fn while_with_break_and_continue() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("while_with_break_and_continue"));
     cmd.assert().success().stdout(contains("20 18 16 14 12 10"));
@@ -52,7 +52,7 @@ fn while_with_break_and_continue() -> TestResult {
 
 #[test]
 fn nested_break() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("nested_break"));
     cmd.assert().success().stdout(contains("3 3 \n2 2 \n1 1"));
@@ -62,7 +62,7 @@ fn nested_break() -> TestResult {
 
 #[test]
 fn nested_continue() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("nested_continue"));
     cmd.assert()
@@ -74,7 +74,7 @@ fn nested_continue() -> TestResult {
 
 #[test]
 fn for_statement() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("for"));
     cmd.assert().success().stdout(contains("success"));
@@ -84,7 +84,7 @@ fn for_statement() -> TestResult {
 
 #[test]
 fn for_with_existing_initial_value() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("for_with_existing_initial_value"));
     cmd.assert().success().stdout(contains("55"));
@@ -94,7 +94,7 @@ fn for_with_existing_initial_value() -> TestResult {
 
 #[test]
 fn err_break_not_in_loop() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-break_not_in_loop"));
     cmd.assert()
@@ -107,7 +107,7 @@ fn err_break_not_in_loop() -> TestResult {
 
 #[test]
 fn err_continue_not_in_loop() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-continue_not_in_loop"));
     cmd.assert()
@@ -120,7 +120,7 @@ fn err_continue_not_in_loop() -> TestResult {
 
 #[test]
 fn err_expected_update_assignment() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-expected_update_assignment"));
     cmd.assert()
@@ -133,7 +133,7 @@ fn err_expected_update_assignment() -> TestResult {
 
 #[test]
 fn err_expected_initial_assign_or_init() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-expected_initial_assign_or_init"));
     cmd.assert()

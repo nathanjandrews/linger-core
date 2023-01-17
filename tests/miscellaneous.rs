@@ -1,7 +1,10 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::{error::{ParseError, TokenizerError, RuntimeError}, interpreter::Value};
+use linger::{
+    error::{ParseError, RuntimeError, TokenizerError},
+    interpreter::Value,
+};
 use predicates::prelude::predicate::str::{contains, starts_with};
 
 fn file_name_to_path(s: &str) -> String {
@@ -12,7 +15,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn comments() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("comments"));
     cmd.assert().success().stdout(contains("success"));
@@ -22,7 +25,7 @@ fn comments() -> TestResult {
 
 #[test]
 fn string_indexing() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("string_indexing"));
     cmd.assert().success().stdout(starts_with("n"));
@@ -32,11 +35,11 @@ fn string_indexing() -> TestResult {
 
 #[test]
 fn is_empty() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
     cmd.arg(file_name_to_path("is_empty_true"));
     cmd.assert().success().stdout(starts_with("true"));
 
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
     cmd.arg(file_name_to_path("is_empty_false"));
     cmd.assert().success().stdout(starts_with("false"));
 
@@ -45,11 +48,11 @@ fn is_empty() -> TestResult {
 
 #[test]
 fn is_nil() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
     cmd.arg(file_name_to_path("is_nil_true"));
     cmd.assert().success().stdout(starts_with("true"));
 
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
     cmd.arg(file_name_to_path("is_nil_false"));
     cmd.assert().success().stdout(contains("false").count(4));
 
@@ -58,7 +61,7 @@ fn is_nil() -> TestResult {
 
 #[test]
 fn err_is_empty_non_list() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-is_empty_non_list"));
     cmd.assert()
@@ -73,7 +76,7 @@ fn err_is_empty_non_list() -> TestResult {
 
 #[test]
 fn err_missing_main() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-missing_main"));
     cmd.assert()
@@ -85,7 +88,7 @@ fn err_missing_main() -> TestResult {
 
 #[test]
 fn err_multiple_top_level_procs() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-multiple_top_level_procs"));
     cmd.assert().failure().stderr(starts_with(
@@ -97,7 +100,7 @@ fn err_multiple_top_level_procs() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn err_invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-invalid_escape_sequence"));
     cmd.assert().failure().stderr(starts_with(
@@ -109,7 +112,7 @@ fn err_invalid_escape_sequence() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn err_missing_semicolon() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-missing_semicolon"));
     cmd.assert()
@@ -121,7 +124,7 @@ fn err_missing_semicolon() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn err_unterminated_string_literal() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-unterminated_string_literal"));
     cmd.assert()
@@ -134,7 +137,7 @@ fn err_unterminated_string_literal() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn err_unexpected_eof() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-unexpected_eof"));
     cmd.assert()

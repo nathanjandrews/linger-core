@@ -12,7 +12,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn recursion() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("recursion"));
     cmd.assert()
@@ -24,7 +24,7 @@ fn recursion() -> TestResult {
 
 #[test]
 fn closures() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("closures"));
     cmd.assert().success().stdout(contains("10"));
@@ -34,7 +34,7 @@ fn closures() -> TestResult {
 
 #[test]
 fn higher_order_procedure() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("higher_order_procedure"));
     cmd.assert().success().stdout(contains("17 25"));
@@ -44,7 +44,7 @@ fn higher_order_procedure() -> TestResult {
 
 #[test]
 fn single_line_closure_no_brackets() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("single_line_closure_no_brackets"));
     cmd.assert().success().stdout(contains("25"));
@@ -54,7 +54,7 @@ fn single_line_closure_no_brackets() -> TestResult {
 
 #[test]
 fn err_keyword_as_proc() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-keyword_as_proc"));
     cmd.assert().failure().stderr(contains(
@@ -66,7 +66,7 @@ fn err_keyword_as_proc() -> TestResult {
 
 #[test]
 fn err_keyword_as_param_top_level_proc() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-keyword_as_param_tlp"));
     cmd.assert().failure().stderr(contains(
@@ -78,7 +78,7 @@ fn err_keyword_as_param_top_level_proc() -> TestResult {
 
 #[test]
 fn err_keyword_as_param_top_level_lambda() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-keyword_as_param_lambda"));
     cmd.assert().failure().stderr(contains(
@@ -90,7 +90,7 @@ fn err_keyword_as_param_top_level_lambda() -> TestResult {
 
 #[test]
 fn err_arg_mismatch() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-arg_mismatch"));
     cmd.assert().failure().stderr(contains(

@@ -12,7 +12,7 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 #[test]
 fn initialization() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("initialization"));
     cmd.assert().success();
@@ -22,7 +22,7 @@ fn initialization() -> TestResult {
 
 #[test]
 fn reassignment() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("reassignment"));
     cmd.assert().success();
@@ -32,7 +32,7 @@ fn reassignment() -> TestResult {
 
 #[test]
 fn const_() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("const"));
     cmd.assert().success().stdout(starts_with("success"));
@@ -42,7 +42,7 @@ fn const_() -> TestResult {
 
 #[test]
 fn err_keyword_as_var() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-keyword_as_var"));
     cmd.assert().failure().stderr(contains(
@@ -54,7 +54,7 @@ fn err_keyword_as_var() -> TestResult {
 
 #[test]
 fn err_invalid_assignment_target() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-invalid_assignment_target"));
     cmd.assert()
@@ -66,24 +66,24 @@ fn err_invalid_assignment_target() -> TestResult {
 
 #[test]
 fn err_const_reassignment() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-const_reassignment"));
-    cmd.assert()
-        .failure()
-        .stderr(contains(RuntimeError::ReassignConstant("num".to_string()).to_string()));
+    cmd.assert().failure().stderr(contains(
+        RuntimeError::ReassignConstant("num".to_string()).to_string(),
+    ));
 
     Ok(())
 }
 
 #[test]
 fn err_reassign_top_level_proc() -> TestResult {
-    let mut cmd = Command::cargo_bin("linger")?;
+    let mut cmd = Command::cargo_bin("linger-core")?;
 
     cmd.arg(file_name_to_path("err-reassign_top_level_proc"));
-    cmd.assert()
-        .failure()
-        .stderr(contains(RuntimeError::ReassignTopLevelProc("foo".to_string()).to_string()));
+    cmd.assert().failure().stderr(contains(
+        RuntimeError::ReassignTopLevelProc("foo".to_string()).to_string(),
+    ));
 
     Ok(())
 }
