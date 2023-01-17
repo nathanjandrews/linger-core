@@ -1,7 +1,7 @@
 use crate::{
     desugar::Statement,
     environment::Environment,
-    error::RuntimeError::{self, *},
+    error::RuntimeError::{self, *}, Writer,
 };
 
 use super::{expressions::interp_expression, Value};
@@ -18,47 +18,48 @@ pub fn interp_statement(
     env: &mut Environment,
     statement: Statement,
     in_loop: bool,
+    writer: &mut Writer
 ) -> Result<(Value, ControlFlow), RuntimeError> {
     match statement {
-        Statement::Expr(expr) => match interp_expression(env, expr)? {
+        Statement::Expr(expr) => match interp_expression(env, expr, writer)? {
             value => Ok((value, ControlFlow::Normal)),
         },
         Statement::Let(id, new_expr) => {
-            let new_value = interp_expression(env, new_expr)?;
+            let new_value = interp_expression(env, new_expr, writer)?;
             env.insert_new_mutable_value(id, new_value);
             Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::Const(id, new_expr) => {
-            let new_value = interp_expression(env, new_expr)?;
+            let new_value = interp_expression(env, new_expr, writer)?;
             env.insert_new_constant_value(id, new_value);
             Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::Assign(id, expr) => {
-            let value = interp_expression(env, expr)?;
+            let value = interp_expression(env, expr, writer)?;
             env.reassign(id, value)?;
             Ok((Value::Nil, ControlFlow::Normal))
         }
         Statement::If(cond_expr, then_statement, else_statement_option) => {
-            let cond_bool = match interp_expression(env, cond_expr)? {
+            let cond_bool = match interp_expression(env, cond_expr, writer)? {
                 Value::Bool(b) => b,
                 v => return Err(BadArg(v)),
             };
             if cond_bool {
-                interp_statement(env, *then_statement, in_loop)
+                interp_statement(env, *then_statement, in_loop, writer)
             } else {
                 match else_statement_option {
-                    Some(else_statement) => interp_statement(env, *else_statement, in_loop),
+                    Some(else_statement) => interp_statement(env, *else_statement, in_loop, writer),
                     None => Ok((Value::Nil, ControlFlow::Normal)),
                 }
             }
         }
         Statement::While(cond_expr, while_block) => Ok(loop {
-            let cond_bool = match interp_expression(env, cond_expr.clone())? {
+            let cond_bool = match interp_expression(env, cond_expr.clone(), writer)? {
                 Value::Bool(b) => b,
                 v => return Err(BadArg(v)),
             };
             if cond_bool {
-                match interp_statement(env, *while_block.clone(), true)? {
+                match interp_statement(env, *while_block.clone(), true, writer)? {
                     (value, ControlFlow::Return) => break (value, ControlFlow::Return),
                     (_, ControlFlow::Break) => break (Value::Nil, ControlFlow::Normal),
                     (_, ControlFlow::Normal) => (),
@@ -69,7 +70,7 @@ pub fn interp_statement(
             }
         }),
         Statement::Return(expr_option) => match expr_option {
-            Some(expr) => Ok((interp_expression(env, expr)?, ControlFlow::Return)),
+            Some(expr) => Ok((interp_expression(env, expr, writer)?, ControlFlow::Return)),
             None => Ok((Value::Nil, ControlFlow::Return)),
         },
         Statement::Break => Ok((Value::Nil, ControlFlow::Break)),
@@ -78,7 +79,7 @@ pub fn interp_statement(
             let mut block_value = Value::Nil;
             let mut block_env = env.clone();
             for statement in statements {
-                let statement_value = match interp_statement(&mut block_env, statement, in_loop)? {
+                let statement_value = match interp_statement(&mut block_env, statement, in_loop, writer)? {
                     (value, ControlFlow::Normal) => value,
                     (value, ControlFlow::Return) => {
                         env.update_reassigned_entries(&block_env)?;

@@ -2,7 +2,7 @@ use crate::{
     desugar::Expr,
     environment::{AssignmentType, Binding, Entry, Environment, Mutability},
     error::RuntimeError::{self, *},
-    tokenizer::Operator,
+    tokenizer::Operator, Writer,
 };
 
 use super::{
@@ -11,7 +11,7 @@ use super::{
     Value,
 };
 
-pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value, RuntimeError> {
+pub fn interp_expression<'a>(env: &mut Environment, expr: Expr, writer: &mut Writer) -> Result<Value, RuntimeError> {
     match expr {
         Expr::Nil => Ok(Value::Nil),
         Expr::Num(n) => Ok(Value::Num(n)),
@@ -24,8 +24,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
         Expr::Binary(op, left, right) => match op {
             Operator::Plus => {
                 match (
-                    interp_expression(env, *left)?,
-                    interp_expression(env, *right)?,
+                    interp_expression(env, *left, writer)?,
+                    interp_expression(env, *right, writer)?,
                 ) {
                     (Value::Num(num_left), Value::Num(num_right)) => {
                         Ok(Value::Num(num_left + num_right))
@@ -42,8 +42,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 }
             }
             Operator::Minus => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left - num_right))
@@ -52,8 +52,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v, _) => Err(BadArg(v)),
             },
             Operator::Eq => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left == num_right))
@@ -64,8 +64,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::Ne => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left != num_right))
@@ -76,8 +76,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::LT => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left < num_right))
@@ -85,8 +85,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::GT => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left > num_right))
@@ -94,8 +94,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::LTE => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left <= num_right))
@@ -103,28 +103,28 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::GTE => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Bool(num_left >= num_right))
                 }
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
-            Operator::LogicOr => match interp_expression(env, *left)? {
+            Operator::LogicOr => match interp_expression(env, *left, writer)? {
                 Value::Bool(b) => match b {
                     true => Ok(Value::Bool(true)),
-                    false => match interp_expression(env, *right)? {
+                    false => match interp_expression(env, *right, writer)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
                         right_value => Err(BadArg(right_value)),
                     },
                 },
                 left_value => Err(BadArg(left_value)),
             },
-            Operator::LogicAnd => match interp_expression(env, *left)? {
+            Operator::LogicAnd => match interp_expression(env, *left, writer)? {
                 Value::Bool(b) => match b {
                     false => Ok(Value::Bool(false)),
-                    true => match interp_expression(env, *right)? {
+                    true => match interp_expression(env, *right, writer)? {
                         Value::Bool(b) => Ok(Value::Bool(b)),
                         right_value => Err(BadArg(right_value)),
                     },
@@ -132,8 +132,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 left_value => Err(BadArg(left_value)),
             },
             Operator::Times => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left * num_right))
@@ -141,8 +141,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::Mod => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left % num_right))
@@ -150,8 +150,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 (v_left, v_right) => Err(BadArgs(vec![v_left, v_right])),
             },
             Operator::Div => match (
-                interp_expression(env, *left)?,
-                interp_expression(env, *right)?,
+                interp_expression(env, *left, writer)?,
+                interp_expression(env, *right, writer)?,
             ) {
                 (Value::Num(num_left), Value::Num(num_right)) => {
                     Ok(Value::Num(num_left / num_right))
@@ -167,7 +167,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                     _ => return Err(InvalidAssignmentTarget),
                 };
 
-                let num_value = match interp_expression(env, *operand)? {
+                let num_value = match interp_expression(env, *operand, writer)? {
                     Value::Num(n) => n,
                     v => return Err(BadArg(v)),
                 };
@@ -182,7 +182,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                     _ => return Err(InvalidAssignmentTarget),
                 };
 
-                let original_num_value = match interp_expression(env, *operand)? {
+                let original_num_value = match interp_expression(env, *operand, writer)? {
                     Value::Num(n) => n,
                     v => return Err(BadArg(v)),
                 };
@@ -197,7 +197,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                     _ => return Err(InvalidAssignmentTarget),
                 };
 
-                let num_value = match interp_expression(env, *operand)? {
+                let num_value = match interp_expression(env, *operand, writer)? {
                     Value::Num(n) => n,
                     v => return Err(BadArg(v)),
                 };
@@ -212,7 +212,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                     _ => return Err(InvalidAssignmentTarget),
                 };
 
-                let original_num_value = match interp_expression(env, *operand)? {
+                let original_num_value = match interp_expression(env, *operand, writer)? {
                     Value::Num(n) => n,
                     v => return Err(BadArg(v)),
                 };
@@ -221,11 +221,11 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
 
                 return Ok(Value::Num(original_num_value));
             }
-            Operator::Minus => match interp_expression(env, *operand)? {
+            Operator::Minus => match interp_expression(env, *operand, writer)? {
                 Value::Num(n) => Ok(Value::Num(-n)),
                 v => Err(BadArg(v)),
             },
-            Operator::LogicNot => match interp_expression(env, *operand)? {
+            Operator::LogicNot => match interp_expression(env, *operand, writer)? {
                 Value::Bool(b) => Ok(Value::Bool(!b)),
                 v => Err(BadArg(v)),
             },
@@ -237,7 +237,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 _ => "<lambda>".to_string(),
             };
 
-            let (f_params, f_body, f_env) = match interp_expression(env, *f_expr)? {
+            let (f_params, f_body, f_env) = match interp_expression(env, *f_expr, writer)? {
                 Value::Proc(params, body, env) => (params, body, env),
                 v => return Err(BadArg(v)),
             };
@@ -252,7 +252,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
 
             let arg_values_result: Result<Vec<Value>, RuntimeError> = args
                 .into_iter()
-                .map(|arg| interp_expression(env, arg))
+                .map(|arg| interp_expression(env, arg, writer))
                 .collect();
             let arg_values = match arg_values_result {
                 Ok(values) => values,
@@ -270,7 +270,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 .zip(entries)
                 .collect();
 
-            return match interp_statement(&mut f_env.extend(param_bindings), f_body, false)? {
+            return match interp_statement(&mut f_env.extend(param_bindings), f_body, false, writer)? {
                 (value, _) => Ok(value),
             };
         }
@@ -278,35 +278,38 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
             crate::parser::Builtin::Print => {
                 let mut values: Vec<Value> = vec![];
                 for expr in args {
-                    values.push(interp_expression(env, expr)?);
+                    values.push(interp_expression(env, expr, writer)?);
                 }
                 let values: Vec<String> = values.iter().map(|v| v.to_string()).collect();
                 let values = values.join(" ");
-                print!("{}", values);
+
+                // TODO: write a better expect message
+                writer.w.write(values.as_bytes()).expect("should be able to write");
+                // print!("{}", values);
                 Ok(Value::Nil)
             }
             crate::parser::Builtin::List => {
                 let mut values = vec![];
                 for expr in args {
-                    values.push(interp_expression(env, expr)?);
+                    values.push(interp_expression(env, expr, writer)?);
                 }
                 Ok(Value::List(values))
             }
             crate::parser::Builtin::IsEmpty => {
                 let arg = ensure_single_arg(args)?;
-                let list = ensure_list(interp_expression(env, arg)?)?;
+                let list = ensure_list(interp_expression(env, arg, writer)?)?;
                 Ok(Value::Bool(list.is_empty()))
             }
             crate::parser::Builtin::IsNil => {
                 let arg = ensure_single_arg(args)?;
-                match interp_expression(env, arg)? {
+                match interp_expression(env, arg, writer)? {
                     Value::Nil => Ok(Value::Bool(true)),
                     _ => Ok(Value::Bool(false)),
                 }
             }
             crate::parser::Builtin::Head => {
                 let arg = ensure_single_arg(args)?;
-                let list = ensure_list(interp_expression(env, arg)?)?;
+                let list = ensure_list(interp_expression(env, arg, writer)?)?;
 
                 match list.as_slice() {
                     [hd, ..] => Ok(hd.clone()),
@@ -315,7 +318,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
             }
             crate::parser::Builtin::Rest => {
                 let arg = ensure_single_arg(args)?;
-                let list = ensure_list(interp_expression(env, arg)?)?;
+                let list = ensure_list(interp_expression(env, arg, writer)?)?;
 
                 match list.as_slice() {
                     [_, tail @ ..] => Ok(Value::List(tail.to_vec())),
@@ -323,8 +326,8 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 }
             }
         },
-        Expr::Index(indexable_expr, index_expr) => match interp_expression(env, *indexable_expr)? {
-            Value::List(list) => match interp_expression(env, *index_expr)? {
+        Expr::Index(indexable_expr, index_expr) => match interp_expression(env, *indexable_expr, writer)? {
+            Value::List(list) => match interp_expression(env, *index_expr, writer)? {
                 Value::Num(num) => {
                     if num.fract() != 0.0 {
                         return Err(ExpectedInteger(Value::Num(num)));
@@ -344,7 +347,7 @@ pub fn interp_expression<'a>(env: &mut Environment, expr: Expr) -> Result<Value,
                 }
                 bad_value => return Err(ExpectedInteger(bad_value)),
             },
-            Value::Str(str) => match interp_expression(env, *index_expr)? {
+            Value::Str(str) => match interp_expression(env, *index_expr, writer)? {
                 Value::Num(num) => {
                     if num.fract() != 0.0 {
                         return Err(ExpectedInteger(Value::Num(num)));

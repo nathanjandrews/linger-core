@@ -1,6 +1,6 @@
-use std::{env, fs, process::ExitCode};
+use std::{env, fs, io::stdout, process::ExitCode};
 
-use linger::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
+use linger::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize, Writer};
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -47,7 +47,7 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    let value = match interp_program(program) {
+    let value = match interp_program(program, &mut Writer::new(Box::new(stdout()))) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("{e}");

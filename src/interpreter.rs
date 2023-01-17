@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{desugar::Statement, environment::Environment, error::RuntimeError, parser::Program};
+use crate::{desugar::Statement, environment::Environment, error::RuntimeError, parser::Program, Writer};
 
 use self::statements::interp_statement;
 
@@ -36,8 +36,8 @@ mod expressions;
 mod statements;
 mod utils;
 
-pub fn interp_program<'a>(p: Program) -> Result<Value, RuntimeError> {
-    return match interp_statement(&mut Environment::new(p.procedures), p.main, false)? {
+pub fn interp_program<'a>(p: Program, writer: &mut Writer) -> Result<Value, RuntimeError> {
+    return match interp_statement(&mut Environment::new(p.procedures), p.main, false, writer)? {
         (value, _) => Ok(value),
     };
 }
