@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger::{error::{ParseError, TokenizerError, RuntimeError}, interpreter::Value};
+use linger_core::{error::{ParseError, TokenizerError, RuntimeError}, interpreter::Value};
 use predicates::prelude::predicate::str::{contains, starts_with};
 
 fn file_name_to_path(s: &str) -> String {
