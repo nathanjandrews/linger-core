@@ -1,8 +1,8 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger_core::error::RuntimeError;
-use linger_core::interpreter::Value;
+use linger::error::RuntimeError;
+use linger::interpreter::Value;
 use predicates::{
     prelude::{predicate::str::contains, PredicateBooleanExt},
     str::starts_with,

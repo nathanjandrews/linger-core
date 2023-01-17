@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use linger_core::{error::RuntimeError, interpreter::Value};
+use linger::{error::RuntimeError, interpreter::Value};
 use predicates::prelude::predicate::str::starts_with;
 
 fn file_name_to_path(s: &str) -> String {

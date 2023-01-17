@@ -1,6 +1,6 @@
 use std::{env, fs, process::ExitCode};
 
-use linger_core::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
+use linger::{interpreter::interp_program, parser::parse_program, tokenizer::tokenize};
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
